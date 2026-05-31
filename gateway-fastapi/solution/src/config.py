@@ -43,9 +43,7 @@ class Settings(BaseSettings):
     # === Models ===
     model_complex: str = constants.MODEL_COMPLEX
     model_simple: str = constants.MODEL_SIMPLE
-    # Exercise 1 — third tier. Placeholder points at gpt-4o so the dispatch
-    # stays Vocareum-compatible; swap to gpt-4-turbo or claude-sonnet outside
-    # the sandbox.
+    # TODO(m18-ex1): add the premium tier model name (placeholder gpt-4o keeps the dispatch Vocareum-compatible)
     model_premium: str = "gpt-4o"
     embedding_model: str = constants.EMBEDDING_MODEL
 

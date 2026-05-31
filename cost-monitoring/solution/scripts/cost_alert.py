@@ -8,6 +8,7 @@ Run:
     uv run python scripts/cost_alert.py
 """
 
+# TODO(m13-ex3)-start
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
@@ -37,3 +38,4 @@ if rolling_avg > 0 and today_cost > 2 * rolling_avg:
     print(
         f"WARNING: today's cost is {today_cost / rolling_avg:.1f}x the rolling average"
     )
+# TODO(m13-ex3)-end

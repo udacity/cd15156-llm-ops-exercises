@@ -26,10 +26,7 @@ from src.models import TokenUsage
 MODEL_PRICING: dict[str, tuple[float, float]] = {
     "gpt-4o": (2.50, 10.00),
     "gpt-4o-mini": (0.15, 0.60),
-    # Exercise 3 — synthetic Anthropic model for the adapter stub. The
-    # numbers are illustrative (close to Anthropic's published Sonnet
-    # rates on the day this was authored); what matters is that the
-    # adapter's compute_cost() call resolves cleanly.
+    # TODO(m18-ex3): add the synthetic claude-sonnet-stub rate row so compute_cost resolves for the Anthropic adapter
     "claude-sonnet-stub": (3.00, 15.00),
 }
 

@@ -49,11 +49,13 @@ class Settings(BaseSettings):
     confidence_threshold: float = constants.CONFIDENCE_THRESHOLD
     cost_log_path: str = constants.COST_LOG_PATH
 
+    # TODO(m03-ex2)-start: add prompt_env setting for env-aware loader
     # === Prompt environment (Exercise 2) ===
     # Selects ``prompts/<prompt_env>/`` for the env-aware loader.
     # Defaults to ``"prod"`` so accidental promotion of dev behavior to
     # production is a typed failure rather than a silent one.
     prompt_env: Literal["dev", "prod"] = "prod"
+    # TODO(m03-ex2)-end
 
 
 settings = Settings()

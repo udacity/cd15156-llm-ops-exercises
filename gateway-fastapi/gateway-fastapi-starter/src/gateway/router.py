@@ -30,11 +30,13 @@ from src.tracing import traced_pipeline
 
 def select_model(query_type: QueryType) -> str:
     """Map a classifier label to a concrete OpenAI model name."""
+    # TODO(m18-ex1): add the premium-tier dispatch arm (check first — most specific case)
     if query_type == "complex":
         return settings.model_complex
     return settings.model_simple
 
 
+# TODO(m18-ex3): add ``provider: str = "openai"`` keyword and dispatch through the Anthropic adapter when set
 def route_query(
     question: str,
     top_k: int = 5,
@@ -65,11 +67,13 @@ def route_query(
     # is the rubric §6 evidence handle for tier dispatch.
     query_type = classify(question)
     chosen_model = model or select_model(query_type)
+    # TODO(m18-ex3): swap the model to "claude-sonnet-stub" when provider == "anthropic"
 
     hit = lookup(question)
     if hit is not None:
         return hit
 
+    # TODO(m18-ex3): branch on provider before traced_pipeline — Anthropic uses the adapter, OpenAI uses traced_pipeline
     response = traced_pipeline(question, top_k=top_k, model=chosen_model)
     store(question, response)
     log_request(chosen_model, response.tokens, response.cost_usd, query_type)

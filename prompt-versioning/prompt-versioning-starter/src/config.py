@@ -49,5 +49,7 @@ class Settings(BaseSettings):
     confidence_threshold: float = constants.CONFIDENCE_THRESHOLD
     cost_log_path: str = constants.COST_LOG_PATH
 
+    # TODO(m03-ex2): add prompt_env setting for env-aware loader
+
 
 settings = Settings()

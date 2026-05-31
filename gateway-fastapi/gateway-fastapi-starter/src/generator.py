@@ -19,6 +19,8 @@ M13 wired the real cost in without changing the return shape.
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+
+# TODO(m18-ex2): import tenacity + openai exception types for the retry wrapper
 from openai import OpenAI
 
 from src import constants
@@ -52,6 +54,7 @@ def render_system_prompt(sources: list[Source]) -> str:
     return template.render(contexts=contexts)
 
 
+# TODO(m18-ex2): add _is_retryable + @retry-decorated _call_chat_completions helper
 def generate(
     question: str, sources: list[Source], model: str
 ) -> tuple[str, TokenUsage, float]:
@@ -69,6 +72,7 @@ def generate(
     """
     client = OpenAI(base_url=settings.openai_base_url or None)
     system_prompt = render_system_prompt(sources)
+    # TODO(m18-ex2): route the bare client.chat.completions.create through _call_chat_completions
     response = client.chat.completions.create(
         model=model,
         temperature=constants.GENERATION_TEMPERATURE,

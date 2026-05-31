@@ -7,6 +7,8 @@ state machine to override the wait to near-zero so the suite finishes
 in milliseconds rather than seconds.
 """
 
+# TODO(m18-ex2): author the two retry tests — 5xx-then-success retries and 4xx fails fast
+
 from unittest.mock import MagicMock
 
 import httpx

@@ -1,4 +1,5 @@
 """Exercise 2 — environment-aware prompt loader."""
+# TODO(m03-ex2): tests for the env-aware prompt loader (whole file)
 
 import pytest
 from src.prompts.loader import load_environment

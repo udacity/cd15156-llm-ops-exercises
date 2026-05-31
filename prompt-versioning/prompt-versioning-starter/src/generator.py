@@ -38,6 +38,7 @@ _env = Environment(
 )
 
 
+# TODO(m03-ex1): thread user_tier through render_system_prompt
 def render_system_prompt(sources: list[Source]) -> str:
     """Render ``docbot_system.j2`` with retrieved chunks as context.
 

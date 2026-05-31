@@ -19,6 +19,8 @@ M13 wired the real cost in without changing the return shape.
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+
+# TODO(m18-ex2): import tenacity + openai exception types for the retry wrapper
 from openai import APIConnectionError, APIStatusError, OpenAI
 from tenacity import (
     retry,
@@ -58,6 +60,7 @@ def render_system_prompt(sources: list[Source]) -> str:
     return template.render(contexts=contexts)
 
 
+# TODO(m18-ex2): add _is_retryable + @retry-decorated _call_chat_completions helper
 def _is_retryable(exc: BaseException) -> bool:
     """Retry only on transient failures — connection drops and 5xx server errors.
 
@@ -114,6 +117,7 @@ def generate(
     """
     client = OpenAI(base_url=settings.openai_base_url or None)
     system_prompt = render_system_prompt(sources)
+    # TODO(m18-ex2): route the bare client.chat.completions.create through _call_chat_completions
     response = _call_chat_completions(client, model, system_prompt, question)
     answer = response.choices[0].message.content or ""
     usage = TokenUsage(

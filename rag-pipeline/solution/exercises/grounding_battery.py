@@ -10,8 +10,13 @@ Run from the starter directory::
     uv run python exercises/grounding_battery.py | tee /tmp/answers.txt
 """
 
+# TODO(m07-ex1): build the ten-question grounding battery — five in-domain
+# factual + five off-topic — and print answer/top-source/confidence per row.
+
 from src.pipeline import run_pipeline
 
+# TODO(m07-ex1): list the ten (category, question) pairs (5 in-domain factual +
+# 3 off-topic benign + 2 off-topic adjacent).
 QUESTIONS = [
     ("in-domain factual",  "What is the default value of `n_estimators` in `RandomForestClassifier`?"),
     ("in-domain factual",  "What does `StandardScaler` do to input features?"),
@@ -25,6 +30,8 @@ QUESTIONS = [
     ("off-topic adjacent", "How do I broadcast a 2D array against a 3D array in numpy?"),
 ]
 
+# TODO(m07-ex1): for each question call run_pipeline and print category, answer
+# (truncated), top source doc_id + similarity, and confidence.
 for category, q in QUESTIONS:
     r = run_pipeline(q)
     print(f"\n=== [{category}] Q: {q}")

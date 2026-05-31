@@ -176,6 +176,7 @@ def traced_pipeline(
                         search_span.set_attribute(
                             "rag.sources.top_score", max(s.similarity_score for s in sources)
                         )
+                # TODO(m09-ex3): set rag.retrieve.top_score on retrieve span
                 retrieve_span.set_attribute("rag.sources.count", len(sources))
 
             # === augment = render system prompt ===
