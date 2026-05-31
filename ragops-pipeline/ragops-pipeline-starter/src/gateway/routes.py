@@ -127,7 +127,6 @@ def query_endpoint(
     if pii_reason is not None:
         response.blocked_by = pii_reason
 
-    # TODO(m20-exercise-4)-start
     # 7. Structured-output validation at the gateway boundary.
     #    The base ``QueryResponse`` allows ``sources=[]`` and an
     #    out-of-range ``confidence``; the ``QueryResponseValidator``
@@ -146,7 +145,6 @@ def query_endpoint(
                 "field": str(first_error.get("loc", ("unknown",))[0]),
             },
         )
-    # TODO(m20-exercise-4)-end
 
     return response
 

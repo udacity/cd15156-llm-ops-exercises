@@ -54,7 +54,6 @@ def main(argv: list[str] | None = None) -> int:
             "to avoid parallel-load timeouts that produce NaN cells."
         ),
     )
-    # TODO(m11-exercise-4)-start
     parser.add_argument(
         "--faithfulness-min",
         type=float,
@@ -73,7 +72,6 @@ def main(argv: list[str] | None = None) -> int:
             "below this floor. Suitable for CI regression gates."
         ),
     )
-    # TODO(m11-exercise-4)-end
     args = parser.parse_args(argv)
 
     golden = load_golden_set(args.golden)
@@ -107,7 +105,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"\nWrote per-row results to {args.output}")
 
-    # TODO(m11-exercise-4)-start
     thresholds = {
         "faithfulness": args.faithfulness_min,
         "context_recall": args.context_recall_min,
@@ -122,7 +119,6 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             sys.exit(2)
-    # TODO(m11-exercise-4)-end
 
     return 0
 

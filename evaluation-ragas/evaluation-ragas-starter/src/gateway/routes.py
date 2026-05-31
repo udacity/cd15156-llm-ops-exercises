@@ -23,8 +23,7 @@ RAGAS eval harness, for example, fires un-headered requests). Pydantic
 from typing import Annotated
 
 from fastapi import APIRouter, Header
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 from src import constants
 from src.gateway.router import route_query
@@ -40,7 +39,7 @@ from src.guardrails.wrapper import (
     SAFE_FILTERED_MESSAGE,
     safe_response,
 )
-from src.models import QueryResponse, QueryResponseValidator
+from src.models import QueryResponse
 
 
 class QueryRequest(BaseModel):
@@ -67,7 +66,7 @@ def query_endpoint(
     client_id: Annotated[
         str | None, Header(alias=constants.CLIENT_ID_HEADER)
     ] = None,
-) -> QueryResponse | JSONResponse:
+) -> QueryResponse:
     """Dispatch through the guardrail stack to :func:`route_query`.
 
     Order is intentional and load-bearing:
@@ -126,27 +125,6 @@ def query_endpoint(
     # sees the redaction in the audit log even on the happy path.
     if pii_reason is not None:
         response.blocked_by = pii_reason
-
-    # TODO(m20-exercise-4)-start
-    # 7. Structured-output validation at the gateway boundary.
-    #    The base ``QueryResponse`` allows ``sources=[]`` and an
-    #    out-of-range ``confidence``; the ``QueryResponseValidator``
-    #    companion model adds the ``min_length=1`` + ``[0, 1]``
-    #    constraints the planning doc (Skill Pair 9, exercise 4)
-    #    pins. A validation failure here is a contract bug, not a
-    #    user error — we return 502 (Bad Gateway), not 4xx.
-    try:
-        QueryResponseValidator.model_validate(response.model_dump())
-    except ValidationError as exc:
-        first_error = exc.errors()[0]
-        return JSONResponse(
-            status_code=502,
-            content={
-                "detail": "output_validation_failed",
-                "field": str(first_error.get("loc", ("unknown",))[0]),
-            },
-        )
-    # TODO(m20-exercise-4)-end
 
     return response
 
