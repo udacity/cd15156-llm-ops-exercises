@@ -1,0 +1,14 @@
+{
+  "doc_id": "modules.inbox_demo.intro",
+  "text": "The inbox watcher accepts pre-chunked scikit-learn doc sections in the same JSON shape that `corpus.load_corpus` yields. The watcher embeds the `text` field with `text-embedding-3-small`, derives a content-hashed chunk id, and upserts into whichever color the `data/ACTIVE_COLLECTION` alias currently points at. Re-dropping the identical file is idempotent: same text, same hash, same row in Chroma. This template is the happy-path payload for Module 24 Exercise 1.",
+  "metadata": {
+    "source_path": "doc/modules/inbox_demo.rst",
+    "section_title": "Inbox Demo Intro",
+    "section_path": "Inbox Demo > Intro",
+    "url": "https://scikit-learn.org/stable/modules/inbox_demo.html#intro",
+    "has_code": false,
+    "code_languages": [],
+    "xrefs": [],
+    "scikit_learn_sha": "inbox-demo-fixture"
+  }
+}

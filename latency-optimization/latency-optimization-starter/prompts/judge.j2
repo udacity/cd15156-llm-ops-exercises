@@ -1,0 +1,15 @@
+You evaluate whether a scikit-learn documentation answer is supported by the retrieved source chunks below. Respond with a JSON object containing two fields: "verdict" (either "SUPPORTED" or "NOT_SUPPORTED") and "reason" (one short sentence explaining the call).
+
+Rubric
+- The answer is SUPPORTED when every cited symbol, function, class, parameter name, default value, return type, and recommendation is present in the SOURCE block.
+- The answer is NOT_SUPPORTED when it cites an API name, parameter, default value, or behavior that does not appear verbatim or as an obvious paraphrase in the SOURCE block.
+- Paraphrases are allowed when the underlying claim is identical. Example: "the default solver is lbfgs" and "lbfgs is the default solver" both pass if the source mentions the default solver.
+- A refusal in the answer (e.g. "I do not know" or "the docs do not say") is SUPPORTED — refusals are honest.
+
+SOURCE
+{{ source }}
+
+ANSWER
+{{ answer }}
+
+Respond with valid JSON only. No prose outside the JSON object.
