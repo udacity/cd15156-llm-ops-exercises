@@ -20,7 +20,6 @@ RAGAS eval harness, for example, fires un-headered requests). Pydantic
 + FastAPI's ``Header(default=None)`` gives both behaviors in one line.
 """
 
-# TODO(m18-ex3): add Literal import for the provider field
 from typing import Annotated
 
 from fastapi import APIRouter, Header
@@ -56,7 +55,7 @@ class QueryRequest(BaseModel):
 
     question: str = Field(..., min_length=1, max_length=4000)
     top_k: int = Field(constants.DEFAULT_TOP_K, ge=1, le=20)
-    # TODO(m18-ex3): add provider field with Literal["openai", "anthropic"] default "openai"
+    # TODO(m18-ex3): add ``provider: Literal["openai", "anthropic"] = "openai"`` field to QueryRequest (import Literal from typing) and thread ``request.provider`` into the ``route_query`` call below
 
 
 router = APIRouter()
@@ -112,7 +111,6 @@ def query_endpoint(
         pii_reason = f"pii_redacted: {','.join(pii_kinds)}"
 
     # 5. Dispatch.
-    # TODO(m18-ex3): thread request.provider into route_query
     response = route_query(
         cleaned,
         top_k=request.top_k,

@@ -38,7 +38,7 @@ def select_model(query_type: QueryType) -> str:
     return settings.model_simple
 
 
-# TODO(m18-ex3): add ``provider: str = "openai"`` keyword and dispatch through the Anthropic adapter when set
+# TODO(m18-ex3): add ``provider: str = "openai"`` keyword to route_query; when ``provider == "anthropic"`` swap chosen_model to "claude-sonnet-stub" and dispatch through the Anthropic adapter (src.gateway.providers.anthropic.generate) before traced_pipeline
 def route_query(
     question: str,
     top_k: int = 5,
@@ -72,7 +72,6 @@ def route_query(
     # is the rubric §6 evidence handle for tier dispatch.
     query_type = classify(question)
     chosen_model = model or select_model(query_type)
-    # TODO(m18-ex3): swap the model to "claude-sonnet-stub" when provider == "anthropic"
     if provider == "anthropic":
         # Exercise 3 — synthetic model name keyed in src/pricing.py so
         # compute_cost has a rate to use. A real implementation would
@@ -84,7 +83,6 @@ def route_query(
     if hit is not None:
         return hit
 
-    # TODO(m18-ex3): branch on provider before traced_pipeline — Anthropic uses the adapter, OpenAI uses traced_pipeline
     if provider == "anthropic":
         # Local imports keep the OpenAI-only path import-clean — the
         # Anthropic adapter is opt-in.
