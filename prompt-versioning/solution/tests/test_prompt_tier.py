@@ -1,5 +1,5 @@
 """Exercise 1 — premium-tier conditional in the docbot system prompt."""
-# TODO(m03-ex1): tests for the user_tier render path (whole file)
+# Tests that user_tier toggles the mailing-list snippet in the rendered prompt
 
 from src.generator import render_system_prompt
 from src.models import Source

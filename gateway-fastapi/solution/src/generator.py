@@ -20,7 +20,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-# TODO(m18-ex2): import tenacity + openai exception types for the retry wrapper
+# Retry-wrapper imports — openai exception types for the predicate, tenacity for the policy.
 from openai import APIConnectionError, APIStatusError, OpenAI
 from tenacity import (
     retry,
@@ -60,7 +60,7 @@ def render_system_prompt(sources: list[Source]) -> str:
     return template.render(contexts=contexts)
 
 
-# TODO(m18-ex2): add _is_retryable + @retry-decorated _call_chat_completions helper
+# Predicate + tenacity-decorated wrapper around client.chat.completions.create.
 def _is_retryable(exc: BaseException) -> bool:
     """Retry only on transient failures — connection drops and 5xx server errors.
 
@@ -117,7 +117,7 @@ def generate(
     """
     client = OpenAI(base_url=settings.openai_base_url or None)
     system_prompt = render_system_prompt(sources)
-    # TODO(m18-ex2): route the bare client.chat.completions.create through _call_chat_completions
+    # Route the completion through the retry-decorated helper so transient errors get backed off.
     response = _call_chat_completions(client, model, system_prompt, question)
     answer = response.choices[0].message.content or ""
     usage = TokenUsage(

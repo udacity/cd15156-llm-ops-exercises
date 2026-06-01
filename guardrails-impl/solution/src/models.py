@@ -33,10 +33,9 @@ class QueryResponse(BaseModel):
     """Standardised response returned by the ScikitDocs `/query` route."""
 
     answer: str
-    # TODO(m20-exercise-4)-start
+    # Structured-output contract: citations require ≥1 source, confidence in [0.0, 1.0]
     citations: list[Source] = Field(..., min_length=1)
     confidence: float = Field(..., ge=0.0, le=1.0)
-    # TODO(m20-exercise-4)-end
     model: str
     tokens: TokenUsage
     cost_usd: float

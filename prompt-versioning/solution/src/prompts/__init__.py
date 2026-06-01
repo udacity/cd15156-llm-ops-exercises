@@ -1,1 +1,1 @@
-# TODO(m03-ex2): create src/prompts/ package for env-aware loader
+# Marks src/prompts/ as a Python package for the env-aware loader

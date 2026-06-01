@@ -19,8 +19,6 @@ multi-provider adapter eventually re-discovers:
    cost computation would silently see zero tokens.
 """
 
-# TODO(m18-ex3): author the Anthropic adapter — stubbed _call_anthropic + generate() with the same (answer, TokenUsage, cost) contract as src.generator.generate
-
 from src.models import TokenUsage
 from src.pricing import compute_cost
 

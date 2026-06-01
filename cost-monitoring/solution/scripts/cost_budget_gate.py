@@ -9,7 +9,7 @@ Run:
     uv run python scripts/cost_budget_gate.py
 """
 
-# TODO(m13-ex3)-start
+# Pre-call tiktoken cost estimator and per-request budget gate, with reconciliation demo
 import tiktoken
 
 from src.cost.tracker import compute_cost
@@ -69,4 +69,3 @@ if __name__ == "__main__":
     print(f"compute_cost(actual):    ${actual_cost:.6f}")
     sign = "high" if delta_pct >= 0 else "low"
     print(f"delta: estimate is {abs(delta_pct):.0f}% {sign}")
-# TODO(m13-ex3)-end
