@@ -6,7 +6,7 @@ Runs the same N questions against both branches by:
 between iterations. Writes the per-question label (refused vs answered)
 to a JSON report and prints a chi-squared p-value.
 """
-# TODO(m03-ex3): build A/B refusal-rate harness (whole file)
+# Runs N questions against two git branches and reports a chi-squared p-value
 import json
 import re
 import subprocess

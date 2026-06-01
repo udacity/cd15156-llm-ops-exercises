@@ -15,11 +15,8 @@ Run with `make load-data` already complete:
     uv run python scripts/ef_search_sweep.py
 """
 
-# TODO(m26-ex3): build sandbox collections at ef_search of 10/50/200, replay the
-# same queries against each, and print mean per-query latency. See
-# INSTRUCTIONS.md → Exercise 3 for the query list, sandbox-collection pattern,
-# and cleanup snippet.
-# TODO(m26-ex3)-start
+# Build sandbox collections at ef_search of 10/50/200, replay the same queries
+# against each, and print mean per-query latency.
 import time
 
 import chromadb
@@ -73,4 +70,3 @@ def sweep(ef: int) -> dict:
 if __name__ == "__main__":
     for ef in [10, 50, 200]:
         print(sweep(ef))
-# TODO(m26-ex3)-end

@@ -172,7 +172,7 @@ def test_x_client_id_header_passes_through_to_router() -> None:
 
     captured: dict[str, str | None] = {}
 
-    # TODO(m18-ex3): both fake_route_query mocks in this file (this one + test_x_client_id_header_is_optional below) need ``**kwargs`` added to the signature so the new ``provider`` keyword threading does not break the contract tests
+    # ``**kwargs`` absorbs the new ``provider`` keyword so the contract test stays decoupled from the field set.
     def fake_route_query(
         question: str, top_k: int = 5, *, model: str | None = None, client_id: str | None = None, **kwargs
     ) -> QueryResponse:

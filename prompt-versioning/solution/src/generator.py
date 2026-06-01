@@ -38,7 +38,7 @@ _env = Environment(
 )
 
 
-# TODO(m03-ex1)-start: thread user_tier through render_system_prompt
+# Renders the system prompt with retrieved chunks and user_tier
 def render_system_prompt(
     sources: list[Source], user_tier: str = "standard"
 ) -> str:
@@ -57,7 +57,6 @@ def render_system_prompt(
     template = _env.get_template("docbot_system.j2")
     contexts = "\n\n---\n\n".join(s.chunk_text for s in sources)
     return template.render(contexts=contexts, user_tier=user_tier)
-# TODO(m03-ex1)-end
 
 
 def generate(

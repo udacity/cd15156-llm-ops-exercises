@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     # === Models ===
     model_complex: str = constants.MODEL_COMPLEX
     model_simple: str = constants.MODEL_SIMPLE
-    # TODO(m18-ex1): add the premium tier model name (placeholder gpt-4o keeps the dispatch Vocareum-compatible)
+    # Premium-tier model — placeholder gpt-4o so the dispatch stays Vocareum-compatible.
     model_premium: str = "gpt-4o"
     embedding_model: str = constants.EMBEDDING_MODEL
 

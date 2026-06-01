@@ -24,7 +24,7 @@ from openai import OpenAI
 from src import constants
 from src.config import settings
 
-# TODO(m18-ex1): extend QueryType + _VALID_LABELS with the premium tier
+# Three-tier label set — simple, complex, premium — kept in sync with the classifier prompt.
 QueryType = Literal["simple", "complex", "premium"]
 _VALID_LABELS: tuple[str, ...] = ("simple", "complex", "premium")
 

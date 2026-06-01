@@ -46,7 +46,7 @@ class QueryResponse(BaseModel):
     blocked_by: str | None = None
 
 
-# TODO(m20-exercise-4)-start
+# Structured-output guard model that pins gateway-boundary contract (citations ≥1, confidence ∈ [0,1])
 class QueryResponseValidator(BaseModel):
     """Structured-output guard for the `/query` boundary (Skill Pair 9, ex. 4).
 
@@ -68,11 +68,9 @@ class QueryResponseValidator(BaseModel):
 
     Used by the boundary block in `src/gateway/routes.py` that wraps the
     dispatched response in `QueryResponseValidator.model_validate(...)`
-    and returns HTTP 502 on `ValidationError` (see the matching
-    `# TODO(m20-exercise-4)` markers there).
+    and returns HTTP 502 on `ValidationError`.
     """
 
     answer: str
     sources: list[Source] = Field(..., min_length=1)
     confidence: float = Field(..., ge=0.0, le=1.0)
-# TODO(m20-exercise-4)-end

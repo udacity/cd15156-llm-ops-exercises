@@ -13,9 +13,8 @@ Run with `make serve` up on port 8080 and the cache cleared between calls
     uv run python scripts/ttft_compare.py
 """
 
-# TODO(m26-ex2): time blocking + streaming endpoints on the same question and
-# print {"ttft_ms", "total_ms"} for each. See INSTRUCTIONS.md → Exercise 2.
-# TODO(m26-ex2)-start
+# Time blocking and streaming endpoints on the same question and print
+# {"ttft_ms", "total_ms"} for each.
 import json
 import time
 import urllib.request
@@ -55,4 +54,3 @@ def time_streaming() -> dict:
 if __name__ == "__main__":
     print("blocking :", time_blocking())
     print("streaming:", time_streaming())
-# TODO(m26-ex2)-end

@@ -176,7 +176,7 @@ def traced_pipeline(
                         search_span.set_attribute(
                             "rag.sources.top_score", max(s.similarity_score for s in sources)
                         )
-                # TODO(m09-ex3): set rag.retrieve.top_score on retrieve span
+                # Record top similarity score on the outer retrieve span for slice-by-score analysis.
                 retrieve_span.set_attribute(
                     "rag.retrieve.top_score",
                     max(s.similarity_score for s in sources) if sources else 0.0,

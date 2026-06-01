@@ -127,14 +127,13 @@ def query_endpoint(
     if pii_reason is not None:
         response.blocked_by = pii_reason
 
-    # TODO(m20-exercise-4)-start
     # 7. Structured-output validation at the gateway boundary.
     #    ``QueryResponse`` carries the ``citations`` min_length=1 and
-    #    ``confidence`` ∈ [0, 1] Pydantic ``Field`` constraints the
-    #    planning doc (Skill Pair 9, exercise 4) pins. Re-validating
-    #    the dumped response catches a contract violation introduced
-    #    upstream — a validation failure here is a server-side bug,
-    #    not a user error, so we return 502 (Bad Gateway), not 4xx.
+    #    ``confidence`` ∈ [0, 1] Pydantic ``Field`` constraints. Re-
+    #    validating the dumped response catches a contract violation
+    #    introduced upstream — a validation failure here is a server-
+    #    side bug, not a user error, so we return 502 (Bad Gateway),
+    #    not 4xx.
     try:
         QueryResponse.model_validate(response.model_dump())
     except ValidationError as exc:
@@ -146,7 +145,6 @@ def query_endpoint(
                 "field": str(first_error.get("loc", ("unknown",))[0]),
             },
         )
-    # TODO(m20-exercise-4)-end
 
     return response
 

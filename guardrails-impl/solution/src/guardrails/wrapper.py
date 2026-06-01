@@ -50,7 +50,7 @@ def safe_response(message: str, *, blocked_by: str) -> QueryResponse:
 
     Note:
         Uses :meth:`QueryResponse.model_construct` to bypass the
-        ``citations`` ``min_length=1`` constraint that exercise 4 adds.
+        ``citations`` ``min_length=1`` constraint on the response model.
         Block responses are not answers; the boundary validator catches
         malformed *answer* responses, not deliberate block notifications.
     """
