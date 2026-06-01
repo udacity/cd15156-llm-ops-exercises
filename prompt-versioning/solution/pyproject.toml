@@ -41,6 +41,9 @@ dependencies = [
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     # File-watcher for RAGOps demo — REQ-074 (M24)
     "watchdog>=4.0,<7",
+    # A/B refusal-rate harness — M03 Exercise 3 — scripts/ab_refusal.py
+    "requests>=2.31,<3",
+    "scipy>=1.13,<2",
 ]
 
 [dependency-groups]
