@@ -68,7 +68,7 @@ curl -s -X POST http://localhost:8080/query \
   | python -m json.tool
 ```
 
-HTTP 200, `answer` set to `SAFE_BLOCKED_MESSAGE` (defined at `src/guardrails/wrapper.py:14-17`), `sources` empty, `confidence` zero, and `blocked_by: "prompt_injection: matched pattern 'ignore_previous'"`. The regex short-circuit fired; DeBERTa was not invoked. The pattern name in the reason string is what an operator greps audit logs for.
+HTTP 200, `answer` set to `SAFE_BLOCKED_MESSAGE` (defined at `src/guardrails/wrapper.py:14-17`), `citations` empty, `confidence` zero, and `blocked_by: "prompt_injection: matched pattern 'ignore_previous'"`. The regex short-circuit fired; DeBERTa was not invoked. The pattern name in the reason string is what an operator greps audit logs for.
 
 Slot 3 — fire a system-prompt extraction:
 
@@ -94,7 +94,7 @@ The response comes back populated with a real answer about `OneHotEncoder`, and 
 
 ## Walkthrough 3 — Trace the output side: the LLM-judge and the LLM10 cap
 
-Open `src/gateway/routes.py` at lines 102 to 105. After `route_query` returns, the handler calls `check_hallucination(response.answer, response.sources)` and rewrites the response to `SAFE_FILTERED_MESSAGE` on a `NOT_SUPPORTED` verdict. The judge lives at `src/guardrails/llm_judge/output_guards.py`. Three things to read. First, the rubric is in `prompts/judge.j2` — an answer is SUPPORTED if every cited API symbol, function name, parameter, default value, or return type appears in the retrieved source chunks; NOT_SUPPORTED if the answer cites something the sources do not mention. Second, the response contract is JSON mode (`response_format={"type": "json_object"}`) and the parser pulls `{verdict, reason}`. Third, every error path fails open — network exception, JSON-decode error, missing `verdict` field — and logs at WARN. Fire a hallucination-prone query:
+Open `src/gateway/routes.py` at lines 102 to 105. After `route_query` returns, the handler calls `check_hallucination(response.answer, response.citations)` and rewrites the response to `SAFE_FILTERED_MESSAGE` on a `NOT_SUPPORTED` verdict. The judge lives at `src/guardrails/llm_judge/output_guards.py`. Three things to read. First, the rubric is in `prompts/judge.j2` — an answer is SUPPORTED if every cited API symbol, function name, parameter, default value, or return type appears in the retrieved source chunks; NOT_SUPPORTED if the answer cites something the sources do not mention. Second, the response contract is JSON mode (`response_format={"type": "json_object"}`) and the parser pulls `{verdict, reason}`. Third, every error path fails open — network exception, JSON-decode error, missing `verdict` field — and logs at WARN. Fire a hallucination-prone query:
 
 ```
 curl -s -X POST http://localhost:8080/query \
@@ -135,7 +135,7 @@ The LLM-as-judge hallucination check at `src/guardrails/llm_judge/output_guards.
 
 **Setup.** Build a ten-query golden cohort. Five queries should produce grounded answers — pick five scikit-learn API questions whose answer is fully supported by the retrieved chunks (`What is the default value of n_estimators in RandomForestClassifier?`, `What does StandardScaler.fit do?`, `Which kernel does SVR default to?`, etc.). Five should produce subtly-wrong-API answers — questions where the model is likely to hallucinate a function name, an inverted parameter default, or an API that exists in a sibling library but not in scikit-learn (`How does sklearn.preprocessing.NormalizeAll work?`, `What does GridSearchCV.refit_index_ return?`, `What is the default solver for sklearn.cluster.KMeansPlus?`). The grounded answers are your true-negatives ("the judge should not flag these"); the wrong-API answers are your true-positives ("the judge should flag these"). Hedge: ten queries is an underpowered sample for any calibration claim, and a production tuning pass would use hundreds. The exercise teaches the procedure; the numbers you produce are illustrative.
 
-**Run the cohort.** Write a small Python script under `scripts/` (or a Jupyter notebook — anything outside `src/`). For each query, fire `route_query` once and capture the `answer` and `sources` fields. Then call `check_hallucination(answer, sources)` once per row and record the `(passed, reason)` tuple. Tabulate the results. The confusion matrix has four cells:
+**Run the cohort.** Write a small Python script under `scripts/` (or a Jupyter notebook — anything outside `src/`). For each query, fire `route_query` once and capture the `answer` and `citations` fields. Then call `check_hallucination(answer, citations)` once per row and record the `(passed, reason)` tuple. Tabulate the results. The confusion matrix has four cells:
 
 - True-positive (TP): wrong-API cohort, judge flagged (`passed=False`).
 - False-negative (FN): wrong-API cohort, judge passed.
