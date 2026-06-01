@@ -1,0 +1,9 @@
+{
+  "doc_id": "modules.inbox_demo.parse_error",
+  "text": "This file is deliberately not valid JSON — note the trailing comma after the next object, which Python's json.loads rejects.",
+  "metadata": {
+    "source_path": "doc/modules/inbox_demo.rst",
+    "section_title": "Parse Error",
+    "url": "https://scikit-learn.org/stable/modules/inbox_demo.html",
+  }
+}

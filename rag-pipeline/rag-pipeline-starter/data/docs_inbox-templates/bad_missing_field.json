@@ -1,0 +1,4 @@
+{
+  "doc_id": "modules.inbox_demo.missing",
+  "text": "This payload is missing the top-level `metadata` field, which the watcher's two-stage validator rejects with a `missing required fields` reason. Use this file for Module 24 Exercise 2's schema-violation path."
+}

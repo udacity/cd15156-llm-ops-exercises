@@ -1,0 +1,26 @@
+# Local secrets (.env.example is tracked as the template)
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Local on-disk data stores written by the starter at runtime
+data/chroma/
+data/phoenix/
+data/cost_log.jsonl
+
+# Cached scikit-learn doc snapshots — populated by REQ-062 `make load-data`.
+# Keep data/docs/ tracked (we ship the .gitkeep) but ignore the populated tree.
+data/docs/*
+!data/docs/.gitkeep
+
+# REQ-062 corpus build artifacts
+data/scikit-learn-cache/
+data/embedding_cache.jsonl
+data/CORPUS_VERSION
+
+# uv lockfile is tracked at the starter root; venv is not
