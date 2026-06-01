@@ -20,7 +20,7 @@ The starter ships the gateway scaffold (lifespan + tracing init, `route_query` c
 
 ## Note on the tenacity `retry=` filter
 
-The exercise prose names `retry_if_exception_type((APIConnectionError, APIStatusError))` as the decoration-time filter and `_is_retryable` as the "more selective contract you would use if you needed per-status filtering." The pinned test at `tests/test_retry.py::test_does_not_retry_on_400` expects a 400 to fail fast, so the solution wires the decorator with `retry=retry_if_exception(_is_retryable)` — the selective filter — rather than the broad `retry_if_exception_type` variant. The broad filter would retry 400s too and the no-retry-on-4xx test would fail. The exercise spec carries that small inconsistency between the prose decorator and the pinned test; the solution resolves it in favor of the test (and the safer policy).
+The decorator wires `retry=retry_if_exception(_is_retryable)` — the helper-driven filter that retries `APIConnectionError` and 5xx `APIStatusError` while letting 4xx fail fast. This matches the no-retry-on-4xx contract pinned in `tests/test_retry.py::test_does_not_retry_on_400`. The exercise prose flags the broader `retry_if_exception_type((APIConnectionError, APIStatusError))` form as a foot-gun (it would retry 400s) and prescribes the selective form as the default.
 
 ## Verification
 

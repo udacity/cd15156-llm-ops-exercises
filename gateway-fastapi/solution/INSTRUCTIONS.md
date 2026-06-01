@@ -265,7 +265,7 @@ The mechanics this exercise pins are the ones the concept module's video on retr
    from openai import APIConnectionError, APIStatusError
    from tenacity import (
        retry,
-       retry_if_exception_type,
+       retry_if_exception,
        stop_after_attempt,
        wait_exponential_jitter,
    )
@@ -291,7 +291,7 @@ The mechanics this exercise pins are the ones the concept module's video on retr
 
 
    @retry(
-       retry=retry_if_exception_type((APIConnectionError, APIStatusError)),
+       retry=retry_if_exception(_is_retryable),
        stop=stop_after_attempt(3),
        wait=wait_exponential_jitter(initial=1, max=8),
        reraise=True,
@@ -308,7 +308,7 @@ The mechanics this exercise pins are the ones the concept module's video on retr
        )
    ```
 
-   Then replace the bare call in `generate` with `response = _call_chat_completions(client, model, system_prompt, question)`. The `retry_if_exception_type` filter at decoration time guards the entire decorated function; the `_is_retryable` helper above is the more selective contract you would use if you needed per-status filtering (e.g. retry on 502 but not 503, the kind of policy a production gateway eventually grows). For the exercise the two-class filter is enough.
+   Then replace the bare call in `generate` with `response = _call_chat_completions(client, model, system_prompt, question)`. The `retry_if_exception(_is_retryable)` filter at decoration time delegates the per-exception decision to the helper above, so `APIConnectionError` and 5xx `APIStatusError` retry while 4xx (400 bad request, 401 auth, 429 without `Retry-After`) fail fast — the no-retry-on-4xx semantics the next step's test pins. `tenacity` also ships a broader `retry_if_exception_type((APIConnectionError, APIStatusError))` form, but that catches 4xx too and would retry pointless requests; production gateways grow toward selective filters for the same reason.
 
 3. Test the retry behavior with a mocked flaky endpoint. Create `tests/test_retry.py`:
 
