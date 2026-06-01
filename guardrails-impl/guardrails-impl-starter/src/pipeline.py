@@ -54,7 +54,7 @@ def run_pipeline(
     )
     return QueryResponse(
         answer=answer,
-        sources=sources,
+        citations=sources,
         confidence=confidence,
         model=chosen_model,
         tokens=usage,

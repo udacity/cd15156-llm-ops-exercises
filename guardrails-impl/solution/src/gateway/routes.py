@@ -40,7 +40,7 @@ from src.guardrails.wrapper import (
     SAFE_FILTERED_MESSAGE,
     safe_response,
 )
-from src.models import QueryResponse, QueryResponseValidator
+from src.models import QueryResponse
 
 
 class QueryRequest(BaseModel):
@@ -118,7 +118,7 @@ def query_endpoint(
     )
 
     # 6. Hallucination check on the output.
-    passed, halluc_reason = check_hallucination(response.answer, response.sources)
+    passed, halluc_reason = check_hallucination(response.answer, response.citations)
     if not passed:
         return safe_response(SAFE_FILTERED_MESSAGE, blocked_by=halluc_reason or "hallucination: judge flagged")
 
@@ -129,14 +129,14 @@ def query_endpoint(
 
     # TODO(m20-exercise-4)-start
     # 7. Structured-output validation at the gateway boundary.
-    #    The base ``QueryResponse`` allows ``sources=[]`` and an
-    #    out-of-range ``confidence``; the ``QueryResponseValidator``
-    #    companion model adds the ``min_length=1`` + ``[0, 1]``
-    #    constraints the planning doc (Skill Pair 9, exercise 4)
-    #    pins. A validation failure here is a contract bug, not a
-    #    user error — we return 502 (Bad Gateway), not 4xx.
+    #    ``QueryResponse`` carries the ``citations`` min_length=1 and
+    #    ``confidence`` ∈ [0, 1] Pydantic ``Field`` constraints the
+    #    planning doc (Skill Pair 9, exercise 4) pins. Re-validating
+    #    the dumped response catches a contract violation introduced
+    #    upstream — a validation failure here is a server-side bug,
+    #    not a user error, so we return 502 (Bad Gateway), not 4xx.
     try:
-        QueryResponseValidator.model_validate(response.model_dump())
+        QueryResponse.model_validate(response.model_dump())
     except ValidationError as exc:
         first_error = exc.errors()[0]
         return JSONResponse(

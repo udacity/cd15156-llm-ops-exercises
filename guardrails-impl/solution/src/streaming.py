@@ -230,7 +230,7 @@ def _stream(question: str, top_k: int, blocked_by: str | None) -> Iterator[str]:
 
     response = QueryResponse(
         answer=answer,
-        sources=sources,
+        citations=sources,
         confidence=confidence,
         model=model,
         tokens=usage,
@@ -273,9 +273,11 @@ def query_stream(request: StreamQueryRequest) -> StreamingResponse:
     """
     cleaned, blocked_by = _pre_stream_guards(request.question)
     if blocked_by and blocked_by.startswith("prompt_injection"):
-        blocked = QueryResponse(
+        # model_construct bypasses citations min_length=1 — see
+        # guardrails.wrapper.safe_response for the rationale.
+        blocked = QueryResponse.model_construct(
             answer=_BLOCKED_MESSAGE,
-            sources=[],
+            citations=[],
             confidence=0.0,
             model=constants.MODEL_SIMPLE,
             tokens=TokenUsage(prompt_tokens=0, completion_tokens=0),

@@ -100,7 +100,7 @@ def build_eval_dataset(golden_set: list[dict], *, top_k: int = 5) -> Dataset:
         response = run_pipeline(row["question"], top_k=top_k)
         questions.append(row["question"])
         answers.append(response.answer)
-        retrieved_contexts.append([s.chunk_text for s in response.sources])
+        retrieved_contexts.append([s.chunk_text for s in response.citations])
         ground_truths.append(row["ground_truth"])
 
     return Dataset.from_dict(

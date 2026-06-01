@@ -117,7 +117,7 @@ def query_endpoint(
     )
 
     # 6. Hallucination check on the output.
-    passed, halluc_reason = check_hallucination(response.answer, response.sources)
+    passed, halluc_reason = check_hallucination(response.answer, response.citations)
     if not passed:
         return safe_response(SAFE_FILTERED_MESSAGE, blocked_by=halluc_reason or "hallucination: judge flagged")
 
@@ -126,17 +126,7 @@ def query_endpoint(
     if pii_reason is not None:
         response.blocked_by = pii_reason
 
-    # TODO(m20-exercise-4): wire `QueryResponseValidator` from
-    # `src.models` at the gateway boundary here. Wrap a
-    # `QueryResponseValidator.model_validate(response.model_dump())` call
-    # in a `try`/`except ValidationError`; on the exception, return a
-    # `JSONResponse(status_code=502, content={"detail":
-    # "output_validation_failed", "field": str(exc.errors()[0]['loc'][0])})`.
-    # You'll need to add `JSONResponse` (from `fastapi.responses`) and
-    # `ValidationError` (from `pydantic`) to the imports above, plus
-    # `QueryResponseValidator` to the `from src.models import ...` line,
-    # and widen the return type to `QueryResponse | JSONResponse`.
-    # See INSTRUCTIONS.md → Exercise 4 for the full spec.
+    # TODO(m20-exercise-4): wrap response construction in try/except ValidationError; return 502 with detail="output_validation_failed" on failure
 
     return response
 

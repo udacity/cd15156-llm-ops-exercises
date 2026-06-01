@@ -1,20 +1,19 @@
 # Module 20 Solution Notes
 
-This `solution/` is the ScikitDocs starter with **Exercise 4 (Pydantic `QueryResponseValidator` at the gateway boundary)** already applied. The other three exercises produce per-learner artifacts (added input guard, calibration markdown report, cost-amplification table + burst-test script output) rather than code that ships in the repo; reference outputs are described below.
+This `solution/` is the ScikitDocs starter with **Exercise 4 (Pydantic `QueryResponse` validator at the gateway boundary)** already applied. The other three exercises produce per-learner artifacts (added input guard, calibration markdown report, cost-amplification table + burst-test script output) rather than code that ships in the repo; reference outputs are described below.
 
 ## Exercise 4 — Pydantic output validator (code-in-repo)
 
 The change is bracketed by `# TODO(m20-exercise-4)-start` / `-end` markers so a learner can `grep` the seam.
 
-- `src/models.py` — `QueryResponseValidator(BaseModel)` companion model with `sources: list[Source] = Field(..., min_length=1)` and `confidence: float = Field(..., ge=0.0, le=1.0)`. `QueryResponse` itself is **not** modified — it mirrors `project/src/models.py` and a dozen downstream callers depend on the wire shape.
-- `src/gateway/routes.py` — `try/except ValidationError` block at the boundary, after the hallucination check, just before the final `return response`. On `ValidationError`, returns `JSONResponse(status_code=502, content={"detail": "output_validation_failed", "field": str(exc.errors()[0]['loc'][0])})`. Imports widened to bring in `JSONResponse`, `ValidationError`, and `QueryResponseValidator`. Return type widened to `QueryResponse | JSONResponse`.
-- `tests/test_gateway_output_validator.py` — the two tests the exercise asks the learner to author: (1) well-formed response → 200, (2) `sources=[]` → 502 with `field=="sources"`. Both mock `route_query` and `check_hallucination` so the test exercises only the validator seam, and `reset_rate_limit_state()` runs at the top of each test so the LLM10 bucket doesn't leak between runs.
+- `src/models.py` — `QueryResponse` itself carries the constraints: `citations: list[Source] = Field(..., min_length=1)` and `confidence: float = Field(..., ge=0.0, le=1.0)`. `Field` is imported from `pydantic` alongside `BaseModel`. The field rename (`sources` → `citations`) is local to this m20 exercise; other modules in this course keep `sources`.
+- `src/gateway/routes.py` — `try/except ValidationError` block at the boundary, after the hallucination check, just before the final `return response`. On `ValidationError`, returns `JSONResponse(status_code=502, content={"detail": "output_validation_failed", "field": str(exc.errors()[0]['loc'][0])})`. Imports widened to bring in `JSONResponse` and `ValidationError`. Return type widened to `QueryResponse | JSONResponse`.
+- `tests/test_gateway_output_validator.py` — the two tests the exercise asks the learner to author: (1) well-formed response → 200, (2) `citations=[]` → 502 with `field=="citations"`. Both mock `route_query` and `check_hallucination` so the test exercises only the validator seam, and `reset_rate_limit_state()` runs at the top of each test so the LLM10 bucket doesn't leak between runs. The citation-stripped fixture uses `QueryResponse.model_construct(...)` to bypass the constructor's own validation; the test is about the boundary re-validation, not the constructor.
 
 Verify the wire-up:
 
 ```bash
-grep -n "QueryResponseValidator" src/models.py src/gateway/routes.py
-grep -n "TODO(m20-exercise-4)" src/gateway/routes.py
+grep -n "TODO(m20-exercise-4)" src/models.py src/gateway/routes.py
 uv run pytest tests/test_gateway_output_validator.py -v
 ```
 

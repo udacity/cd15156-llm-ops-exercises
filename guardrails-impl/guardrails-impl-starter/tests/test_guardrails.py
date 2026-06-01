@@ -244,7 +244,7 @@ def test_check_hallucination_blocks_when_no_sources() -> None:
 def test_safe_response_shape() -> None:
     response = safe_response(SAFE_BLOCKED_MESSAGE, blocked_by="prompt_injection: test")
     assert response.answer == SAFE_BLOCKED_MESSAGE
-    assert response.sources == []
+    assert response.citations == []
     assert response.confidence == 0.0
     assert response.blocked_by == "prompt_injection: test"
     assert response.model == constants.MODEL_SIMPLE
@@ -256,7 +256,7 @@ def test_safe_response_shape() -> None:
 def _stub_query_response() -> QueryResponse:
     return QueryResponse(
         answer="StandardScaler centers data.",
-        sources=[Source(doc_id="d1", chunk_text="StandardScaler centers data.", similarity_score=0.9)],
+        citations=[Source(doc_id="d1", chunk_text="StandardScaler centers data.", similarity_score=0.9)],
         confidence=0.9,
         model=constants.MODEL_SIMPLE,
         tokens=TokenUsage(prompt_tokens=10, completion_tokens=5),
@@ -285,7 +285,7 @@ def test_query_endpoint_blocks_prompt_injection_at_route_layer() -> None:
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["answer"] == SAFE_BLOCKED_MESSAGE
-    assert body["sources"] == []
+    assert body["citations"] == []
     assert body["blocked_by"].startswith("prompt_injection:")
     assert called["route_query"] == 0, "dispatch should be short-circuited by the input guard"
 

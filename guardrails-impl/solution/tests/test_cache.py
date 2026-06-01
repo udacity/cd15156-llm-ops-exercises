@@ -122,7 +122,7 @@ def fake_embedder(monkeypatch: pytest.MonkeyPatch) -> None:
 def _make_response(answer: str = "Cached answer.") -> QueryResponse:
     return QueryResponse(
         answer=answer,
-        sources=[Source(doc_id="d1", chunk_text="...", similarity_score=0.95)],
+        citations=[Source(doc_id="d1", chunk_text="...", similarity_score=0.95)],
         confidence=0.95,
         model="gpt-4o",
         tokens=TokenUsage(prompt_tokens=100, completion_tokens=20),

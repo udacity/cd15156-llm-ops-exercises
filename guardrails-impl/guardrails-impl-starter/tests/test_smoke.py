@@ -157,7 +157,7 @@ def _stub_response() -> QueryResponse:
     """Cheap ``QueryResponse`` for the contract tests — no LLM call needed."""
     return QueryResponse(
         answer="stub",
-        sources=[Source(doc_id="doc_1", chunk_text="stub", similarity_score=0.9)],
+        citations=[Source(doc_id="doc_1", chunk_text="stub", similarity_score=0.9)],
         confidence=0.9,
         model=constants.MODEL_SIMPLE,
         tokens=TokenUsage(prompt_tokens=10, completion_tokens=5),
@@ -251,7 +251,10 @@ def test_stream_endpoint_returns_sse_media_type() -> None:
 
     with (
         patch("src.streaming.embed_query", return_value=[0.0] * 8),
-        patch("src.streaming.store_query", return_value=[]),
+        patch(
+            "src.streaming.store_query",
+            return_value=[Source(doc_id="doc_1", chunk_text="stub", similarity_score=0.9)],
+        ),
         patch("src.gateway.classifier.classify", return_value="simple"),
         patch("src.gateway.router.select_model", return_value=constants.MODEL_SIMPLE),
         patch("src.streaming.stream_completion", side_effect=_fake_stream),
@@ -273,7 +276,10 @@ def test_stream_endpoint_yields_done_event() -> None:
 
     with (
         patch("src.streaming.embed_query", return_value=[0.0] * 8),
-        patch("src.streaming.store_query", return_value=[]),
+        patch(
+            "src.streaming.store_query",
+            return_value=[Source(doc_id="doc_1", chunk_text="stub", similarity_score=0.9)],
+        ),
         patch("src.gateway.classifier.classify", return_value="simple"),
         patch("src.gateway.router.select_model", return_value=constants.MODEL_SIMPLE),
         patch("src.streaming.stream_completion", side_effect=_fake_stream),
@@ -303,7 +309,10 @@ def test_stream_endpoint_streams_token_events() -> None:
 
     with (
         patch("src.streaming.embed_query", return_value=[0.0] * 8),
-        patch("src.streaming.store_query", return_value=[]),
+        patch(
+            "src.streaming.store_query",
+            return_value=[Source(doc_id="doc_1", chunk_text="stub", similarity_score=0.9)],
+        ),
         patch("src.gateway.classifier.classify", return_value="simple"),
         patch("src.gateway.router.select_model", return_value=constants.MODEL_SIMPLE),
         patch("src.streaming.stream_completion", side_effect=_fake_stream),
