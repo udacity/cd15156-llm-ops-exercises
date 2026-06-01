@@ -17,7 +17,7 @@ The ``client_id`` keyword is the Module 22 sticky-by-user
 contract. It threads from the ``X-Client-Id`` request header through
 the route handler into this function; Module 18 itself does nothing with the
 value beyond passing it through, but the contract test in
-``tests/test_smoke.py`` pins the plumbing so the initial scaffolding can land cleanly.
+``tests/test_smoke.py`` pins the plumbing so the cross-module contract can land cleanly.
 """
 
 from src.cache.semantic import lookup, store

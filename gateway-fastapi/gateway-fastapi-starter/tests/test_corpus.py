@@ -1,4 +1,4 @@
-"""5-chunk hand-authored smoke test for src.corpus (the initial scaffolding acceptance).
+"""5-chunk hand-authored smoke test for src.corpus.
 
 A synthetic ``cross_validation.rst`` exercises the parser end-to-end:
 section headers (level 1 + 2 + 3), :func:/:class:/:ref:/:doc: roles,

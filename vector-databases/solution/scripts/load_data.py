@@ -21,7 +21,7 @@ Pipeline:
        currently resolves to (Module 24 blue/green) with
        ``hnsw:space=cosine`` pinned at create time. Pre-Module 24 starters and
        fresh checkouts with no ``data/ACTIVE_COLLECTION`` file land in
-       the literal ``scikit_docs`` collection — the initial scaffolding's original
+       the literal ``scikit_docs`` collection — the original
        behaviour. Chroma's metadata columns are scalar-only, so
        list-typed fields (xrefs, code_languages) are JSON-serialised on
        the way in.
@@ -277,7 +277,7 @@ def _make_chroma_collection() -> "chromadb.Collection":
     silently writing to the pre-alias ``scikit_docs`` collection. When
     no ``data/ACTIVE_COLLECTION`` file exists (bootstrap / pre-Module 24
     starter) the resolver returns the literal ``scikit_docs`` and
-    behaviour matches the initial scaffolding's original code path.
+    behaviour matches the original code path.
     """
     from src import store
 

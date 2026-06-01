@@ -78,8 +78,8 @@ make test                     # smoke test passes immediately at scaffold time
 ```
 
 Each implementation module's exercise extends the starter incrementally.
-Run `make serve` after the initial scaffolding (Module 18 gateway) lands. Run `make eval`
-after the initial scaffolding (Module 11 evaluation) lands. See each module's `code-refs.md`
+Run `make serve` after Module 18 (gateway) lands. Run `make eval`
+after Module 11 (evaluation) lands. See each module's `code-refs.md`
 for the prerequisite REQs.
 
 ### Populating the corpus (`make load-data`)
@@ -111,5 +111,5 @@ Cost per cold build is ~$0.08–0.15 against `text-embedding-3-small`.
 ## Provenance
 
 - Plan: [`docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md`](../../docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md)
-- Scaffold REQ: the initial scaffolding plan (post-archive path)
-- Capstone constraint: zero edits to `project/` from any Wave 4 REQ. Verified at the initial scaffolding.
+- Scaffold REQ: the initial scaffolding plan
+- Capstone constraint: zero edits to `project/` from any Wave 4 module. Verified at scaffolding.

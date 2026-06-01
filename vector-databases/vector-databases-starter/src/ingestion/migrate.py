@@ -120,7 +120,7 @@ def _build_inactive_color(target_color: str, source_tag: str) -> int:
 def _load_golden_subset(path: Path, sample_size: int) -> list[dict]:
     """Return the first ``sample_size`` rows of the golden CSV.
 
-    Subset order is the CSV's row order, which the initial scaffolding balanced across
+    Subset order is the CSV's row order, which was balanced at scaffolding across
     question-type buckets — taking the head is a fair sample without
     extra balancing logic.
     """
@@ -146,7 +146,7 @@ def recall_at_k(
     A row hits when any of the pipe-separated section prefixes in
     ``expected_doc_ids`` is a prefix of any retrieved chunk's id. The
     metric is intentionally lenient — section-prefix matching tolerates
-    the initial scaffolding's ``.p0`` / ``.p1`` chunk splits without per-row tweaks.
+    the original ``.p0`` / ``.p1`` chunk splits without per-row tweaks.
     """
     if not golden_rows:
         return 0.0
@@ -187,7 +187,7 @@ def migrate_blue_green(
             (``"1.6.0"``) for an actual version-upgrade migration.
         threshold: recall@k floor below which the swap is refused.
         eval_sample_size: golden-set rows to evaluate; the head of the
-            CSV is used so the type-balance from the initial scaffolding is preserved.
+            CSV is used so the type-balance from scaffolding is preserved.
         drop_failed: on gate failure, delete the freshly-built color so
             the next attempt starts clean. Set ``False`` for forensics.
     """

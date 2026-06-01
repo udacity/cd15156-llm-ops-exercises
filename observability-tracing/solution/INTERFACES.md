@@ -1,6 +1,6 @@
 # Frozen interfaces — ScikitDocs starter
 
-These signatures are locked at the initial scaffolding. Each impl REQ fills in the body
+These signatures are locked at scaffolding. Each downstream module fills in the body
 of the file its module teaches. Changing a signature requires the
 upstream-patchback or infra-amendment protocols documented in
 `docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md`
@@ -12,7 +12,7 @@ docstring contract**. The downstream modules depend on this shape.
 
 ## Frozen function contracts
 
-### `src/corpus.py` — filled by the initial scaffolding (Wave 4 infra)
+### `src/corpus.py` — filled by Wave 4 infra
 
 ```python
 def load_corpus(repo_path: Path, version_sha: str) -> Iterator[dict]
@@ -47,7 +47,7 @@ def embed_query(text: str) -> list[float]
 ```
 
 `embed` MUST send a single batched OpenAI request when given a list. The
-batched-load path (the initial scaffolding `scripts/load_data.py`) targets ≥256 chunks per
+batched-load path (`scripts/load_data.py`) targets ≥256 chunks per
 request.
 
 ### `src/store.py` — filled by Module 05
@@ -87,7 +87,7 @@ End-to-end RAG composition: `embed_query` → `store.query` →
 
 | File | Filled by | Module |
 |---|---|---|
-| `src/corpus.py` | the initial scaffolding | (infra) |
+| `src/corpus.py` | scaffolded | (infra) |
 | `src/chunker.py` | Module 05 |
 | `src/embedder.py` | Module 05 |
 | `src/store.py` | Module 05 |
@@ -104,13 +104,13 @@ End-to-end RAG composition: `embed_query` → `store.query` →
 
 ## Cross-module contracts
 
-### `X-Client-Id` header contract (the initial scaffolding → the initial scaffolding)
+### `X-Client-Id` header contract
 
 The gateway accepts an optional `X-Client-Id` request header
-(`constants.CLIENT_ID_HEADER`). When present, the initial scaffolding (Module 22 A/B
+(`constants.CLIENT_ID_HEADER`). When present, Module 22 (A/B
 testing) uses the header value as the bucketing key for
 sticky-by-user variant assignment. A contract test in
-`tests/test_smoke.py` (added by the initial scaffolding) verifies the header is
+`tests/test_smoke.py` (added at scaffolding) verifies the header is
 plumbed end-to-end before Module 22 lands.
 
 ### Collection naming

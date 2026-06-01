@@ -12,7 +12,7 @@ Two design choices worth naming:
   by default and removing it can shift tokenization on some models.
 
 ``cost_usd`` is computed by ``src.pricing.compute_cost`` (added by
-the initial scaffolding / Module 13). The signature still matches ``INTERFACES.md`` —
+Module 13). The signature still matches ``INTERFACES.md`` —
 Module 13 wired the real cost in without changing the return shape.
 """
 

@@ -1,4 +1,4 @@
-"""A/B log analyzer for Module 22 / the initial scaffolding.
+"""A/B log analyzer for Module 22.
 
 Reads ``data/ab_log.jsonl`` (written by ``src.optimization.ab.log_assignment``
 in the learner's Exercise 1 harness), builds a 2×2 variant-by-success
