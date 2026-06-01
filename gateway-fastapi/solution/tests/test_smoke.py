@@ -1,13 +1,13 @@
 """Scaffold-level smoke test for the ScikitDocs starter.
 
-Runs at the initial scaffolding (this file's introducing REQ). Verifies the shape of
+Runs at scaffolding. Verifies the shape of
 the starter without invoking any of the stub function bodies — stubs
 will raise NotImplementedError, which is the correct behavior until
 the per-module REQs fill them in.
 
 A real end-to-end smoke test (loaded corpus + answered query) is added
 by once the infra REQs land. The ``X-Client-Id`` header contract
-test (``test_x_client_id_*``) is added by the initial scaffolding and pins the
+test (``test_x_client_id_*``) is added at scaffolding and pins the
 sticky-by-user contract Module 22 builds on.
 """
 
@@ -29,7 +29,7 @@ STUBBED_SRC_MODULES = ()
 
 # Modules that started as stubs and have since been filled.
 FILLED_SRC_MODULES = (
-    "src.corpus",  # the initial scaffolding
+    "src.corpus",
     "src.generator",  # Module 03
     "src.chunker",  # Module 05
     "src.embedder",  # Module 05
@@ -120,9 +120,9 @@ def test_stub_function_signatures_present() -> None:
 
 
 # ``test_stubs_raise_notimplemented`` lived here until every entry in
-# STUBBED_SRC_MODULES was filled by the initial scaffolding/064/065/066. Per-module
+# STUBBED_SRC_MODULES was scaffolded/064/065/066. Per-module
 # behavior is now covered by dedicated tests (see ``test_corpus.py`` for
-# the the initial scaffolding example pattern). The narrowing protocol carries forward:
+# the original example pattern). The narrowing protocol carries forward:
 # when a new stub lands and is later filled, remove the corresponding
 # ``pytest.raises`` block and move the module into FILLED_SRC_MODULES.
 
@@ -143,7 +143,7 @@ def test_starter_files_present() -> None:
         assert (STARTER_ROOT / relative).exists(), f"{relative} missing"
 
 
-# === the initial scaffolding — X-Client-Id contract test ===
+# === X-Client-Id contract test ===
 #
 # Pins the cross-module contract Module 22 depends on: the
 # ``X-Client-Id`` request header threads through ``POST /query`` and
@@ -225,7 +225,7 @@ def test_health_route_serves_200() -> None:
     assert response.json() == {"status": "ok"}
 
 
-# === the initial scaffolding — POST /query/stream SSE contract tests ===
+# === POST /query/stream SSE contract tests ===
 #
 # Pins three properties of the streaming endpoint Module 26 builds against:
 # the SSE media type, at least one ``token`` event, and exactly one

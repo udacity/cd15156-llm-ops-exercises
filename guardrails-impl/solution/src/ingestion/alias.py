@@ -37,8 +37,7 @@ def read_active_collection(path: Path = ACTIVE_COLLECTION_PATH) -> str:
     """Return the active color name, or ``DEFAULT_COLLECTION_NAME`` if unset.
 
     Falling back to the alias name (rather than guessing blue/green)
-    means a fresh checkout of the starter behaves as it did under
-    the initial scaffolding — ``get_collection("scikit_docs")`` returns the original
+    means a fresh checkout of the starter behaves as it did before the alias migration — ``get_collection("scikit_docs")`` returns the original
     single-collection Chroma store, and no migration is implied.
     """
     if not path.exists():

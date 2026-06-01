@@ -14,7 +14,7 @@ text downstream rather than blocking), then the dispatch. The output
 guard (LLM-judge hallucination check) runs after dispatch.
 
 Why ``X-Client-Id`` is optional: the gateway must accept the header
-when the initial scaffolding sends it for sticky-by-user bucketing, and it must also
+when the gateway sends it for sticky-by-user bucketing, and it must also
 serve clean traffic from callers that do not provide one (the Module 11
 RAGAS eval harness, for example, fires un-headered requests). Pydantic
 + FastAPI's ``Header(default=None)`` gives both behaviors in one line.

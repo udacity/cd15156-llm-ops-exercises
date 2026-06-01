@@ -29,9 +29,9 @@ Sanity check:
 uv run python -c "from src import store; print(store.get_collection().count())"
 ```
 
-Zero means the corpus is empty (run `make load-data`); an `ImportError` means a frozen stub upstream of Module 07 still raises `NotImplementedError` (most likely `embedder.py` or `store.py` from the initial scaffolding).
+Zero means the corpus is empty (run `make load-data`); an `ImportError` means a frozen stub upstream of Module 07 still raises `NotImplementedError` (most likely `embedder.py` or `store.py` from scaffolding).
 
-A gateway-not-yet note. The starter's `Makefile` has a `serve` target, but it points at `src.gateway.app:app` — that file is the initial scaffolding's work and lands in Module 18. For this demo you call `run_pipeline` directly in Python. The FastAPI wrapping is one indirection on top of what you build here; the pipeline itself is the substantive piece.
+A gateway-not-yet note. The starter's `Makefile` has a `serve` target, but it points at `src.gateway.app:app` — that file is the scaffold's work and lands in Module 18. For this demo you call `run_pipeline` directly in Python. The FastAPI wrapping is one indirection on top of what you build here; the pipeline itself is the substantive piece.
 
 ## Part 1 — Read the four-function pipeline
 

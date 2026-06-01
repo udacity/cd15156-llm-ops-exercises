@@ -7,9 +7,7 @@ The capstone factored the same functionality into
 both surfaces here.
 
 The route ``POST /query/stream`` is mounted on the gateway app via
-:func:`src.gateway.app.create_app` (the initial scaffolding mounted the blocking
-``/query`` + cost dashboard; adds the streaming router as the
-third include). The forward-dependency exception is the same one the
+:func:`src.gateway.app.create_app` (the gateway scaffold mounted the blocking ``/query`` + cost dashboard, and this module adds the streaming router as the third include). The forward-dependency exception is the same one the
 gateway docstring already documents: ``src.streaming`` is taught after
 ``src.gateway`` in the curriculum, but the app is a wiring layer and is
 allowed to know about every module.
@@ -24,8 +22,7 @@ Two design notes worth naming:
   for time-to-first-byte. Module 26 Common Pitfalls names this as a gotcha so
   no one mistakes a missing speedup for a broken endpoint.
 
-* **Input-guards seam.** :func:`_pre_stream_guards` is a no-op shim at
-  the initial scaffolding. Module 20 will fill it with the LLM Guard + Presidio
+* **Input-guards seam.** :func:`_pre_stream_guards` is a no-op shim at scaffolding. Module 20 will fill it with the LLM Guard + Presidio
   scanners the capstone uses at
   ``project/src/guardrails/llm_guard/input_guards.py``. The contract:
   the shim returns ``(possibly_redacted_question, blocked_by_reason)``
@@ -90,7 +87,7 @@ class StreamQueryRequest(BaseModel):
 def _pre_stream_guards(question: str) -> tuple[str, str | None]:
     """Run input guards before the SSE stream opens. **No-op at Module 26.**
 
-    the initial scaffolding (Module 20 — Guardrails Implementation) fills this shim with the
+    Module 20 (Guardrails Implementation) fills this shim with the
     LLM Guard prompt-injection scanner + the Presidio PII redactor that
     the capstone uses at
     ``project/src/guardrails/llm_guard/input_guards.py``. Until then

@@ -1,6 +1,6 @@
 """End-to-end RAG pipeline: retrieve → prompt → generate → respond (Module 07).
 
-Composes the three single-purpose modules filled by the initial scaffolding and the initial scaffolding:
+Composes the three single-purpose modules scaffolded:
 
 - ``embedder.embed_query`` — turn the question into a vector.
 - ``store.query`` — top-k cosine search against the ``scikit_docs`` collection.
@@ -32,7 +32,7 @@ def run_pipeline(
 
     Args:
         question: User's question (raw string; sanitization is the gateway's
-            job at the initial scaffolding and the initial scaffolding, not the pipeline's).
+            job at the scaffolded modules, not the pipeline's).
         top_k:    Retrieval depth. Defaults to ``constants.DEFAULT_TOP_K``.
         model:    OpenAI model. Defaults to ``settings.model_complex`` /
                   ``constants.MODEL_COMPLEX``.
@@ -42,7 +42,7 @@ def run_pipeline(
         ``confidence`` (mean of retrieval similarity scores; ``0.0`` if no
         sources came back), ``model``, ``tokens``, and ``cost_usd``. The
         ``cached`` / ``trace_id`` / ``blocked_by`` fields are left at their
-        Pydantic defaults — the initial scaffolding (cache), the initial scaffolding (tracing), and the initial scaffolding
+        Pydantic defaults — the cache, tracing, and other scaffold defaults
         (guardrails) populate them in their respective wrappers.
     """
     chosen_model = model or settings.model_complex

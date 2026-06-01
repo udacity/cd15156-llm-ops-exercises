@@ -27,7 +27,7 @@ Two design choices worth naming:
   as a deliberate fallback rather than a missing feature is the
   discipline Module 21 V3 names.
 
-Cross-module contract: the ``X-Client-Id`` header the initial scaffolding plumbs
+Cross-module contract: the ``X-Client-Id`` header plumbed at scaffolding
 through ``src.gateway.routes.query_endpoint`` arrives at
 ``src.gateway.router.route_query`` as the ``client_id`` keyword. Module 22's
 caller composition reads that value and feeds it to ``pick_variant``.

@@ -33,7 +33,7 @@ class DeprecatedApi:
     note: str
 
 
-# Anchored to scikit-learn 1.5 (the corpus version pinned by the initial scaffolding).
+# Anchored to scikit-learn 1.5 (the corpus version pinned at scaffolding).
 # Every entry traces to the scikit-learn release notes at
 # https://scikit-learn.org/stable/whats_new.html.
 DEPRECATED_APIS: tuple[DeprecatedApi, ...] = (

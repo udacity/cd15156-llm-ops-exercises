@@ -30,7 +30,7 @@ CHUNK_OVERLAP_TOKENS: int = 75
 CONFIDENCE_THRESHOLD: float = 0.7
 GENERATION_TEMPERATURE: float = 0.2
 
-# === Evaluation (RAGAS) — the initial scaffolding / Module 11 ===
+# === Evaluation (RAGAS) — Module 11 ===
 GOLDEN_SET_SIZE: int = 30
 JUDGE_TEMPERATURE: float = 0.0
 

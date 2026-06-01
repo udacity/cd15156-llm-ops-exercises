@@ -102,7 +102,7 @@ print('seeded count:', c.count(where={'is_seeded': True}))
 "
 ```
 
-## Cross-check of 5 golden rows against scikit-learn.org (the initial scaffolding acceptance)
+## Cross-check of 5 golden rows against scikit-learn.org
 
 Verified 2026-05-18 against `https://scikit-learn.org/stable/`:
 
