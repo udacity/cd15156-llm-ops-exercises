@@ -29,7 +29,7 @@ Acceptance is a parametrised pytest case in `tests/test_guardrails.py` (one trig
 
 ## Exercise 2 — LLM-judge calibration (per-learner markdown)
 
-Expected deliverable: `exercises/M20/judge-calibration-sweep.md` containing two confusion matrices (one per configuration the learner sweeps), a one-paragraph interpretation, and a recommendation with rationale. The sweep cohort is ten queries: five grounded scikit-learn API questions (true-negatives) + five subtly-wrong-API questions (true-positives). Reference table shape:
+Expected deliverable: `exercises/Module 20/judge-calibration-sweep.md` containing two confusion matrices (one per configuration the learner sweeps), a one-paragraph interpretation, and a recommendation with rationale. The sweep cohort is ten queries: five grounded scikit-learn API questions (true-negatives) + five subtly-wrong-API questions (true-positives). Reference table shape:
 
 ```
 | config | TP | FN | TN | FP | FP rate | FN rate |

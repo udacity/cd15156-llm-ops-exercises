@@ -1,4 +1,4 @@
-"""Blue/green alias file management (REQ-074, M24).
+"""Blue/green alias file management (Module 24).
 
 The ``scikit_docs`` collection name is a *public alias* that resolves to
 one of two real Chroma collections: ``scikit_docs_blue`` or
@@ -13,9 +13,9 @@ which a concurrent reader could see a partial value. That property is
 the load-bearing reason this file exists rather than the alias being a
 ``constants.py`` value.
 
-Pre-M24 environments have no ``ACTIVE_COLLECTION`` file and
+Pre-Module 24 environments have no ``ACTIVE_COLLECTION`` file and
 ``read_active_collection`` returns the literal ``scikit_docs`` so the
-REQ-065 (M05) behaviour is preserved for any caller that imports
+Module 05 behaviour is preserved for any caller that imports
 :func:`src.store.get_collection`.
 """
 
@@ -38,7 +38,7 @@ def read_active_collection(path: Path = ACTIVE_COLLECTION_PATH) -> str:
 
     Falling back to the alias name (rather than guessing blue/green)
     means a fresh checkout of the starter behaves as it did under
-    REQ-065 — ``get_collection("scikit_docs")`` returns the original
+    the initial scaffolding — ``get_collection("scikit_docs")`` returns the original
     single-collection Chroma store, and no migration is implied.
     """
     if not path.exists():

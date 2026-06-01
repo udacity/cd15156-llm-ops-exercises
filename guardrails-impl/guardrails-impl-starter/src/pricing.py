@@ -1,4 +1,4 @@
-"""Per-model pricing and cost computation (REQ-069 — Module 13).
+"""Per-model pricing and cost computation (Module 13).
 
 Shared infrastructure imported by both ``src.generator`` (where token
 usage is captured at the source) and ``src.cost.tracker`` (where costs

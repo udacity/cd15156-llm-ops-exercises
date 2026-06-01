@@ -1,4 +1,4 @@
-"""Upsert the deliberately-seeded difficulty chunks into the Chroma collection (REQ-063).
+"""Upsert the deliberately-seeded difficulty chunks into the Chroma collection.
 
 Reads ``data/seeded_chunks.jsonl`` (8 chunks: 3 near-duplicate, 3
 version-conflicting, 2 embedding-confusion), embeds them via the same
@@ -9,7 +9,7 @@ Runs after ``make load-data``. Idempotent — re-running upserts the same
 eight IDs.
 
 Why these chunks exist: a too-clean documentation corpus produces near-
-ceiling recall and makes the M11 RAGAS top-k sweep pedagogically flat.
+ceiling recall and makes the Module 11 RAGAS top-k sweep pedagogically flat.
 The 8 seeded chunks (~0.2% of the corpus) reintroduce confusion without
 breaking the smoke gate's recall@5 ≥ 0.7 floor. See
 ``data/SEEDING_NOTES.md`` for the full rationale.
@@ -59,7 +59,7 @@ CHROMA_PATH: Path = Path(settings.chroma_path)
 
 def load_seeded_chunks(path: Path) -> list[dict]:
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found — run from module-starters/scikit-docs/")
+        raise FileNotFoundError(f"{path} not found — run from the project root")
     chunks: list[dict] = []
     with path.open("r", encoding="utf-8") as fh:
         for line in fh:

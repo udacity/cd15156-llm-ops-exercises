@@ -1,7 +1,7 @@
 """Shared Pydantic models for the ScikitDocs starter.
 
 Mirrors `project/src/models.py` for the most part. The local-only
-deviation (M20 exercise 4) is that `QueryResponse.citations` and
+deviation (Module 20 exercise 4) is that `QueryResponse.citations` and
 `QueryResponse.confidence` carry Pydantic `Field` constraints — the
 structured-output contract the learner wires at the gateway boundary
 in Skill Pair 9.

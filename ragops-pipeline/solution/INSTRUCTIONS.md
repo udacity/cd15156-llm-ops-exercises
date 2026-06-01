@@ -45,7 +45,7 @@ The alias mechanism lives in two short files. `src/ingestion/alias.py` defines t
 
 `src/ingestion/migrate.py::migrate_blue_green` is the four-step orchestrator. It reads the active color, picks the opposite (or blue, as the bootstrap default), drops and rebuilds the target color from the requested scikit-learn tag, runs `recall_at_k` against the first twelve rows of `data/golden_set.csv`, and on a pass — score at or above the threshold, defaulting to `0.70` — calls `swap_alias`. On a fail, the freshly-built color is dropped (unless `--keep-failed` is passed for forensics) and the alias stays where it was. The whole sequence reuses the helpers in `scripts/load_data.py` for parse, chunk, embed, and upsert so the embedding cache at `data/embedding_cache.jsonl` is shared with the alias-path `make load-data` flow — most chunks on a same-version re-ingest are cache hits and the rebuild lands in under twenty seconds on the Workspace.
 
-A practical aside on the eval gate. The threshold is the load-bearing knob — set it too high and routine corpus refreshes will fail the gate on benign embedding drift; set it too low and a genuine regression slips through and gets aliased into production. The default `0.70` matches the smoke gate and the same number the M11 RAGAS sweep uses as its retrieval-quality floor. A real production deployment would also compare the *delta* against the previous color rather than only an absolute floor, but for a teaching example one number keeps the property visible without obscuring it.
+A practical aside on the eval gate. The threshold is the load-bearing knob — set it too high and routine corpus refreshes will fail the gate on benign embedding drift; set it too low and a genuine regression slips through and gets aliased into production. The default `0.70` matches the smoke gate and the same number the Module 11 RAGAS sweep uses as its retrieval-quality floor. A real production deployment would also compare the *delta* against the previous color rather than only an absolute floor, but for a teaching example one number keeps the property visible without obscuring it.
 
 ## Part 3 — AWS production form (course-author sidebar)
 
@@ -77,7 +77,7 @@ uv run python -c "from src.config import settings; print(repr(settings.openai_ba
 
 You want `''` on direct OpenAI or `'https://openai.vocareum.com/v1'` on Vocareum. Any other value will fail with a confusing 401 the first time the watcher tries to embed an incoming section — fix the `.env` before continuing.
 
-Confirm the corpus is loaded and the alias is in its default pre-M24 state:
+Confirm the corpus is loaded and the alias is in its default pre-Module 24 state:
 
 ```
 uv run python -c "
@@ -128,7 +128,7 @@ The pattern is: watcher in one terminal, file-drop in the other, then a query th
    ingestion.watcher: Ingested my_first_section.json → modules.inbox_demo.intro#... (active=scikit_docs)
    ```
 
-   The `active=scikit_docs` portion is the alias resolver reporting itself — since the alias file does not exist yet, writes land in the legacy `scikit_docs` collection that M05 created. Exercise 3 is where this changes to a color name.
+   The `active=scikit_docs` portion is the alias resolver reporting itself — since the alias file does not exist yet, writes land in the legacy `scikit_docs` collection that Module 05 created. Exercise 3 is where this changes to a color name.
 
 4. Confirm the new section is queryable through the gateway. From terminal two:
 

@@ -106,7 +106,7 @@ Three lines deserve attention. `OpenAI(base_url=settings.openai_base_url or None
 
 `temperature=constants.GENERATION_TEMPERATURE` imports from `src/constants.py`. The locked value is `0.2` — low enough for factual recall, not zero so the model can paraphrase. Hardcoding `0.2` in a call site is a review-blocker caught by `make consistency-check`.
 
-`cost_usd = 0.0` is a placeholder. Module 13 (Cost Monitoring) lands `src/pricing.py` and replaces the literal with `pricing.compute_cost(usage, model)`. Until then, cost-aware downstreams see zero — the slot-and-fill is intentional so M13 owns the pricing table without rework here.
+`cost_usd = 0.0` is a placeholder. Module 13 (Cost Monitoring) lands `src/pricing.py` and replaces the literal with `pricing.compute_cost(usage, model)`. Until then, cost-aware downstreams see zero — the slot-and-fill is intentional so Module 13 owns the pricing table without rework here.
 
 Sanity check before you go further:
 

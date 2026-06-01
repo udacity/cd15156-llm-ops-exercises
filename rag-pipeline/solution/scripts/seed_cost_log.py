@@ -1,4 +1,4 @@
-"""Seed ``data/cost_log.jsonl`` with 50 realistic synthetic entries (REQ-069, M13).
+"""Seed ``data/cost_log.jsonl`` with 50 realistic synthetic entries (Module 13).
 
 Lets a learner satisfy Module 13 Exercise 1's "50-entry floor" in <1
 second with $0 of API spend, instead of running a 50-query bash loop.

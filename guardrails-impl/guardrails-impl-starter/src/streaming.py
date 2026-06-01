@@ -1,4 +1,4 @@
-"""Server-Sent Events streaming endpoint for ScikitDocs (REQ-075, M26).
+"""Server-Sent Events streaming endpoint for ScikitDocs (Module 26).
 
 Lives flat under ``src/`` rather than in a separate ``optimization``
 subpackage so the starter keeps its "one file per module" convention.
@@ -7,8 +7,8 @@ The capstone factored the same functionality into
 both surfaces here.
 
 The route ``POST /query/stream`` is mounted on the gateway app via
-:func:`src.gateway.app.create_app` (REQ-071 mounted the blocking
-``/query`` + cost dashboard; REQ-075 adds the streaming router as the
+:func:`src.gateway.app.create_app` (the initial scaffolding mounted the blocking
+``/query`` + cost dashboard; adds the streaming router as the
 third include). The forward-dependency exception is the same one the
 gateway docstring already documents: ``src.streaming`` is taught after
 ``src.gateway`` in the curriculum, but the app is a wiring layer and is
@@ -17,15 +17,15 @@ allowed to know about every module.
 Two design notes worth naming:
 
 * **Cache bypass.** The streaming endpoint deliberately does not consult
-  the M15 cache. A streamed response cannot meaningfully short-circuit
+  the Module 15 cache. A streamed response cannot meaningfully short-circuit
   on a cache hit — the cache stores a fully realized ``QueryResponse``,
   not a token sequence. The blocking ``/query`` route is what learners
   benchmark for cache wins; the streaming route is what they benchmark
-  for time-to-first-byte. M26 Common Pitfalls names this as a gotcha so
+  for time-to-first-byte. Module 26 Common Pitfalls names this as a gotcha so
   no one mistakes a missing speedup for a broken endpoint.
 
 * **Input-guards seam.** :func:`_pre_stream_guards` is a no-op shim at
-  REQ-075. M20 (REQ-072) will fill it with the LLM Guard + Presidio
+  the initial scaffolding. Module 20 will fill it with the LLM Guard + Presidio
   scanners the capstone uses at
   ``project/src/guardrails/llm_guard/input_guards.py``. The contract:
   the shim returns ``(possibly_redacted_question, blocked_by_reason)``
@@ -88,9 +88,9 @@ class StreamQueryRequest(BaseModel):
 
 
 def _pre_stream_guards(question: str) -> tuple[str, str | None]:
-    """Run input guards before the SSE stream opens. **No-op at M26.**
+    """Run input guards before the SSE stream opens. **No-op at Module 26.**
 
-    REQ-072 (M20 — Guardrails Implementation) fills this shim with the
+    the initial scaffolding (Module 20 — Guardrails Implementation) fills this shim with the
     LLM Guard prompt-injection scanner + the Presidio PII redactor that
     the capstone uses at
     ``project/src/guardrails/llm_guard/input_guards.py``. Until then
@@ -98,7 +98,7 @@ def _pre_stream_guards(question: str) -> tuple[str, str | None]:
     ``blocked_by`` reason, and the streaming route proceeds straight to
     retrieval + generation.
 
-    The contract M20 will fill against is:
+    The contract Module 20 will fill against is:
 
     * ``(question, None)`` — safe; stream the answer.
     * ``(cleaned_question, "pii_redacted: EMAIL,PHONE")`` — PII was
@@ -109,8 +109,8 @@ def _pre_stream_guards(question: str) -> tuple[str, str | None]:
       the route short-circuits to :func:`_blocked_stream` and never
       makes an LLM call.
 
-    Keeping the shim explicit (rather than letting M20 add the call
-    site directly) gives M26's demo a concrete file:line to point at
+    Keeping the shim explicit (rather than letting Module 20 add the call
+    site directly) gives Module 26's demo a concrete file:line to point at
     when walking the input-guards-before-stream design.
     """
     return question, None
@@ -143,7 +143,7 @@ def stream_completion(
     ``stream_options={"include_usage": True}`` argument on line 38 of
     the capstone is the load-bearing API choice: without it, the OpenAI
     streaming response omits the ``usage`` field on its final chunk and
-    the per-call cost computation has nothing to work from. M26 Demo
+    the per-call cost computation has nothing to work from. Module 26 Demo
     Part 2 names this line explicitly; the Common Pitfalls block names
     forgetting it as the gotcha.
 
@@ -255,7 +255,7 @@ def query_stream(request: StreamQueryRequest) -> StreamingResponse:
 
     Pipeline:
 
-    1. :func:`_pre_stream_guards` runs first (no-op at M26 — M20 fills it).
+    1. :func:`_pre_stream_guards` runs first (no-op at Module 26 — Module 20 fills it).
        A prompt-injection match short-circuits to :func:`_blocked_stream`
        and the SSE response carries exactly one ``done`` event; PII in
        the question is redacted in place before retrieval and generation.

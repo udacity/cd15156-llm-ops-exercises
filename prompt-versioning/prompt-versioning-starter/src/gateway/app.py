@@ -1,21 +1,21 @@
-"""FastAPI application factory for the ScikitDocs gateway (REQ-071, M18).
+"""FastAPI application factory for the ScikitDocs gateway (Module 18).
 
 ``make serve`` boots ``uvicorn src.gateway.app:app --port 8080``, which
 imports ``app`` from this module. ``app`` is the output of
 :func:`create_app`, a thin factory that mounts three routers:
 
 - :data:`src.gateway.routes.router` — ``POST /query`` + ``GET /health``
-- :data:`src.cost.dashboard.router` — ``GET /cost-dashboard`` (M13)
-- :data:`src.streaming.streaming_router` — ``POST /query/stream`` (M26)
+- :data:`src.cost.dashboard.router` — ``GET /cost-dashboard`` (Module 13)
+- :data:`src.streaming.streaming_router` — ``POST /query/stream`` (Module 26)
 
-The streaming router is a curriculum-later addition (M26) mounted on a
-curriculum-earlier surface (M18). The app is a wiring layer and is
+The streaming router is a curriculum-later addition (Module 26) mounted on a
+curriculum-earlier surface (Module 18). The app is a wiring layer and is
 allowed to know about every package; importing the streaming router
 here is the documented exception to the forward-dependency rule the
 gateway otherwise honors.
 
 The :func:`lifespan` async context manager boots Phoenix tracing on
-startup (M09) and force-flushes any in-flight spans on shutdown so the
+startup (Module 09) and force-flushes any in-flight spans on shutdown so the
 last few requests are not silently dropped. The two side effects mirror
 the capstone's ``project/src/gateway/app.py`` exactly — same hooks,
 same ordering.

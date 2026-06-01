@@ -1,12 +1,12 @@
-"""Wave-4 smoke RAG gate (REQ-063).
+"""Wave-4 smoke RAG gate.
 
 Embeds three representative queries from ``data/golden_set.csv``,
 queries the Chroma collection directly (``src/pipeline.py`` is still
 stubbed at this point in the wave), and asserts recall@5 ≥ 0.7. Writes
 the per-query and aggregate result to ``data/SMOKE_REPORT.md``.
 
-This script is the gate before downstream impl REQs (M03 / M05 / M07 /
-M09 / M11 / M13 / M15 / M18 / M20 / M22 / M24 / M26) start touching
+This script is the gate before downstream downstream modules (Module 03 / Module 05 / Module 07 /
+Module 09 / Module 11 / Module 13 / Module 15 / Module 18 / Module 20 / Module 22 / Module 24 / Module 26) start touching
 ``src/``. The pinned tag ``wave-4-infra-frozen`` follows immediately
 after.
 
@@ -197,7 +197,7 @@ def write_report(passed: bool, results: list[dict], recall: float) -> None:
                  "*shape* of retrieval, not exact anchor alignment.")
     lines.append("- The 8 deliberately-seeded chunks (see "
                  "`SEEDING_NOTES.md`) are present in the collection so the "
-                 "M11 top-k sweep has signal but the smoke floor is "
+                 "Module 11 top-k sweep has signal but the smoke floor is "
                  "preserved.")
     SMOKE_REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"[smoke_gate] wrote {SMOKE_REPORT_PATH}")

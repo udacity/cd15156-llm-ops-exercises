@@ -1,4 +1,4 @@
-"""LLM-as-judge output guard — hallucination scanning (REQ-072, M20).
+"""LLM-as-judge output guard — hallucination scanning (Module 20).
 
 The judge is a gpt-4o-mini call constructed at module load time with
 the Vocareum-aware ``base_url`` discipline Module 18 covers (the

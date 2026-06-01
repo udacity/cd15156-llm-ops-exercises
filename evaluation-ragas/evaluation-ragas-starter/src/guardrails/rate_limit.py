@@ -1,4 +1,4 @@
-"""LLM10 Unbounded Consumption — slot 4 (REQ-072, M20).
+"""LLM10 Unbounded Consumption — slot 4 (Module 20).
 
 Two mechanisms, both anchored on CVE-2025-53773 (the August 2025 GitHub
 Copilot RCE / cost-amplification incident, where prompt injection in

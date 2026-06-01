@@ -1,4 +1,4 @@
-"""Unit tests for the M24 ingestion surface (REQ-074).
+"""Unit tests for the Module 24 ingestion surface.
 
 These tests do not call out to OpenAI or stand up a real Chroma store
 on disk for the embedding-bearing paths — the embedding call is patched

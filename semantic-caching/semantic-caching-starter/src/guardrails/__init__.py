@@ -1,4 +1,4 @@
-"""Input + output guardrails for the ScikitDocs gateway (REQ-072, M20).
+"""Input + output guardrails for the ScikitDocs gateway (Module 20).
 
 Four guardrail slots, matched 1:1 to the OWASP LLM Top 10 categories
 the module exercises:

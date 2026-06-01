@@ -3,7 +3,7 @@
 Unified alt-workload starter for the 11 implementation modules of
 Udacity nd907 Course 2 (LLM Ops). ScikitDocs is a Q&A assistant for the
 [scikit-learn](https://scikit-learn.org) library — learners build it
-incrementally across M03 through M26 by filling in stubbed `src/` files,
+incrementally across Module 03 through Module 26 by filling in stubbed `src/` files,
 then prove their LLM Ops skills on the unrelated capstone (ThirdShotHub
 pickleball FAQ) at `project/`.
 
@@ -21,18 +21,18 @@ in *applying* what was taught.
 `src/` is a type-stubbed skeleton at scaffold time. Each implementation
 module fills in the file it teaches:
 
-- **M03 (Prompt Versioning)** → fills `src/generator.py`
-- **M05 (Vector DB)** → fills `src/store.py`, `src/embedder.py`, `src/chunker.py`
-- **M07 (RAG Pipeline)** → fills `src/pipeline.py`
-- **M09 (Phoenix Tracing)** → instruments `src/pipeline.py` + `src/gateway/`
-- **M11 (RAGAS Evaluation)** → builds `scripts/run_eval.py`
-- **M13 (Cost Monitoring)** → adds `src/pricing.py` + cost tracking
-- **M15 (Semantic Cache)** → adds `src/cache/`
-- **M18 (Gateway)** → adds `src/gateway/` with FastAPI app + `X-Client-Id` header
-- **M20 (Guardrails)** → adds `src/guardrails/`
-- **M22 (A/B Testing)** → adds sticky-by-user assignment via `client_id`
-- **M24 (RAGOps)** → adds blue/green index swap
-- **M26 (Latency)** → adds a streaming variant of `/query`
+- **Module 03 (Prompt Versioning)** → fills `src/generator.py`
+- **Module 05 (Vector DB)** → fills `src/store.py`, `src/embedder.py`, `src/chunker.py`
+- **Module 07 (RAG Pipeline)** → fills `src/pipeline.py`
+- **Module 09 (Phoenix Tracing)** → instruments `src/pipeline.py` + `src/gateway/`
+- **Module 11 (RAGAS Evaluation)** → builds `scripts/run_eval.py`
+- **Module 13 (Cost Monitoring)** → adds `src/pricing.py` + cost tracking
+- **Module 15 (Semantic Cache)** → adds `src/cache/`
+- **Module 18 (Gateway)** → adds `src/gateway/` with FastAPI app + `X-Client-Id` header
+- **Module 20 (Guardrails)** → adds `src/guardrails/`
+- **Module 22 (A/B Testing)** → adds sticky-by-user assignment via `client_id`
+- **Module 24 (RAGOps)** → adds blue/green index swap
+- **Module 26 (Latency)** → adds a streaming variant of `/query`
 
 `exercises/` is flat per module — each module's hands-on work lives in
 its own `exercises/m{NN}_<slug>/` subdirectory. Exercises READ from
@@ -55,14 +55,14 @@ casing). Read [`CONSTANTS.md`](CONSTANTS.md) for the rationale.
 | `src/pipeline.py` | `project/src/rag/pipeline.py` | End-to-end RAG composition |
 | `src/models.py` | `project/src/models.py` | `Source`, `TokenUsage`, `QueryResponse` |
 | `src/config.py` | `project/src/config.py` | Settings via pydantic-settings + `.env` |
-| `src/pricing.py` (REQ-069) | `project/src/pricing.py` | Per-model cost table |
-| `src/gateway/` (REQ-071) | `project/src/gateway/` | FastAPI app + routes |
-| `src/guardrails/` (REQ-072) | `project/src/guardrails/` | Input/output safety |
-| `src/cache/` (REQ-070) | `project/src/cache/` | Semantic answer cache |
+| `src/pricing.py` | `project/src/pricing.py` | Per-model cost table |
+| `src/gateway/` | `project/src/gateway/` | FastAPI app + routes |
+| `src/guardrails/` | `project/src/guardrails/` | Input/output safety |
+| `src/cache/` | `project/src/cache/` | Semantic answer cache |
 | `prompts/docbot_system.j2` | `project/prompts/rag_system.j2` | Domain-specific system prompt |
-| `scripts/load_data.py` (REQ-062) | `project/scripts/load_data.py` | Corpus ingestion |
-| `scripts/run_eval.py` (REQ-068) | `project/src/evaluation/run_eval.py` | RAGAS evaluation |
-| `data/golden_set.csv` (REQ-063) | `project/data/golden_set.csv` | RAGAS golden Q&A |
+| `scripts/load_data.py` | `project/scripts/load_data.py` | Corpus ingestion |
+| `scripts/run_eval.py` | `project/src/evaluation/run_eval.py` | RAGAS evaluation |
+| `data/golden_set.csv` | `project/data/golden_set.csv` | RAGAS golden Q&A |
 | `Makefile` | `project/Makefile` | `setup`, `serve`, `load-data`, `eval`, `test`, `verify` |
 
 The shape is intentionally lighter than the capstone — fewer packages,
@@ -72,15 +72,14 @@ module rather than incidental complexity.
 ## Setup
 
 ```bash
-cd module-starters/scikit-docs
 uv sync                       # installs deps into .venv/
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key)
 make test                     # smoke test passes immediately at scaffold time
 ```
 
 Each implementation module's exercise extends the starter incrementally.
-Run `make serve` after REQ-071 (M18 gateway) lands. Run `make eval`
-after REQ-068 (M11 evaluation) lands. See each module's `code-refs.md`
+Run `make serve` after the initial scaffolding (Module 18 gateway) lands. Run `make eval`
+after the initial scaffolding (Module 11 evaluation) lands. See each module's `code-refs.md`
 for the prerequisite REQs.
 
 ### Populating the corpus (`make load-data`)
@@ -112,5 +111,5 @@ Cost per cold build is ~$0.08–0.15 against `text-embedding-3-small`.
 ## Provenance
 
 - Plan: [`docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md`](../../docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md)
-- Scaffold REQ: [`do-work/archive/UR-008/REQ-061-scaffold-scikitdocs-starter.md`](../../do-work/archive/UR-008/REQ-061-scaffold-scikitdocs-starter.md) (post-archive path)
-- Capstone constraint: zero edits to `project/` from any Wave 4 REQ. Verified at REQ-078.
+- Scaffold REQ: the initial scaffolding plan (post-archive path)
+- Capstone constraint: zero edits to `project/` from any Wave 4 REQ. Verified at the initial scaffolding.

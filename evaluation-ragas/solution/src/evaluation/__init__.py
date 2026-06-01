@@ -1,4 +1,4 @@
-"""RAGAS evaluation harness for the ScikitDocs starter (REQ-068, M11).
+"""RAGAS evaluation harness for the ScikitDocs starter (Module 11).
 
 Mirrors ``project/src/evaluation/run_eval.py`` with two ScikitDocs-specific
 adaptations:

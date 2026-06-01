@@ -1,4 +1,4 @@
-"""Regex layer — the explainable fast-path for input guards (REQ-072, M20).
+"""Regex layer — the explainable fast-path for input guards (Module 20).
 
 Three detector families live here:
 

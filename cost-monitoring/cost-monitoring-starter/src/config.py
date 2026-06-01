@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # === Chroma ===
     chroma_path: str = "data/chroma"
 
-    # === Tracing — REQ-067 (M09) populates this ===
+    # === Tracing — Module 09 populates this ===
     tracing_backend: Literal["phoenix", "none"] = "phoenix"
     phoenix_embedded: bool = True
     phoenix_host: str = "0.0.0.0"

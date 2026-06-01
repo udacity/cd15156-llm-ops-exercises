@@ -1,4 +1,4 @@
-"""Blue/green re-ingest with golden-set eval gate (REQ-074, M24).
+"""Blue/green re-ingest with golden-set eval gate (Module 24).
 
 A migration is four moves:
 
@@ -17,7 +17,7 @@ A migration is four moves:
 This is intentionally the simplest blue/green that teaches the
 property — atomic cutover with a quality gate. A production system
 would add traffic-shadowing, gradual ramp-up, longer eval sets, and
-likely a human approval step at the swap. M24's exercise reasons about
+likely a human approval step at the swap. Module 24's exercise reasons about
 those extensions; the runnable code is the minimum that demonstrates
 why an atomic alias swap is safer than in-place re-ingest.
 """
@@ -48,7 +48,7 @@ DEFAULT_RECALL_THRESHOLD: float = 0.70
 DEFAULT_TOP_K: int = 5
 # Use a subset of the full 30-question golden set for the gate.
 # Migration eval is a fast confidence check; the long RAGAS sweep in
-# REQ-068/M11 is the rigorous post-merge run.
+# Module 11 is the rigorous post-merge run.
 DEFAULT_EVAL_SAMPLE_SIZE: int = 12
 
 
@@ -120,7 +120,7 @@ def _build_inactive_color(target_color: str, source_tag: str) -> int:
 def _load_golden_subset(path: Path, sample_size: int) -> list[dict]:
     """Return the first ``sample_size`` rows of the golden CSV.
 
-    Subset order is the CSV's row order, which REQ-063 balanced across
+    Subset order is the CSV's row order, which the initial scaffolding balanced across
     question-type buckets — taking the head is a fair sample without
     extra balancing logic.
     """
@@ -146,7 +146,7 @@ def recall_at_k(
     A row hits when any of the pipe-separated section prefixes in
     ``expected_doc_ids`` is a prefix of any retrieved chunk's id. The
     metric is intentionally lenient — section-prefix matching tolerates
-    REQ-065's ``.p0`` / ``.p1`` chunk splits without per-row tweaks.
+    the initial scaffolding's ``.p0`` / ``.p1`` chunk splits without per-row tweaks.
     """
     if not golden_rows:
         return 0.0
@@ -187,7 +187,7 @@ def migrate_blue_green(
             (``"1.6.0"``) for an actual version-upgrade migration.
         threshold: recall@k floor below which the swap is refused.
         eval_sample_size: golden-set rows to evaluate; the head of the
-            CSV is used so the type-balance from REQ-063 is preserved.
+            CSV is used so the type-balance from the initial scaffolding is preserved.
         drop_failed: on gate failure, delete the freshly-built color so
             the next attempt starts clean. Set ``False`` for forensics.
     """

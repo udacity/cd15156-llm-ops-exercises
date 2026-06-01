@@ -1,4 +1,4 @@
-"""LLM Guard wrappers — DeBERTa prompt injection + Presidio PII (REQ-072, M20).
+"""LLM Guard wrappers — DeBERTa prompt injection + Presidio PII (Module 20).
 
 The capstone teaches the regex layer first because it is fast,
 explainable, and grep-able. This subpackage is the ML layer that

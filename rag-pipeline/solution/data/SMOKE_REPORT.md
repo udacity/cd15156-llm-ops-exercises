@@ -72,4 +72,4 @@
 
 - Hit-any semantics: a query passes if at least `min_hits` of its expected doc_id prefixes match retrieved doc_ids.
 - Prefix matching is intentionally loose because real section anchors are slugified from RST titles and not fully predictable offline. The smoke gate validates the *shape* of retrieval, not exact anchor alignment.
-- The 8 deliberately-seeded chunks (see `SEEDING_NOTES.md`) are present in the collection so the M11 top-k sweep has signal but the smoke floor is preserved.
+- The 8 deliberately-seeded chunks (see `SEEDING_NOTES.md`) are present in the collection so the Module 11 top-k sweep has signal but the smoke floor is preserved.

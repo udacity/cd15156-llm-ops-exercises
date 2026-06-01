@@ -4,25 +4,25 @@ version = "0.1.0"
 description = "ScikitDocs alt-workload starter — Course 2 implementation modules teach against this"
 requires-python = ">=3.11,<3.14"
 dependencies = [
-    # Web layer — REQ-071 (M18) populates src/gateway/
+    # Web layer — Module 18 populates src/gateway/
     "fastapi>=0.111,<1",
     "uvicorn[standard]>=0.30,<1",
     "pydantic>=2.7,<3",
     "pydantic-settings>=2.3,<3",
     "python-dotenv>=1.0,<2",
-    # Vector store — REQ-065 (M05) fills src/store.py
+    # Vector store — Module 05 fills src/store.py
     "chromadb>=0.5,<1",
-    # OpenAI client + token accounting — REQ-064 (M03) + REQ-069 (M13)
+    # OpenAI client + token accounting — Module 03 + Module 13
     "openai>=1.30,<3",
     "tiktoken>=0.7,<1",
-    # Templating — REQ-064 (M03) uses src/generator.py + prompts/
+    # Templating — Module 03 uses src/generator.py + prompts/
     "jinja2>=3.1,<4",
-    # RST parsing for scikit-learn doc/*.rst — REQ-062
+    # RST parsing for scikit-learn doc/*.rst — the initial scaffolding
     "docutils>=0.21,<1",
-    # Evaluation — REQ-068 (M11)
+    # Evaluation — Module 11
     "ragas==0.4.3",
     "langchain-openai>=1.0,<2",
-    # Tracing — REQ-067 (M09)
+    # Tracing — Module 09
     # Phoenix 14+ conflicts with llm-guard via cryptography (>=45 vs <44.1).
     # Phoenix 13.21 needs the old phoenix.evals.models layout, which exists
     # only in arize-phoenix-evals<3 — pin both together. Mirrors capstone.
@@ -31,7 +31,7 @@ dependencies = [
     "arize-phoenix-otel>=0.16,<1",
     "openinference-instrumentation-openai>=0.1,<1",
     "pytz>=2026.1",
-    # Guardrails — REQ-072 (M20)
+    # Guardrails — Module 20
     "llm-guard>=0.3,<1",
     # spaCy English NER model — Presidio (which llm-guard's Anonymize
     # wraps) uses spaCy as its tokenization / sentence-segmentation
@@ -39,9 +39,9 @@ dependencies = [
     # Declared as a URL-pinned wheel so `uv sync` keeps it in the
     # lockfile instead of pruning it as extraneous.
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
-    # File-watcher for RAGOps demo — REQ-074 (M24)
+    # File-watcher for RAGOps demo — Module 24
     "watchdog>=4.0,<7",
-    # Local embedder swap — M05 Exercise — scripts/embed_with_st.py
+    # Local embedder swap — Module 05 Exercise — scripts/embed_with_st.py
     "sentence-transformers>=3,<5",
 ]
 

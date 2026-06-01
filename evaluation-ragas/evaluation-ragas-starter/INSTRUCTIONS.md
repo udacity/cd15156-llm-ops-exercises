@@ -174,7 +174,7 @@ Module 10 framed `top_k` as the lever that trades retrieval recall against preci
 
    *Caption: `top_k=5` is the standard pick — clears the recall@5 ≥ 0.70 floor at acceptable precision, keeps the prompt short, stays within the Wilson 95% CI band of `top_k=10` on recall.*
 
-   The visible curve is the lesson. The eight seeded difficulty chunks (REQ-063) — three near-duplicates, three version-conflicts, two embedding-confusion pairs — guarantee the sweep produces variance. Without those eight, the unusually-clean scikit-learn docs corpus would hit ~0.95 recall at every `top_k` and the table would be flat. The seeded chunks are 0.2% of the corpus and the smoke gate's recall@5 ≥ 0.7 floor still holds; their job is to surface signal in the sweep.
+   The visible curve is the lesson. The eight seeded difficulty chunks — three near-duplicates, three version-conflicts, two embedding-confusion pairs — guarantee the sweep produces variance. Without those eight, the unusually-clean scikit-learn docs corpus would hit ~0.95 recall at every `top_k` and the table would be flat. The seeded chunks are 0.2% of the corpus and the smoke gate's recall@5 ≥ 0.7 floor still holds; their job is to surface signal in the sweep.
 
    Save the table — pipe `make eval-topk-sweep > /tmp/topk-sweep.md` or copy the printed table into your writeup.
 
@@ -213,10 +213,10 @@ Aggregate metrics tell you whether the system is healthy in the median. The diag
 2. Sort the rows by the lowest single metric score (across all five surfaces, including the deprecated-API sub-metric). Pick the two rows with the lowest scores. If both lowest are faithfulness drops, that is fine — pick them; the diagnostic loop works the same. If one of your two is a `deprecated_apis_score = 0.0`, prioritize that pick — library-API hallucinations are the easiest to demonstrate and the most actionable for the Module 20 forward reference.
 
 3. For each picked row, apply the four-surface diagnostic from the demo:
-   - **Retrieval failure.** `context_recall` low (below 0.5) and `context_precision` low. Fix lives upstream — chunking, embedding choice, similarity threshold. Forward-ref: M5, M6, M24.
-   - **Generation failure.** `context_recall` and `context_precision` both high but `faithfulness` low. Fix lives in the prompt template, the model choice, or a downstream output guardrail. Forward-ref: M20.
+   - **Retrieval failure.** `context_recall` low (below 0.5) and `context_precision` low. Fix lives upstream — chunking, embedding choice, similarity threshold. Forward-ref: M5, M6, Module 24.
+   - **Generation failure.** `context_recall` and `context_precision` both high but `faithfulness` low. Fix lives in the prompt template, the model choice, or a downstream output guardrail. Forward-ref: Module 20.
    - **Routing failure.** `answer_relevancy` low while everything else is high. The pipeline answered a different question. Fix at the routing layer.
-   - **Deprecated-API failure.** `deprecated_apis_score = 0.0` with `deprecated_apis_citations` listing the offending symbol. Fix is a stricter prompt naming the corpus version, or an output guardrail that scans for removed symbols. Forward-ref: M20 — the same guardrail catches both faithfulness drops and deprecated-API drops, which is why the sub-metric lives in M11 rather than separately.
+   - **Deprecated-API failure.** `deprecated_apis_score = 0.0` with `deprecated_apis_citations` listing the offending symbol. Fix is a stricter prompt naming the corpus version, or an output guardrail that scans for removed symbols. Forward-ref: Module 20 — the same guardrail catches both faithfulness drops and deprecated-API drops, which is why the sub-metric lives in Module 11 rather than separately.
 
 4. For each of the two picked rows, write two paragraphs.
    - **Paragraph 1.** State the question and the five metric scores (including `deprecated_apis_score`). Read the contexts and the answer side by side with the ground truth, and name the failure surface: retrieval, generation, routing, deprecated-API, or some combination. Acknowledge the Wilson 95% CI ±0.14 band when the metric score is close to a threshold.

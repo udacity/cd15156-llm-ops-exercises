@@ -3,15 +3,11 @@
 Every Course 2 implementation module that touches port numbers, model
 names, top-k values, route paths, or any other shared value imports it
 from this file. Hardcoding any of these values inside a module is a
-review-blocker — the `make consistency-check` target (wired up in
-REQ-078) greps for the bare literals.
+review-blocker.
 
-The set was frozen during REQ-061 ("Scaffold module-starters/scikit-docs/").
-Changing a value here counts as an infra amendment and must follow the
-infra-amendment protocol in
-`docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md`
-§"Operational protocols": branch a REQ-061a patch, re-verify already-shipped
-impl REQs' code-refs, document the change.
+The set was frozen during the initial starter scaffolding. Changing a
+value here is a project-wide invariant — re-verify every module that
+imports it before merging.
 
 Twenty-one invariants, grouped by concern.
 """
@@ -34,21 +30,21 @@ CHUNK_OVERLAP_TOKENS: int = 75
 CONFIDENCE_THRESHOLD: float = 0.7
 GENERATION_TEMPERATURE: float = 0.2
 
-# === Evaluation (RAGAS) — REQ-063 / REQ-068 (M11) ===
+# === Evaluation (RAGAS) — the initial scaffolding / Module 11 ===
 GOLDEN_SET_SIZE: int = 30
 JUDGE_TEMPERATURE: float = 0.0
 
-# === Caching — REQ-070 (M15) ===
+# === Caching — Module 15 ===
 CACHE_SIMILARITY_THRESHOLD: float = 0.85
 
-# === Cost logging — REQ-069 (M13) ===
+# === Cost logging — Module 13 ===
 COST_LOG_PATH: str = "data/cost_log.jsonl"
 
-# === Tracing — REQ-067 (M09) ===
+# === Tracing — Module 09 ===
 PHOENIX_PORT: int = 6006
 PHOENIX_PROJECT_NAME: str = "scikitdocs"
 
-# === Gateway + A/B routing — REQ-071 (M18) / REQ-073 (M22) ===
+# === Gateway + A/B routing — Module 18 / Module 22 ===
 CLIENT_ID_HEADER: str = "X-Client-Id"
 
 # === OpenAI / Vocareum bridge — matches memory `project_vocareum_deployment.md` ===

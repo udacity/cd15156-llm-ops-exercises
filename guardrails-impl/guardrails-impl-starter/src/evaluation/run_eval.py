@@ -139,7 +139,7 @@ def _build_llm() -> LangchainLLMWrapper:
     Temperature is pinned at ``constants.JUDGE_TEMPERATURE`` (0.0). The
     judge is a comparator, not a generator — non-zero temperature is a
     documented source of run-to-run drift in LLM-as-judge evals (see
-    the M10 concept walk and the MT-Bench paper).
+    the Module 10 concept walk and the MT-Bench paper).
     """
     return LangchainLLMWrapper(
         LangchainChatOpenAI(

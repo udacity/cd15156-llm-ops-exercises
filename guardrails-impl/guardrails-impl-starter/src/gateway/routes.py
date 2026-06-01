@@ -1,11 +1,11 @@
-"""HTTP route handlers for the ScikitDocs gateway (REQ-071, M18 + REQ-072, M20).
+"""HTTP route handlers for the ScikitDocs gateway (Module 18 + Module 20).
 
 ``POST /query`` accepts a Pydantic-validated body plus the optional
 ``X-Client-Id`` request header (per ``constants.CLIENT_ID_HEADER``).
 ``GET /health`` is a static liveness probe so the runtime check has a
 zero-cost endpoint to ping.
 
-REQ-072 (M20) inserted the guardrail stack between the route handler
+Module 20 inserted the guardrail stack between the route handler
 and :func:`src.gateway.router.route_query`. The order is deliberate
 (documented in the handler body): rate-limit first (LLM10 — cheapest
 check, fails before any work), prompt-injection regex/DeBERTa second,
@@ -14,8 +14,8 @@ text downstream rather than blocking), then the dispatch. The output
 guard (LLM-judge hallucination check) runs after dispatch.
 
 Why ``X-Client-Id`` is optional: the gateway must accept the header
-when REQ-073 sends it for sticky-by-user bucketing, and it must also
-serve clean traffic from callers that do not provide one (the M11
+when the initial scaffolding sends it for sticky-by-user bucketing, and it must also
+serve clean traffic from callers that do not provide one (the Module 11
 RAGAS eval harness, for example, fires un-headered requests). Pydantic
 + FastAPI's ``Header(default=None)`` gives both behaviors in one line.
 """

@@ -1,4 +1,4 @@
-"""Bootstrap the scikit-learn docs corpus into Chroma (REQ-062).
+"""Bootstrap the scikit-learn docs corpus into Chroma.
 
 Usage:
     uv run python scripts/load_data.py
@@ -18,17 +18,17 @@ Pipeline:
        concurrent in-flight requests, so a cold build of ~4,000 chunks
        fits the <60s Workspace target.
     7. Upsert into the Chroma collection that the ``scikit_docs`` alias
-       currently resolves to (REQ-074 / M24 blue/green) with
-       ``hnsw:space=cosine`` pinned at create time. Pre-M24 starters and
+       currently resolves to (Module 24 blue/green) with
+       ``hnsw:space=cosine`` pinned at create time. Pre-Module 24 starters and
        fresh checkouts with no ``data/ACTIVE_COLLECTION`` file land in
-       the literal ``scikit_docs`` collection — REQ-062's original
+       the literal ``scikit_docs`` collection — the initial scaffolding's original
        behaviour. Chroma's metadata columns are scalar-only, so
        list-typed fields (xrefs, code_languages) are JSON-serialised on
        the way in.
     8. Write ``data/CORPUS_VERSION`` with tag + SHA + timestamp + chunk
-       count so M24 RAGOps can read it for blue/green migrations.
+       count so Module 24 RAGOps can read it for blue/green migrations.
 
-REQ-065 (M05) refactors this script to use the now-filled
+Module 05 refactors this script to use the now-filled
 ``src.chunker.chunk_doc`` / ``src.embedder.embed`` / ``src.store.add``
 stubs. Until then the chunk/embed/upsert logic lives inline here.
 """
@@ -270,14 +270,14 @@ def embed_missing(
 def _make_chroma_collection() -> "chromadb.Collection":
     """Open the active collection by routing through :func:`src.store.get_collection`.
 
-    REQ-074 (M24) introduced the blue/green alias mechanism — passing
+    Module 24 introduced the blue/green alias mechanism — passing
     ``COLLECTION_NAME`` (``"scikit_docs"``, the public alias) through
     ``store.get_collection`` means a post-migration ``make load-data``
     refreshes whichever color the alias currently names rather than
     silently writing to the pre-alias ``scikit_docs`` collection. When
-    no ``data/ACTIVE_COLLECTION`` file exists (bootstrap / pre-M24
+    no ``data/ACTIVE_COLLECTION`` file exists (bootstrap / pre-Module 24
     starter) the resolver returns the literal ``scikit_docs`` and
-    behaviour matches REQ-062's original code path.
+    behaviour matches the initial scaffolding's original code path.
     """
     from src import store
 

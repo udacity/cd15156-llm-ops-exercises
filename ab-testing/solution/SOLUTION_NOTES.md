@@ -1,6 +1,6 @@
 # Solution notes — Module 22 (Prompt A/B Testing)
 
-The starter ships every production primitive M22 needs: `src/optimization/ab.py` (three functions), both prompt variants at `prompts/docbot_system_{A,B}.j2`, the analyzer at `scripts/ab_analyze.py`, the `make ab-analyze` Makefile target, and the 16-test suite at `tests/test_ab.py`. The only new file this exercise authors is one script.
+The starter ships every production primitive Module 22 needs: `src/optimization/ab.py` (three functions), both prompt variants at `prompts/docbot_system_{A,B}.j2`, the analyzer at `scripts/ab_analyze.py`, the `make ab-analyze` Makefile target, and the 16-test suite at `tests/test_ab.py`. The only new file this exercise authors is one script.
 
 ## Files this solution adds
 

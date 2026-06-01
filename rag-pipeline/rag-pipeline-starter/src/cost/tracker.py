@@ -1,4 +1,4 @@
-"""Per-request cost log (append-only JSONL) and summarization helpers (REQ-069, M13).
+"""Per-request cost log (append-only JSONL) and summarization helpers (Module 13).
 
 Three responsibilities:
 

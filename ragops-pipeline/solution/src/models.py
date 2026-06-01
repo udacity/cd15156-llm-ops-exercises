@@ -5,7 +5,7 @@ capstone reads identical type shapes here. Don't add ScikitDocs-specific
 fields — they belong in `src/store.py` metadata or `src/pipeline.py`
 locals, not in the shared response surface.
 
-`QueryResponseValidator` (M20 exercise 4) is the one local-only addition.
+`QueryResponseValidator` (Module 20 exercise 4) is the one local-only addition.
 It does not mirror `project/` — it is the curriculum-only structured-output
 guard the learner wires at the gateway boundary in Skill Pair 9.
 """

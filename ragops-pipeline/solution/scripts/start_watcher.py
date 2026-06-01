@@ -1,4 +1,4 @@
-"""CLI entry for the docs-inbox watcher (REQ-074, M24).
+"""CLI entry for the docs-inbox watcher (Module 24).
 
 Usage:
     uv run python scripts/start_watcher.py

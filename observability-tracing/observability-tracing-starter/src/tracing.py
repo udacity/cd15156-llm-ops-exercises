@@ -1,17 +1,17 @@
-"""Phoenix tracing for the ScikitDocs pipeline (REQ-067 — Module 09).
+"""Phoenix tracing for the ScikitDocs pipeline (Module 09).
 
 Two responsibilities:
 
 1. ``init_tracing`` boots the embedded Phoenix UI, registers an
    OpenTelemetry ``TracerProvider``, and auto-instruments the OpenAI
    SDK. Idempotent — safe to call multiple times from the lifespan of a
-   long-running process (REQ-071/M18 wires it into the FastAPI gateway)
-   or from a one-off Python invocation in the M09 demo and exercises.
+   long-running process (Module 18 wires it into the FastAPI gateway)
+   or from a one-off Python invocation in the Module 09 demo and exercises.
 
 2. ``traced_pipeline`` composes the same four functions
    ``pipeline.run_pipeline`` does — ``embed_query`` → ``store.query`` →
    ``render_system_prompt`` → ``generate`` — and emits one named span per
-   stage. The resulting hierarchy matches the M08 concept's vocabulary:
+   stage. The resulting hierarchy matches the Module 08 concept's vocabulary:
 
        rag_query           (root, the request)
          └── retrieve
@@ -21,10 +21,10 @@ Two responsibilities:
          └── generate      (auto-child: OpenAI ChatCompletion span)
 
    Re-implementing the composition here (instead of decorating
-   ``run_pipeline``) is deliberate: the M09 learner sees each stage as
+   ``run_pipeline``) is deliberate: the Module 09 learner sees each stage as
    its own span in Phoenix, which is the diagnostic surface the eval,
    cost, and latency modules will read from later. The trade-off is the
-   small duplication with ``src/pipeline.py``; the contract that M07
+   small duplication with ``src/pipeline.py``; the contract that Module 07
    should not import OpenTelemetry (so the pipeline stays a pure RAG
    composition) keeps the duplication contained to this one file.
 
@@ -136,7 +136,7 @@ def traced_pipeline(
     Imports the four underlying functions directly (rather than calling
     ``run_pipeline``) so ``retrieve``, ``embed``, ``search``, ``augment``,
     and ``generate`` each become their own named span. The resulting
-    Gantt chart in Phoenix matches the vocabulary the M08 concept uses.
+    Gantt chart in Phoenix matches the vocabulary the Module 08 concept uses.
 
     Returns a ``QueryResponse`` with ``trace_id`` populated (32-character
     hex from the W3C Trace Context spec). When ``init_tracing`` was not

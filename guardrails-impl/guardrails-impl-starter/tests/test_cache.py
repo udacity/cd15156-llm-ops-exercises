@@ -1,4 +1,4 @@
-"""Unit tests for the semantic cache primitives (REQ-070, M15).
+"""Unit tests for the semantic cache primitives (Module 15).
 
 Mirrors the shape of ``project/tests/cache/test_semantic.py`` but stubs
 the embedder and the Chroma client so the suite is hermetic — no OpenAI
@@ -178,7 +178,7 @@ def test_loose_threshold_lets_unrelated_query_through(
     cache_module.store("warmup", _make_response("Bantam content."))
     hit = cache_module.lookup("different_topic", threshold=0.0)
     assert hit is not None
-    assert hit.answer == "Bantam content."  # served the wrong answer; the M15 lift
+    assert hit.answer == "Bantam content."  # served the wrong answer; the Module 15 lift
 
 
 def test_default_threshold_misses_on_unrelated_query(

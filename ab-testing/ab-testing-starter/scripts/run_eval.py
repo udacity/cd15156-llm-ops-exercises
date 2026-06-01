@@ -1,9 +1,9 @@
-"""CLI: ``make eval`` → ``uv run python scripts/run_eval.py`` (REQ-068, M11).
+"""CLI: ``make eval`` → ``uv run python scripts/run_eval.py`` (Module 11).
 
 Runs RAGAS over the ScikitDocs golden set, prints the four-metric
 aggregate plus the deprecated-API sub-metric, and optionally writes
 per-row results (RAGAS columns + deprecated-API citations) to JSON
-for the M11 Exercise 3 diagnostic loop.
+for the Module 11 Exercise 3 diagnostic loop.
 """
 
 import argparse

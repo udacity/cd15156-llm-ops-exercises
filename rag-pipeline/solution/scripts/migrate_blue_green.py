@@ -1,4 +1,4 @@
-"""CLI entry for the blue/green corpus migration (REQ-074, M24).
+"""CLI entry for the blue/green corpus migration (Module 24).
 
 Usage:
     uv run python scripts/migrate_blue_green.py
@@ -6,10 +6,10 @@ Usage:
 
 By default the script re-ingests the currently pinned
 ``corpus.SCIKIT_LEARN_TAG`` into the inactive color — the "rebuild"
-form of blue/green that the M24 exercise uses to teach the cutover
+form of blue/green that the Module 24 exercise uses to teach the cutover
 mechanism. Pass ``--tag <version>`` to point the migration at a
 different scikit-learn release, which is the actual version-upgrade
-scenario M24 frames in the demo.
+scenario Module 24 frames in the demo.
 """
 
 from __future__ import annotations

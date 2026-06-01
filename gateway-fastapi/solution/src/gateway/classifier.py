@@ -1,15 +1,15 @@
-"""LLM self-classifier for the tiered router (REQ-071, M18).
+"""LLM self-classifier for the tiered router (Module 18).
 
 gpt-4o-mini reads the user's question and returns ``{"classification":
 "simple" | "complex", "reasoning": "..."}`` via OpenAI's JSON mode.
-The two-tier output keeps the starter minimal — Exercise 1 of M18 walks
+The two-tier output keeps the starter minimal — Exercise 1 of Module 18 walks
 the four-file edit to add a third ``premium`` tier without changing the
 gateway scaffolding.
 
 The fall-through at :func:`classify` defaults bad JSON or unexpected
 labels to ``complex``. The reasoning is conservative: when the
 classifier returns garbage, pay a bit more for the better model rather
-than silently routing a hard question to the cheap path. M18 Slide 9
+than silently routing a hard question to the cheap path. Module 18 Slide 9
 ("Common pitfalls") names this as the standard default-on-failure
 pattern for tier classifiers.
 """

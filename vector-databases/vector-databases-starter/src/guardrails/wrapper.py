@@ -1,4 +1,4 @@
-"""Safe-response helper used by every guardrail block path (REQ-072, M20).
+"""Safe-response helper used by every guardrail block path (Module 20).
 
 When any guard fires, the gateway returns a 200 OK with a generic
 refusal message in ``answer``, empty ``sources``, ``confidence=0.0``,

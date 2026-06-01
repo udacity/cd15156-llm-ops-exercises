@@ -1,4 +1,4 @@
-"""Tests for the A/B routing primitives (REQ-073, M22).
+"""Tests for the A/B routing primitives (Module 22).
 
 The contract this REQ delivers:
 

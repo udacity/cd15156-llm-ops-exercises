@@ -1,4 +1,4 @@
-"""Sticky-by-user A/B routing + variant-aware OpenAI caller (REQ-073, M22).
+"""Sticky-by-user A/B routing + variant-aware OpenAI caller (Module 22).
 
 Three primitives, intentionally small:
 
@@ -27,9 +27,9 @@ Two design choices worth naming:
   as a deliberate fallback rather than a missing feature is the
   discipline Module 21 V3 names.
 
-Cross-module contract: the ``X-Client-Id`` header REQ-071 plumbs
+Cross-module contract: the ``X-Client-Id`` header the initial scaffolding plumbs
 through ``src.gateway.routes.query_endpoint`` arrives at
-``src.gateway.router.route_query`` as the ``client_id`` keyword. M22's
+``src.gateway.router.route_query`` as the ``client_id`` keyword. Module 22's
 caller composition reads that value and feeds it to ``pick_variant``.
 """
 
@@ -73,7 +73,7 @@ def pick_variant(
 
     When ``client_id`` is ``None`` or empty the function falls back to
     weighted random sampling via :func:`random.choices`. That keeps the
-    contract safe to call on un-headered traffic (the M11 RAGAS eval
+    contract safe to call on un-headered traffic (the Module 11 RAGAS eval
     harness, the capstone's pickleball workload) without raising.
 
     Args:

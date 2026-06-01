@@ -1,4 +1,4 @@
-"""Tests for the gateway boundary output validator (REQ-082, M20 exercise 4).
+"""Tests for the gateway boundary output validator (Module 20 exercise 4).
 
 Two tests pin the contract Skill Pair 9 exercise 4 teaches:
 

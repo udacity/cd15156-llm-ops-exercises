@@ -1,8 +1,8 @@
-"""Unit tests for ``src.pricing`` + ``src.cost.{tracker,dashboard}`` (REQ-069, M13).
+"""Unit tests for ``src.pricing`` + ``src.cost.{tracker,dashboard}`` (Module 13).
 
 Covers the pure-function surface: cost math, JSONL round-trip,
 summarization, HTML rendering on empty and populated inputs. The
-``/cost-dashboard`` route itself is integration-tested at REQ-071 (M18)
+``/cost-dashboard`` route itself is integration-tested at Module 18
 when the gateway lands.
 """
 

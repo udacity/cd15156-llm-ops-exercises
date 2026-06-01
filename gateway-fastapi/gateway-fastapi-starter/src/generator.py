@@ -1,4 +1,4 @@
-"""OpenAI generation + system-prompt rendering (REQ-064 — Module 03).
+"""OpenAI generation + system-prompt rendering (Module 03).
 
 Renders ``prompts/docbot_system.j2`` with the retrieved chunks as context
 and calls OpenAI chat completions. Frozen contract documented in
@@ -12,8 +12,8 @@ Two design choices worth naming:
   by default and removing it can shift tokenization on some models.
 
 ``cost_usd`` is computed by ``src.pricing.compute_cost`` (added by
-REQ-069 / Module 13). The signature still matches ``INTERFACES.md`` —
-M13 wired the real cost in without changing the return shape.
+the initial scaffolding / Module 13). The signature still matches ``INTERFACES.md`` —
+Module 13 wired the real cost in without changing the return shape.
 """
 
 from pathlib import Path
@@ -68,7 +68,7 @@ def generate(
 
     Returns:
         ``(answer, TokenUsage, cost_usd)``. ``cost_usd`` comes from
-        ``src.pricing.compute_cost`` (wired in by REQ-069 / M13).
+        ``src.pricing.compute_cost`` (wired in by Module 13).
     """
     client = OpenAI(base_url=settings.openai_base_url or None)
     system_prompt = render_system_prompt(sources)

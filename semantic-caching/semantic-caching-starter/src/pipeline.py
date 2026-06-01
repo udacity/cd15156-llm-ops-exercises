@@ -1,6 +1,6 @@
-"""End-to-end RAG pipeline: retrieve → prompt → generate → respond (REQ-066, M07).
+"""End-to-end RAG pipeline: retrieve → prompt → generate → respond (Module 07).
 
-Composes the three single-purpose modules filled by REQ-064 and REQ-065:
+Composes the three single-purpose modules filled by the initial scaffolding and the initial scaffolding:
 
 - ``embedder.embed_query`` — turn the question into a vector.
 - ``store.query`` — top-k cosine search against the ``scikit_docs`` collection.
@@ -12,10 +12,10 @@ the ScikitDocs starter inlines the embed-plus-search half (no separate
 walkthrough. The composition is otherwise identical — same five RAG stages,
 same confidence-from-similarity averaging, same ``QueryResponse`` shape.
 
-Phoenix tracing (REQ-067 / M09) wraps this function from the outside with a
+Phoenix tracing (Module 09) wraps this function from the outside with a
 top-level span and child spans for each composed call. Don't import
-opentelemetry here — M09 patches the function reference rather than asking
-M07 to know about tracing.
+opentelemetry here — Module 09 patches the function reference rather than asking
+Module 07 to know about tracing.
 """
 
 from src.config import settings
@@ -32,7 +32,7 @@ def run_pipeline(
 
     Args:
         question: User's question (raw string; sanitization is the gateway's
-            job at REQ-071 and REQ-072, not the pipeline's).
+            job at the initial scaffolding and the initial scaffolding, not the pipeline's).
         top_k:    Retrieval depth. Defaults to ``constants.DEFAULT_TOP_K``.
         model:    OpenAI model. Defaults to ``settings.model_complex`` /
                   ``constants.MODEL_COMPLEX``.
@@ -42,7 +42,7 @@ def run_pipeline(
         ``confidence`` (mean of retrieval similarity scores; ``0.0`` if no
         sources came back), ``model``, ``tokens``, and ``cost_usd``. The
         ``cached`` / ``trace_id`` / ``blocked_by`` fields are left at their
-        Pydantic defaults — REQ-070 (cache), REQ-067 (tracing), and REQ-072
+        Pydantic defaults — the initial scaffolding (cache), the initial scaffolding (tracing), and the initial scaffolding
         (guardrails) populate them in their respective wrappers.
     """
     chosen_model = model or settings.model_complex

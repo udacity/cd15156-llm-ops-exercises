@@ -1,4 +1,4 @@
-"""scikit-learn docs corpus loader (REQ-062).
+"""scikit-learn docs corpus loader.
 
 Walks a pinned scikit-learn checkout, parses ``doc/**/*.rst`` with docutils,
 and yields one dict per top-level section. Sphinx-specific roles
@@ -12,7 +12,7 @@ https://docutils.sourceforge.io/docs/howto/rst-directives.html — we register
 no-op handlers for the Sphinx-specific names docutils doesn't know about.
 
 Known limitation: cross-references (``:ref:``, ``:doc:``) are captured but
-not resolved — resolution would require a full Sphinx build. M07 (REQ-066)
+not resolved — resolution would require a full Sphinx build. Module 07
 discusses this trade-off when teaching RAG retrieval quality.
 """
 

@@ -1,23 +1,23 @@
-"""Tier dispatch + cache-traced composition for the gateway (REQ-071, M18).
+"""Tier dispatch + cache-traced composition for the gateway (Module 18).
 
 The route handler in :mod:`src.gateway.routes` calls :func:`route_query`,
 which is where every Wave 1-3 capability the starter shipped converges:
 
-1. **Classify** the question (M18 — :func:`src.gateway.classifier.classify`).
+1. **Classify** the question (Module 18 — :func:`src.gateway.classifier.classify`).
 2. **Select** the model from the tier (:func:`select_model`, this file).
-3. **Look up** the cache (M15 — :func:`src.cache.semantic.lookup`).
-4. **On miss**, run the traced pipeline (M09 — :func:`src.tracing.traced_pipeline`)
+3. **Look up** the cache (Module 15 — :func:`src.cache.semantic.lookup`).
+4. **On miss**, run the traced pipeline (Module 09 — :func:`src.tracing.traced_pipeline`)
    so Phoenix gets one span per stage and the OpenAI auto-instrumentor
    gets to attach token/cost attributes to the ``generate`` span.
 5. **Store** the response in the cache so future paraphrases hit.
-6. **Log** the cost row (M13 — :func:`src.cost.tracker.log_request`)
+6. **Log** the cost row (Module 13 — :func:`src.cost.tracker.log_request`)
    — only on miss, because cache hits did not make an LLM call.
 
-The ``client_id`` keyword is the M22 (REQ-073) sticky-by-user
+The ``client_id`` keyword is the Module 22 sticky-by-user
 contract. It threads from the ``X-Client-Id`` request header through
-the route handler into this function; M18 itself does nothing with the
+the route handler into this function; Module 18 itself does nothing with the
 value beyond passing it through, but the contract test in
-``tests/test_smoke.py`` pins the plumbing so REQ-073 can land cleanly.
+``tests/test_smoke.py`` pins the plumbing so the initial scaffolding can land cleanly.
 """
 
 from src.cache.semantic import lookup, store
@@ -53,7 +53,7 @@ def route_query(
             classifier decides the tier and :func:`select_model` picks
             the model from ``settings``.
         client_id: Optional ``X-Client-Id`` value from the request
-            header. M18 forwards it as request state; M22 (REQ-073)
+            header. Module 18 forwards it as request state; Module 22
             will read it for sticky-by-user variant assignment.
 
     Returns:

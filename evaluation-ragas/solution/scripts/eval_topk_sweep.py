@@ -1,8 +1,7 @@
 """Sweep ``top_k`` at three values and emit a markdown comparison table.
 
 Sweeps ``top_k ∈ {3, 5, 10}`` by default against the ScikitDocs golden
-set. The seeded-difficulty chunks in ``data/seeded_chunks.jsonl``
-(REQ-063) guarantee a visible curve — without seeding the corpus is
+set. The seeded-difficulty chunks in ``data/seeded_chunks.jsonl`` guarantee a visible curve — without seeding the corpus is
 too clean for a sweep to produce variance.
 
 Cost: ~3× one ``make eval`` invocation (~$0.06 at OpenAI pricing as of

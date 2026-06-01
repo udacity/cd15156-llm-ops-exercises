@@ -1,4 +1,4 @@
-"""Operational ingestion surface for the ScikitDocs corpus (REQ-074, M24).
+"""Operational ingestion surface for the ScikitDocs corpus (Module 24).
 
 Two related concerns live here:
 

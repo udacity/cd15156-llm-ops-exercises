@@ -223,7 +223,7 @@ Goal: run the filled embedder + store against twelve real questions from the gol
 
 ### Why a 12-question subset
 
-The full golden set is thirty questions across six query types: factual (12), procedural (6), conceptual (5), comparative (3), edge_case (2), and off_topic (2). For a retrieval-only measurement the last two buckets are misleading — edge-case questions ("Which classifier is the best one?") have ambiguous expected answers, and off-topic questions ("What's the weather in Paris today?") test the *refusal* pathway, not retrieval. They belong in the M03 (generator) and M20 (guardrails) evaluations, not here. The twelve-question subset below is five factual, three procedural, two conceptual, and two comparative — heavy on the buckets where a "right answer" is unambiguous enough to score.
+The full golden set is thirty questions across six query types: factual (12), procedural (6), conceptual (5), comparative (3), edge_case (2), and off_topic (2). For a retrieval-only measurement the last two buckets are misleading — edge-case questions ("Which classifier is the best one?") have ambiguous expected answers, and off-topic questions ("What's the weather in Paris today?") test the *refusal* pathway, not retrieval. They belong in the Module 03 (generator) and Module 20 (guardrails) evaluations, not here. The twelve-question subset below is five factual, three procedural, two conceptual, and two comparative — heavy on the buckets where a "right answer" is unambiguous enough to score.
 
 ### Steps
 
@@ -298,7 +298,7 @@ The full golden set is thirty questions across six query types: factual (12), pr
 
 Question 1 ("default value of `n_estimators` in `RandomForestClassifier`") is a textbook factual lookup. The expected sections — `modules.ensemble.random-forests`, `modules.ensemble.parameters`, `modules.ensemble.forests-of-randomized-trees` — together cover most of the scikit-learn ensemble user-guide page. The expected_doc_ids field is generous on purpose: the answer (100 trees, raised from 10 in version 0.22) lives in any of those sections depending on which scikit-learn version you read. A retriever that finds any of them within top-5 has done its job; choosing which one to cite is the generator's problem.
 
-Question 6 ("How do I scale features before clustering them?") is procedural and crosses two user-guide pages — preprocessing and clustering. The expected_doc_ids set is `modules.preprocessing|modules.clustering` rather than a specific subsection, because the "correct" procedural answer is a two-step recipe that combines knowledge from both pages. This is the shape most procedural questions take in a docs corpus: the right answer is not in any single section, and the generator has to compose. M07 will show how the retrieval-plus-generation composition turns a multi-section hit into a coherent answer; M11 will show how to measure when the composition stays faithful to the cited sources versus drifting into model knowledge.
+Question 6 ("How do I scale features before clustering them?") is procedural and crosses two user-guide pages — preprocessing and clustering. The expected_doc_ids set is `modules.preprocessing|modules.clustering` rather than a specific subsection, because the "correct" procedural answer is a two-step recipe that combines knowledge from both pages. This is the shape most procedural questions take in a docs corpus: the right answer is not in any single section, and the generator has to compose. Module 07 will show how the retrieval-plus-generation composition turns a multi-section hit into a coherent answer; Module 11 will show how to measure when the composition stays faithful to the cited sources versus drifting into model knowledge.
 
 Question 12 ("difference between `OneHotEncoder` and `LabelEncoder`") is comparative. The expected_doc_ids set is `modules.preprocessing|modules.preprocessing_targets` because the answer needs both — `OneHotEncoder` lives in feature preprocessing, `LabelEncoder` lives in target preprocessing, and confusing the two is a real bug pattern in newer scikit-learn users. A retriever that returns only one of the two pages would still score as a hit under the lenient prefix rule, but the answer the generator produces from a one-sided hit would be incomplete. Top-K hit-any is the easiest retrieval metric to compute and the loosest one to argue from; the better evaluation question, which Module 11 builds out, is whether the retrieved set is jointly sufficient to answer the question.
 
@@ -332,7 +332,7 @@ The model swap is one line in `src/embedder.py`. The problem is that everything 
 1. Write a side-by-side wrapper so you can run both embedders without modifying the production embedder. Create `scripts/embed_with_st.py`:
 
    ```python
-   """Local sentence-transformers embedder for the M05 swap exercise."""
+   """Local sentence-transformers embedder for the Module 05 swap exercise."""
    from sentence_transformers import SentenceTransformer
 
    _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -425,7 +425,7 @@ This is not a design limitation specific to Chroma. Every dense vector store wor
 
 ### What stays the same across embedders
 
-Two pieces of the M05 stack survive the embedder swap untouched: `src/chunker.py` and the structure of `src/store.py`. Chunking is a function of the source corpus, not the embedder, so the same chunk_doc output feeds both rebuilds. The store's `get_collection / add / query` API is also embedder-agnostic — the only thing that varies is which collection name you pass in and what dimensionality the vectors happen to have. That separation is why the rebuild script is so short: most of the work is already done.
+Two pieces of the Module 05 stack survive the embedder swap untouched: `src/chunker.py` and the structure of `src/store.py`. Chunking is a function of the source corpus, not the embedder, so the same chunk_doc output feeds both rebuilds. The store's `get_collection / add / query` API is also embedder-agnostic — the only thing that varies is which collection name you pass in and what dimensionality the vectors happen to have. That separation is why the rebuild script is so short: most of the work is already done.
 
 ### When the trade is worth it
 

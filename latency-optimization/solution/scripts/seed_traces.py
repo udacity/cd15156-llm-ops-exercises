@@ -1,4 +1,4 @@
-"""Seed Phoenix with a 5-question pack and export the rubric §7 evidence (REQ-067, M09).
+"""Seed Phoenix with a 5-question pack and export the rubric §7 evidence (Module 09).
 
 Fires a hand-curated set of ``traced_pipeline`` calls in-process so the
 OTel exporter and the markdown renderer both see the same spans, then

@@ -11,7 +11,7 @@ same eight IDs.
 Out-of-the-box, the scikit-learn doc corpus is unusually clean: section
 titles map crisply to learner queries, and a `text-embedding-3-small`
 retrieval with `top_k=5` will hit ~0.95 recall on a hand-authored golden
-set. That ceiling makes the M11 RAGAS top-k sweep exercise — where
+set. That ceiling makes the Module 11 RAGAS top-k sweep exercise — where
 learners are supposed to *see* recall degrade from `k=10` down to `k=3`
 and rationalize the operating point — pedagogically flat. Seeding 8
 deliberately confusing chunks reintroduces signal without breaking the
@@ -31,15 +31,15 @@ across k ∈ {3, 5, 10} now produces a visible curve.
 | 7 | `embedding_confusion` | `seeded.embed_confusion.random_forest_regressor` | RF *Regressor* docs that embed near RF *Classifier* queries |
 | 8 | `embedding_confusion` | `seeded.embed_confusion.gradient_boosting_regressor` | GB *Regressor* docs that embed near GB *Classifier* queries |
 
-`seed_pair_id` ties duplicates together for analysis (e.g. M24 RAGOps
+`seed_pair_id` ties duplicates together for analysis (e.g. Module 24 RAGOps
 exercise on detecting near-duplicate ingest drift).
 
 ## Categories — what each one teaches
 
 ### Near-duplicates (chunks 1–3)
 Two embeddings cosine-close enough that top-k retrieval will sometimes
-return one and sometimes the other for the same query. M11 (RAGAS)
-sees this as `context_precision` fluctuating across runs; M24 (RAGOps)
+return one and sometimes the other for the same query. Module 11 (RAGAS)
+sees this as `context_precision` fluctuating across runs; Module 24 (RAGOps)
 sees this as a real candidate for a deduplication pre-ingest pass.
 
 ### Version conflicts (chunks 4–6)
@@ -47,8 +47,8 @@ Two chunks that answer the same question with **different correct
 answers** depending on the scikit-learn version. The retriever has no
 way to know which one matches the learner's intent; this is the
 single biggest failure mode of "freeze the docs at one version" RAG and
-exists in production library-doc Q&A systems too. M11 sees this as
-`answer_correctness` swings; M24 demonstrates the fix (version-tagged
+exists in production library-doc Q&A systems too. Module 11 sees this as
+`answer_correctness` swings; Module 24 demonstrates the fix (version-tagged
 indices, blue/green corpus migration).
 
 ### Embedding confusion (chunks 7–8)
@@ -65,7 +65,7 @@ target: every seeded chunk should appear in top-10 retrieval for at
 least one golden-set query (otherwise the seeding does nothing) but no
 single golden-set query should be **dominated** by seeded chunks
 (otherwise we've broken the smoke gate). The smoke gate's recall@5 ≥
-0.7 floor and the M11 sweep operating point are both validated against
+0.7 floor and the Module 11 sweep operating point are both validated against
 these proportions.
 
 ## CSV / JSONL format notes
@@ -79,11 +79,11 @@ these proportions.
   `expected_doc_ids` — they test guardrails / refusal behaviour, not
   retrieval.
 
-## Statistical caveat (carry into M11)
+## Statistical caveat (carry into Module 11)
 
 N=30 yields a Wilson 95% confidence interval of roughly ±0.14 on a
 recall@5 ≈ 0.8 point estimate. The golden set is **teaching-sized**,
-not production-sized; M11's "calibrate top-k" exercise must frame the
+not production-sized; Module 11's "calibrate top-k" exercise must frame the
 sweep results as directional rather than statistically conclusive. The
 fact that the sweep produces a *visible curve* (rather than a flat
 0.95) is the point — the confidence band is the secondary lesson.
@@ -102,7 +102,7 @@ print('seeded count:', c.count(where={'is_seeded': True}))
 "
 ```
 
-## Cross-check of 5 golden rows against scikit-learn.org (REQ-063 acceptance)
+## Cross-check of 5 golden rows against scikit-learn.org (the initial scaffolding acceptance)
 
 Verified 2026-05-18 against `https://scikit-learn.org/stable/`:
 

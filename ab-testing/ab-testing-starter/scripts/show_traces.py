@@ -1,4 +1,4 @@
-"""Export recent Phoenix traces as markdown or JSON (REQ-067, M09).
+"""Export recent Phoenix traces as markdown or JSON (Module 09).
 
 Backstop for environments where the Phoenix UI on port 6006 isn't
 reachable from the learner's browser. Reads spans from the embedded

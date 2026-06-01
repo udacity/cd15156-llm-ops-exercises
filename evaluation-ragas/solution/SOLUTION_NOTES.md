@@ -34,7 +34,7 @@ Recommendation: `top_k=5` — clears recall ≥ 0.70 at acceptable precision (0.
 
 ## Exercise 3 — Two-question diagnostic writeup
 
-Per-learner — picks come from the learner's own `/tmp/learner-eval.json`. Expected structure: two questions × (question text, five metric scores, surface-naming paragraph, concrete-fix paragraph), then one closing paragraph forward-referencing M15/M20/M23/M24. The "concrete fix" bar is "would a teammate know what file to edit and what change to make" — not "improve the prompt" but "add line X to `prompts/docbot_system.j2`."
+Per-learner — picks come from the learner's own `/tmp/learner-eval.json`. Expected structure: two questions × (question text, five metric scores, surface-naming paragraph, concrete-fix paragraph), then one closing paragraph forward-referencing Module 15/Module 20/Module 23/Module 24. The "concrete fix" bar is "would a teammate know what file to edit and what change to make" — not "improve the prompt" but "add line X to `prompts/docbot_system.j2`."
 
 ## Exercise 4 — CI threshold gate
 
