@@ -2,7 +2,7 @@
 
 # Demo — Wire the Watcher, Then Walk a Blue/Green Index Swap
 
-Module 23 named the pattern — producer, queue, consumer, with idempotency on the consumer as the load-bearing property. This demo brings that pattern down to code in the ScikitDocs starter. The runnable surface is a watcher on `data/docs_inbox/` that ingests pre-chunked scikit-learn doc sections one JSON at a time, plus a blue/green migration that re-ingests the whole corpus into an inactive collection, evaluates it against the golden set, and atomically swaps the public alias on pass. After that, an AWS sidebar describes the same shape in cloud production form so a course-author recording can show the S3-plus-Lambda layout without learners needing an AWS account.
+The producer–queue–consumer pattern — with idempotency on the consumer as the load-bearing property — comes down to code here in the ScikitDocs starter. The runnable surface is a watcher on `data/docs_inbox/` that ingests pre-chunked scikit-learn doc sections one JSON at a time, plus a blue/green migration that re-ingests the whole corpus into an inactive collection, evaluates it against the golden set, and atomically swaps the public alias on pass. After that, an AWS sidebar describes the same shape in cloud production form — the S3-plus-Lambda layout — without you needing an AWS account.
 
 ## Part 1 — The watcher and the inbox
 
@@ -22,11 +22,11 @@ The alias mechanism lives in two short files. `src/ingestion/alias.py` defines t
 
 `src/ingestion/migrate.py::migrate_blue_green` is the four-step orchestrator. It reads the active color, picks the opposite (or blue, as the bootstrap default), drops and rebuilds the target color from the requested scikit-learn tag, runs `recall_at_k` against the first twelve rows of `data/golden_set.csv`, and on a pass — score at or above the threshold, defaulting to `0.70` — calls `swap_alias`. On a fail, the freshly-built color is dropped (unless `--keep-failed` is passed for forensics) and the alias stays where it was. The whole sequence reuses the helpers in `scripts/load_data.py` for parse, chunk, embed, and upsert so the embedding cache at `data/embedding_cache.jsonl` is shared with the alias-path `make load-data` flow — most chunks on a same-version re-ingest are cache hits and the rebuild lands in under twenty seconds on the Workspace.
 
-A practical aside on the eval gate. The threshold is the load-bearing knob — set it too high and routine corpus refreshes will fail the gate on benign embedding drift; set it too low and a genuine regression slips through and gets aliased into production. The default `0.70` matches the smoke gate and the same number the Module 11 RAGAS sweep uses as its retrieval-quality floor. A real production deployment would also compare the *delta* against the previous color rather than only an absolute floor, but for a teaching example one number keeps the property visible without obscuring it.
+A practical aside on the eval gate. The threshold is the load-bearing knob — set it too high and routine corpus refreshes will fail the gate on benign embedding drift; set it too low and a genuine regression slips through and gets aliased into production. The default `0.70` matches the smoke gate and the retrieval-quality floor the RAGAS sweep uses. A real production deployment would also compare the *delta* against the previous color rather than only an absolute floor, but for a teaching example one number keeps the property visible without obscuring it.
 
-## Part 3 — AWS production form (course-author sidebar)
+## Part 3 — AWS production form (sidebar)
 
-This section describes the same pattern in cloud production form. You do not run this. The runnable learner path is the watchdog plus blue/green flow above. This sidebar exists so the course-author recording can show the S3-plus-Lambda shape on a real AWS console, and so the curious learner has a concrete starting point if they go set it up later.
+This section describes the same pattern in cloud production form. You do not run this. The runnable path is the watchdog plus blue/green flow above. This sidebar shows the S3-plus-Lambda shape so the curious reader has a concrete starting point if they go set it up later.
 
 The producer is an S3 bucket. AWS S3 Event Notifications support an `s3:ObjectCreated:Put` event filtered by suffix; configuring the filter to `*.json` means only section-JSON uploads trigger the downstream consumer and a stray PDF in the same bucket does not. S3 delivers events at-least-once, which is the load-bearing assumption that drives the same idempotent-receiver design — Hohpe and Woolf again, just at a different layer of the stack.
 

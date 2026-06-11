@@ -1,73 +1,24 @@
 # ScikitDocs starter
 
-Unified alt-workload starter for the 11 implementation modules of
-Udacity nd907 Course 2 (LLM Ops). ScikitDocs is a Q&A assistant for the
-[scikit-learn](https://scikit-learn.org) library — learners build it
-incrementally across Module 03 through Module 26 by filling in stubbed `src/` files,
-then prove their LLM Ops skills on the unrelated capstone (ThirdShotHub
-pickleball FAQ) at `project/`.
+ScikitDocs is a Q&A assistant for the
+[scikit-learn](https://scikit-learn.org) library. You build it
+incrementally across the implementation modules by filling in stubbed
+`src/` files — each module implements the piece it teaches against this
+shared codebase. It gives you a permanent, well-known, freely-available
+documentation corpus to practice LLM Ops skills against.
 
-## Why ScikitDocs
+## Layout
 
-The capstone is a *project* — it must remain a clean slate for learners.
-Walking through it module-by-module during instruction would make the
-capstone feel like a re-walk rather than an application of skills.
-ScikitDocs gives instruction a permanent, well-known, freely-available
-documentation corpus to teach against. The capstone stays an exercise
-in *applying* what was taught.
+`src/` is a type-stubbed skeleton. Each module's exercise fills in the
+file it teaches, leaving the rest of the contract intact.
 
-## Architecture — Option C′ (stubbed shared `src/`)
+`exercises/` holds each module's hands-on work in its own subdirectory.
+Exercises read from `src/` but never write to it.
 
-`src/` is a type-stubbed skeleton at scaffold time. Each implementation
-module fills in the file it teaches:
-
-- **Module 03 (Prompt Versioning)** → fills `src/generator.py`
-- **Module 05 (Vector DB)** → fills `src/store.py`, `src/embedder.py`, `src/chunker.py`
-- **Module 07 (RAG Pipeline)** → fills `src/pipeline.py`
-- **Module 09 (Phoenix Tracing)** → instruments `src/pipeline.py` + `src/gateway/`
-- **Module 11 (RAGAS Evaluation)** → builds `scripts/run_eval.py`
-- **Module 13 (Cost Monitoring)** → adds `src/pricing.py` + cost tracking
-- **Module 15 (Semantic Cache)** → adds `src/cache/`
-- **Module 18 (Gateway)** → adds `src/gateway/` with FastAPI app + `X-Client-Id` header
-- **Module 20 (Guardrails)** → adds `src/guardrails/`
-- **Module 22 (A/B Testing)** → adds sticky-by-user assignment via `client_id`
-- **Module 24 (RAGOps)** → adds blue/green index swap
-- **Module 26 (Latency)** → adds a streaming variant of `/query`
-
-`exercises/` is flat per module — each module's hands-on work lives in
-its own `exercises/m{NN}_<slug>/` subdirectory. Exercises READ from
-`src/` but never WRITE to it, which preserves commit-and-/clear
-discipline between modules.
-
-`src/constants.py` is the **authoritative source** for 21 cross-module
-invariants (port, models, top-k, thresholds, route paths, header
-casing). Read [`CONSTANTS.md`](CONSTANTS.md) for the rationale.
-[`INTERFACES.md`](INTERFACES.md) freezes the function signatures.
-
-## Mapping to the capstone
-
-| ScikitDocs path | Capstone counterpart (`project/`) | Purpose |
-|---|---|---|
-| `src/store.py` | `project/src/vectordb/store.py` | Chroma client + collection management |
-| `src/embedder.py` | `project/src/vectordb/embedder.py` | OpenAI embeddings wrapper |
-| `src/chunker.py` | `project/src/vectordb/chunker.py` | Document chunking |
-| `src/generator.py` | `project/src/rag/generator.py` | OpenAI chat + Jinja2 prompt rendering |
-| `src/pipeline.py` | `project/src/rag/pipeline.py` | End-to-end RAG composition |
-| `src/models.py` | `project/src/models.py` | `Source`, `TokenUsage`, `QueryResponse` |
-| `src/config.py` | `project/src/config.py` | Settings via pydantic-settings + `.env` |
-| `src/pricing.py` | `project/src/pricing.py` | Per-model cost table |
-| `src/gateway/` | `project/src/gateway/` | FastAPI app + routes |
-| `src/guardrails/` | `project/src/guardrails/` | Input/output safety |
-| `src/cache/` | `project/src/cache/` | Semantic answer cache |
-| `prompts/docbot_system.j2` | `project/prompts/rag_system.j2` | Domain-specific system prompt |
-| `scripts/load_data.py` | `project/scripts/load_data.py` | Corpus ingestion |
-| `scripts/run_eval.py` | `project/src/evaluation/run_eval.py` | RAGAS evaluation |
-| `data/golden_set.csv` | `project/data/golden_set.csv` | RAGAS golden Q&A |
-| `Makefile` | `project/Makefile` | `setup`, `serve`, `load-data`, `eval`, `test`, `verify` |
-
-The shape is intentionally lighter than the capstone — fewer packages,
-simpler routing — so the focus stays on the LLM Ops concept of each
-module rather than incidental complexity.
+`src/constants.py` is the authoritative source for the shared constants
+(ports, models, top-k, thresholds, route paths). Read
+[`CONSTANTS.md`](CONSTANTS.md) for the values and
+[`INTERFACES.md`](INTERFACES.md) for the frozen function signatures.
 
 ## Setup
 
@@ -77,10 +28,9 @@ cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key)
 make test                     # smoke test passes immediately at scaffold time
 ```
 
-Each implementation module's exercise extends the starter incrementally.
-Run `make serve` after Module 18 (gateway) lands. Run `make eval`
-after Module 11 (evaluation) lands. See each module's `code-refs.md`
-for the prerequisite REQs.
+Each module's exercise extends the starter incrementally. Other Makefile
+targets (`make serve`, `make eval`) become available once you implement
+the pieces they depend on.
 
 ### Populating the corpus (`make load-data`)
 
@@ -107,9 +57,3 @@ Target wall-clock on the Udacity Workspace (4 GB RAM / 2 vCPU):
   from `embedding_cache.jsonl`, Chroma idempotently upserts.
 
 Cost per cold build is ~$0.08–0.15 against `text-embedding-3-small`.
-
-## Provenance
-
-- Plan: [`docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md`](../../docs/plans/2026-05-17-feat-rewrite-impl-modules-scikitdocs-altworkload-plan.md)
-- Scaffold REQ: the initial scaffolding plan
-- Capstone constraint: zero edits to `project/` from any Wave 4 module. Verified at scaffolding.

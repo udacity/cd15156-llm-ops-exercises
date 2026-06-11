@@ -1,6 +1,6 @@
 > A walkthrough of the codebase you'll work with. See INSTRUCTIONS.md for the exercise tasks.
 
-# Module 05 — Demo: Build the ScikitDocs Vector-DB Layer From Three Stubs
+# Demo: Build the ScikitDocs Vector-DB Layer From Three Stubs
 
 The concept module argued that an embedding store is three things stacked: a chunker, an embedder, and an indexed key/value backend. This demo builds those three pieces in the ScikitDocs starter from frozen stubs — `src/chunker.py`, `src/embedder.py`, `src/store.py` — runs them end to end against the scikit-learn 1.5.2 docs corpus, and shows the one piece of Chroma configuration (`hnsw:space=cosine`) that quietly determines whether your similarity ranking is meaningful at all.
 
@@ -18,11 +18,11 @@ Sanity check from the starter root:
 uv run python -c "from src import store; print(store.get_collection().count())"
 ```
 
-You want a number around 750 — that is the chunk count after `make load-data` and `make seed-difficulty` have both run. Zero means the corpus is empty (run `make load-data`); an import error means `src/store.py` is still a stub (continue with Part 3 to fill it in).
+You want a number around 750 — that is the chunk count after `make load-data` and `make seed-difficulty` have both run. Zero means the corpus is empty (run `make load-data`); an import error means `src/store.py` is still a stub (Part 3 fills it in).
 
 ## Part 1 — Build `chunker.py` from the stub
 
-Open `src/chunker.py`. Before this REQ landed it was a stub — one function, `chunk_doc`, raising `NotImplementedError`, with its signature frozen by `INTERFACES.md`. Now it is filled in, and every chunk that enters the vector store passes through it. Walk through the file from top to bottom.
+Open `src/chunker.py`. It started as a stub — one function, `chunk_doc`, raising `NotImplementedError`, with its signature frozen by `INTERFACES.md`. Filled in, it is the piece every chunk that enters the vector store passes through. Walk through the file from top to bottom.
 
 The strategy is section-header chunking. The input is one dict per top-level section, already yielded by `src/corpus.py` — that file is the corpus parser's work and we leave it alone. Each input dict has `text` (the section body, stripped of RST markup), `doc_id` (a stable id like `modules.cross_validation.grid-search`), and a `metadata` block with `source_path`, `section_title`, `section_path`, `url`, `has_code`, `code_languages`, `xrefs`, and `scikit_learn_sha`. The chunker decides whether that section is one chunk or several.
 
@@ -38,7 +38,7 @@ pieces = _split_long_text(text, _CHUNK_MAX_TOKENS, constants.CHUNK_OVERLAP_TOKEN
 
 Sections under 50 tokens are dropped — they are noise for retrieval (one-line "See also" stubs, residual headings). Sections at or under 512 tokens pass through as a single chunk with the original `doc_id`. Only sections above 512 tokens go through `_split_long_text`. That function walks paragraphs and packs them into 512-token windows with 75-token overlap; if a single paragraph is already over the ceiling it is emitted as-is rather than mid-paragraph-split, because mid-paragraph splits hurt embedding semantics more than slightly oversized chunks hurt recall.
 
-Three details worth naming. First, `has_code`, `code_languages`, and `xrefs` propagate at the section level — every chunk from a section inherits the parent's flags, even if a particular split piece does not contain the code block itself. Module 11 will use `has_code` for code-aware retrieval analysis, and the section is the right granularity for that flag. Second, `chunk_id` differs from `doc_id` for split sections: the first piece gets `<doc_id>.p0`, the second `<doc_id>.p1`, and so on. That naming is load-bearing — `src/store.py` uses `chunk_id` as the Chroma primary key, so the postfix is how re-runs stay idempotent without colliding multi-piece sections. Third, `corpus.token_count` is the project-wide encoder (`cl100k_base`, the encoding for both `text-embedding-3-small` and `gpt-4o`), so token counts here match what OpenAI bills downstream.
+Three details worth naming. First, `has_code`, `code_languages`, and `xrefs` propagate at the section level — every chunk from a section inherits the parent's flags, even if a particular split piece does not contain the code block itself. Code-aware retrieval analysis downstream relies on `has_code`, and the section is the right granularity for that flag. Second, `chunk_id` differs from `doc_id` for split sections: the first piece gets `<doc_id>.p0`, the second `<doc_id>.p1`, and so on. That naming is load-bearing — `src/store.py` uses `chunk_id` as the Chroma primary key, so the postfix is how re-runs stay idempotent without colliding multi-piece sections. Third, `corpus.token_count` is the project-wide encoder (`cl100k_base`, the encoding for both `text-embedding-3-small` and `gpt-4o`), so token counts here match what OpenAI bills downstream.
 
 Try one section now:
 
@@ -76,7 +76,7 @@ def embed(text: str | list[str]) -> list[float] | list[list[float]]:
     return vectors
 ```
 
-Single string in, single vector out. List of strings in, one OpenAI request per 256-input slice, vectors concatenated in input order. `_embed_batch` is the tight loop: one call to `client.embeddings.create(input=texts, model=settings.embedding_model)`, returning `[item.embedding for item in response.data]`. `embed_query` is a thin alias — same call path, always a single input — kept as its own function so query-time call sites read naturally and so the RAG pipeline (Module 07) can swap in a query-side cache later (Module 15) without touching the corpus-side path.
+Single string in, single vector out. List of strings in, one OpenAI request per 256-input slice, vectors concatenated in input order. `_embed_batch` is the tight loop: one call to `client.embeddings.create(input=texts, model=settings.embedding_model)`, returning `[item.embedding for item in response.data]`. `embed_query` is a thin alias — same call path, always a single input — kept as its own function so query-time call sites read naturally and so a query-side cache can later be swapped in without touching the corpus-side path.
 
 Two configuration choices that route through `src/config.py` and `src/constants.py`. The model name comes from `settings.embedding_model`, which defaults to `constants.EMBEDDING_MODEL = "text-embedding-3-small"` (1536-dim, unit-normalized). The OpenAI client is built via `_client()`, lazily, with `api_key = settings.openai_api_key or os.environ.get("OPENAI_API_KEY")` and `base_url = settings.openai_base_url or None`. The empty-string-to-None fall-through is the Vocareum bridge: an empty `OPENAI_BASE_URL` means the SDK uses its built-in default; the Vocareum URL routes through the proxy. Same code, two deploy targets, zero conditional branches.
 
@@ -101,7 +101,7 @@ Chroma's default distance metric is L2 (squared Euclidean). OpenAI's `text-embed
 get_collection().upsert(documents=documents, embeddings=embeddings, metadatas=metadatas, ids=ids)
 ```
 
-Idempotent on `ids`. Re-running `make load-data` against the same corpus does not raise on duplicates; it overwrites in place. Module 24 (RAGOps) uses the same property to implement blue/green index swaps without dropping the live collection.
+Idempotent on `ids`. Re-running `make load-data` against the same corpus does not raise on duplicates; it overwrites in place. The same property is what lets a blue/green index swap rebuild a collection without dropping the live one.
 
 `query` translates Chroma's cosine *distance* (where smaller is better) into a similarity *score* (where larger is better) on the way out:
 
@@ -113,7 +113,7 @@ sources = [
 sources.sort(key=lambda s: s.similarity_score, reverse=True)
 ```
 
-Callers see `list[Source]` sorted highest first. The `Source` model is `src/models.py` — three fields, `doc_id`, `chunk_text`, `similarity_score` — and it mirrors the capstone's `Source` exactly so a learner who has read the capstone reads identical type shapes here.
+Callers see `list[Source]` sorted highest first. The `Source` model is `src/models.py` — three fields, `doc_id`, `chunk_text`, `similarity_score`.
 
 End-to-end check, all three pieces composed:
 
@@ -126,7 +126,7 @@ for s in store.query(qv, n_results=3):
 "
 ```
 
-Top-1 should be in `modules.grid_search.*` with a similarity of roughly 0.58. The score is not "58 percent confidence" — it is the cosine similarity of two unit vectors in a 1536-dimensional space, where 1.0 is identical and 0.0 is orthogonal — and chunks above ~0.5 are typically on-topic for short factual questions. The confidence-vs-similarity distinction matters in Module 13 when we start logging it.
+Top-1 should be in `modules.grid_search.*` with a similarity of roughly 0.58. The score is not "58 percent confidence" — it is the cosine similarity of two unit vectors in a 1536-dimensional space, where 1.0 is identical and 0.0 is orthogonal — and chunks above ~0.5 are typically on-topic for short factual questions. The confidence-vs-similarity distinction matters later once you start logging it.
 
 ## Wrap-up
 

@@ -1,4 +1,4 @@
-"""Sticky-by-user A/B routing + variant-aware OpenAI caller (Module 22).
+"""Sticky-by-user A/B routing + variant-aware OpenAI caller.
 
 Three primitives, intentionally small:
 
@@ -20,17 +20,15 @@ Two design choices worth naming:
   user who saw variant B in experiment 1 would always see variant B in
   experiment 2. Salting by experiment key (LaunchDarkly calls it
   "salt"; Statsig calls it "experiment ID") is the standard fix.
-- **Per-request fallback is honest, not lazy.** The capstone's
-  pickleball workload has no user-identifier surface, so it calls
-  ``pick_variant(client_id=None, ...)`` and gets per-request weighted
-  sampling. That's the right behavior for that workload — naming it
-  as a deliberate fallback rather than a missing feature is the
-  discipline Module 21 V3 names.
+- **Per-request fallback is honest, not lazy.** A workload with no
+  user-identifier surface can call ``pick_variant(client_id=None, ...)``
+  and get per-request weighted sampling. That's the right behavior for
+  that workload — naming it as a deliberate fallback rather than a
+  missing feature is the discipline.
 
-Cross-module contract: the ``X-Client-Id`` header plumbed at scaffolding
-through ``src.gateway.routes.query_endpoint`` arrives at
-``src.gateway.router.route_query`` as the ``client_id`` keyword. Module 22's
-caller composition reads that value and feeds it to ``pick_variant``.
+The ``X-Client-Id`` request header arrives at the gateway's
+``route_query`` as the ``client_id`` keyword; the caller composition
+reads that value and feeds it to ``pick_variant``.
 """
 
 import hashlib
@@ -73,8 +71,8 @@ def pick_variant(
 
     When ``client_id`` is ``None`` or empty the function falls back to
     weighted random sampling via :func:`random.choices`. That keeps the
-    contract safe to call on un-headered traffic (the Module 11 RAGAS eval
-    harness, the capstone's pickleball workload) without raising.
+    contract safe to call on un-headered traffic (an evaluation harness,
+    a workload with no user identifier) without raising.
 
     Args:
         client_id: Bucketing key. Typically the value of the

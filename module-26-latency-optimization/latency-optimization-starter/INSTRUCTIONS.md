@@ -22,7 +22,7 @@ If that returns a grounded answer about `rbf`, you are ready. Follow the demo wa
 
 ---
 
-> A walkthrough of this codebase is in DEMO.md.
+> The recorded demo walks through this codebase; the exercises below build on it.
 
 # Exercise — Profile a Trace, Stream a Token, Sweep `ef_search`
 
@@ -189,7 +189,7 @@ A second stretch: fire the same question twice through `/query` (the blocking en
 
 ## Exercise 3 — Sweep `ef_search` against the `scikit_docs` collection
 
-The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for the three tunable HNSW knobs — `M = 16`, `ef_construction = 100`, `ef_search = 100`. Only `hnsw:space` is set explicitly, because OpenAI embeddings are normalized and L2 silently corrupts ranking against them. The corpus is roughly three to four thousand scikit-learn doc chunks — more than enough for the recall-versus-latency curve to show measurable variance, unlike the capstone's thirty-product workload where the curve is flat below the noise floor.
+The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for the three tunable HNSW knobs — `M = 16`, `ef_construction = 100`, `ef_search = 100`. Only `hnsw:space` is set explicitly, because OpenAI embeddings are normalized and L2 silently corrupts ranking against them. The corpus is roughly three to four thousand scikit-learn doc chunks — more than enough for the recall-versus-latency curve to show measurable variance, unlike a few-dozen-row workload where the curve is flat below the noise floor.
 
 ### What to do
 
@@ -320,10 +320,10 @@ A second paragraph: name which knob you would tune first on a hypothetical ten-m
 - **Phoenix not running when you expect spans.** If you set `TRACING_BACKEND=none` in `.env` or if Phoenix failed to launch (check `make serve` startup logs for the tracing-init line), the `/query` response will still carry `trace_id=""` and the UI at port 6006 will be empty. `make show-traces` will print "no traces found." Restart with the default backend and the spans return.
 - **Reading the Phoenix UI without remembering it is in-process.** The Phoenix store lives in the FastAPI worker. Restarting `make serve` clears it. If you ran a query yesterday and expect to see it today, you will not — the trace store is not persisted across restarts in the embedded configuration. The rubric §7 evidence path expects you to capture the trace export from `make show-traces` or screenshot the UI within the same session as the queries that produced the spans.
 - **Measuring TTFT with curl's default buffering.** Without `-N`, curl buffers the entire response body before printing, which means the wall-clock time you see is total, not TTFT. The Python client in Exercise 2 uses `urllib.request.urlopen` which is line-buffered by default; the per-iteration `for line in resp` loop is what makes the TTFT measurement meaningful. If you adapt this to a different HTTP library, confirm that it does not buffer the response body before yielding the first chunk.
-- **Expecting `/query/stream` to hit the cache on a paraphrase.** The streaming route bypasses the cache by design — see the implementation note in Demo Part 2. If your streaming TTFT numbers look implausibly identical run-over-run on the same question, that is the expected behavior. Cache wins are measured on `/query`, not on `/query/stream`.
+- **Expecting `/query/stream` to hit the cache on a paraphrase.** The streaming route bypasses the cache by design — the recorded demo covers why. If your streaming TTFT numbers look implausibly identical run-over-run on the same question, that is the expected behavior. Cache wins are measured on `/query`, not on `/query/stream`.
 
 What you have at the end. A Phoenix-rendered latency breakdown for one query, cold versus cached. A TTFT-versus-total comparison between the streaming and blocking endpoints with hedged magnitudes. An `ef_search` sweep that demonstrates in your own numbers how the curve behaves at a few thousand chunks and where it would start to matter at production scale. Three artifacts that together cover the profile-streaming-tune triangle the previous concept module framed, on the exact code paths the starter ships.
 
-Two forward references close the loop. The vLLM concept module picks up the self-hosted inference path — when the API-hosted model is the bottleneck and the volume justifies the operational overhead, batching and KV-cache tuning open up the inference-side levers that hosted endpoints do not expose. The course-review module is the bridging unit that ties together the threads from every prior module; the trace-reading discipline and the cache-as-primary-savings-lever framing from this module are two of the threads it pulls forward into the capstone wrap-up.
+One more lever to name. The self-hosted inference path is the other latency option — when the API-hosted model is the bottleneck and the volume justifies the operational overhead, batching and KV-cache tuning open up inference-side levers that hosted endpoints do not expose. Most teams do not reach that point; knowing it exists is the takeaway.
 
 One closing observation about the discipline this exercise is building. The hardest part of latency engineering is not the measurement — Phoenix is in-process, the spans are auto-instrumented, the curl commands are five lines each. The hard part is resisting the urge to tune the thing you can tune instead of the thing that matters. The HNSW knobs in `src/store.py` are tunable; the LLM call's TTFT mostly is not (unless you swap models or self-host). The exercises above are designed so that you measure both surfaces and arrive at the right ratio of effort — cache and model choice first, vector search later, embedding model last. That ratio is the operational habit the previous concept module named and this module demonstrated on the starter. Carry it forward.

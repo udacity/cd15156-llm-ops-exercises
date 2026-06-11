@@ -1,23 +1,23 @@
-"""Tier dispatch + cache-traced composition for the gateway (Module 18).
+"""Tier dispatch + cache-traced composition for the gateway.
 
 The route handler in :mod:`src.gateway.routes` calls :func:`route_query`,
-which is where every Wave 1-3 capability the starter shipped converges:
+which is where every capability the starter provides converges:
 
-1. **Classify** the question (Module 18 — :func:`src.gateway.classifier.classify`).
+1. **Classify** the question (:func:`src.gateway.classifier.classify`).
 2. **Select** the model from the tier (:func:`select_model`, this file).
-3. **Look up** the cache (Module 15 — :func:`src.cache.semantic.lookup`).
-4. **On miss**, run the traced pipeline (Module 09 — :func:`src.tracing.traced_pipeline`)
+3. **Look up** the cache (:func:`src.cache.semantic.lookup`).
+4. **On miss**, run the traced pipeline (:func:`src.tracing.traced_pipeline`)
    so Phoenix gets one span per stage and the OpenAI auto-instrumentor
    gets to attach token/cost attributes to the ``generate`` span.
 5. **Store** the response in the cache so future paraphrases hit.
-6. **Log** the cost row (Module 13 — :func:`src.cost.tracker.log_request`)
+6. **Log** the cost row (:func:`src.cost.tracker.log_request`)
    — only on miss, because cache hits did not make an LLM call.
 
-The ``client_id`` keyword is the Module 22 sticky-by-user
-contract. It threads from the ``X-Client-Id`` request header through
-the route handler into this function; Module 18 itself does nothing with the
-value beyond passing it through, but the contract test in
-``tests/test_smoke.py`` pins the plumbing so the cross-module contract can land cleanly.
+The ``client_id`` keyword is the sticky-by-user contract. It threads
+from the ``X-Client-Id`` request header through the route handler into
+this function; this function does nothing with the value beyond passing
+it through, but the contract test in ``tests/test_smoke.py`` pins the
+plumbing so a sticky-by-user consumer can rely on it.
 """
 
 from src.cache.semantic import lookup, store
@@ -53,8 +53,8 @@ def route_query(
             classifier decides the tier and :func:`select_model` picks
             the model from ``settings``.
         client_id: Optional ``X-Client-Id`` value from the request
-            header. Module 18 forwards it as request state; Module 22
-            will read it for sticky-by-user variant assignment.
+            header. Forwarded as request state; a sticky-by-user
+            variant assignment reads it for arm selection.
 
     Returns:
         A :class:`QueryResponse` populated by the cache (on hit) or by
@@ -64,7 +64,7 @@ def route_query(
     # The classifier runs first so we always have a ``query_type`` to
     # log even when the cache absorbs the question. Cheap call (one
     # gpt-4o-mini round-trip with a tiny prompt) and the classification
-    # is the rubric §6 evidence handle for tier dispatch.
+    # is the evidence handle for tier dispatch.
     query_type = classify(question)
     chosen_model = model or select_model(query_type)
 

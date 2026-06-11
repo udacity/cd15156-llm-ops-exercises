@@ -60,9 +60,8 @@ def load_golden_set(path: str | Path) -> list[dict]:
 
     Returns a list of ``{question, ground_truth, query_type, version_sensitive}``
     dicts. The starter's CSV uses ``ground_truth_answer`` as the column
-    name (rather than the capstone's ``ground_truth``); this function
-    rewrites it to ``ground_truth`` so callers downstream see the
-    RAGAS-canonical key. ``expected_doc_ids`` and ``min_hits`` are
+    name; this function rewrites it to ``ground_truth`` so callers
+    downstream see the RAGAS-canonical key. ``expected_doc_ids`` and ``min_hits`` are
     consumed only by ``scripts/smoke_gate.py`` and are dropped here —
     RAGAS measures retrieval quality against whatever the pipeline
     retrieves at eval time, not against a fixed candidate list.
@@ -139,7 +138,7 @@ def _build_llm() -> LangchainLLMWrapper:
     Temperature is pinned at ``constants.JUDGE_TEMPERATURE`` (0.0). The
     judge is a comparator, not a generator — non-zero temperature is a
     documented source of run-to-run drift in LLM-as-judge evals (see
-    the Module 10 concept walk and the MT-Bench paper).
+    the MT-Bench paper).
     """
     return LangchainLLMWrapper(
         LangchainChatOpenAI(

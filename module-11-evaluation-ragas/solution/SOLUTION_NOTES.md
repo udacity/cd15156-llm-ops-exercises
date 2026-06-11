@@ -1,12 +1,12 @@
 # Module 11 Solution Notes
 
-This `solution/` is the ScikitDocs starter with **Exercise 4 (CI threshold gate)** already applied to `scripts/run_eval.py` — the `--faithfulness-min` and `--context-recall-min` flags plus the `sys.exit(2)` gate body are in place. Run `uv run python scripts/run_eval.py --help` to see the new flags.
+This reference build is the ScikitDocs starter with **Exercise 4 (CI threshold gate)** already applied to `scripts/run_eval.py` — the `--faithfulness-min` and `--context-recall-min` flags plus the `sys.exit(2)` gate body are in place. Run `uv run python scripts/run_eval.py --help` to see the new flags.
 
 Exercises 1, 2, and 3 produce **prose/data artifacts** rather than code that lives in the repo. The expected outputs are described below; learners should produce their own and compare.
 
 ## Exercise 1 — Five new golden-set rows
 
-The shipped `data/golden_set.csv` is unchanged in this solution because the authored rows are per-learner — what matters is the schema and the difficulty spread. A reference five-row extension:
+The shipped `data/golden_set.csv` is unchanged here because the authored rows are per-learner — what matters is the schema and the difficulty spread. A reference five-row extension:
 
 | difficulty | question (example) | version_sensitive |
 |---|---|---|
@@ -34,7 +34,7 @@ Recommendation: `top_k=5` — clears recall ≥ 0.70 at acceptable precision (0.
 
 ## Exercise 3 — Two-question diagnostic writeup
 
-Per-learner — picks come from the learner's own `/tmp/learner-eval.json`. Expected structure: two questions × (question text, five metric scores, surface-naming paragraph, concrete-fix paragraph), then one closing paragraph forward-referencing Module 15/Module 20/Module 23/Module 24. The "concrete fix" bar is "would a teammate know what file to edit and what change to make" — not "improve the prompt" but "add line X to `prompts/docbot_system.j2`."
+Per-learner — picks come from the learner's own `/tmp/learner-eval.json`. Expected structure: two questions × (question text, five metric scores, surface-naming paragraph, concrete-fix paragraph), then one closing paragraph naming the downstream fixes (semantic caching, output guardrails, RAGOps regression gating and corpus-drift detection). The "concrete fix" bar is "would a teammate know what file to edit and what change to make" — not "improve the prompt" but "add line X to `prompts/docbot_system.j2`."
 
 ## Exercise 4 — CI threshold gate
 

@@ -2,20 +2,20 @@
 
 # Module 20 — Demo: Read the Four Guardrail Slots, Fire Three Blocks, Trace the Output Side
 
-Module 19 named the threat surfaces — user input, retrieved content, downstream outputs — and walked the OWASP LLM Top 10 vocabulary. This demo wires four of those slots into running code in the ScikitDocs starter. You will read the input stack top to bottom, fire three live blocks against the gateway on `localhost:8080`, then trace the output side where the LLM-as-judge scores hallucinations and the LLM10 token-bucket caps unbounded consumption. The Module 19 framing carries forward: guardrails reduce risk, they do not eliminate it. The demo's job is to make the layered defense legible at the file level and to anchor each slot on a real 2025 incident.
+The threat surfaces — user input, retrieved content, downstream outputs — map onto the OWASP LLM Top 10 vocabulary. This demo wires four of those slots into running code in the ScikitDocs starter. You will read the input stack top to bottom, fire three live blocks against the gateway on `localhost:8080`, then trace the output side where the LLM-as-judge scores hallucinations and the LLM10 token-bucket caps unbounded consumption. The framing to carry forward: guardrails reduce risk, they do not eliminate it. The demo's job is to make the layered defense legible at the file level and to anchor each slot on a real 2025 incident.
 
 ## Setup
 
 With `make load-data` reporting the Chroma corpus is populated and `make smoke-gate` green, fire `make serve` in a separate terminal. The first call into the input stack triggers a DeBERTa load — roughly 250 MB on disk for the small variant, five to ten seconds of CPU time on the Workspace T4 box. Subsequent calls reuse the in-process model and run in tens of milliseconds. The Anonymize scanner's Presidio backend likewise loads `dslim/bert-base-NER` on first use.
 
-Your `.env` carries the two values Module 18 named:
+Your `.env` carries the two values the gateway reads:
 
 ```
 OPENAI_API_KEY=voc-...
 OPENAI_BASE_URL=https://openai.vocareum.com/v1
 ```
 
-The input guards on slots 1 (prompt injection), 2 (PII), and 3 (system-prompt leak) all run in-process — DeBERTa, Presidio, and the regex layer need no API key. The output side is different. The LLM-as-judge hallucination check is a gpt-4o-mini call constructed at `src/guardrails/llm_judge/output_guards.py:44-47` with the same `OpenAI(api_key=..., base_url=settings.openai_base_url or None)` pattern Module 18 covered. Block your network and the input guards still run; block your network and the judge fails open with a WARN log. That fail-open behavior is deliberate — a network blip should not flip a grounded answer to "blocked."
+The input guards on slots 1 (prompt injection), 2 (PII), and 3 (system-prompt leak) all run in-process — DeBERTa, Presidio, and the regex layer need no API key. The output side is different. The LLM-as-judge hallucination check is a gpt-4o-mini call constructed at `src/guardrails/llm_judge/output_guards.py:44-47` with the same `OpenAI(api_key=..., base_url=settings.openai_base_url or None)` pattern the gateway uses. Block your network and the input guards still run; block your network and the judge fails open with a WARN log. That fail-open behavior is deliberate — a network blip should not flip a grounded answer to "blocked."
 
 If `make serve` errors on a spaCy `en_core_web_sm` not-found message, the URL-pinned wheel in `pyproject.toml` is meant to prevent this, but Workspace image rebuilds have shipped without the model on past cohorts. Fix: `uv run python -m spacy download en_core_web_sm`, then restart `make serve`.
 
@@ -62,7 +62,7 @@ curl -s -X POST http://localhost:8080/query \
   | python -m json.tool
 ```
 
-Same shape, `blocked_by: "system_prompt_leak: matched pattern 'first_sentence_context'"`. The route handler runs slot 1 then slot 3 in sequence (see `src/gateway/routes.py:90-100`), so a hijack-then-extract payload is caught by whichever pattern fires first. The anchor is CVE-2025-54135 — the Cursor incident the slide deck reads in detail.
+Same shape, `blocked_by: "system_prompt_leak: matched pattern 'first_sentence_context'"`. The route handler runs slot 1 then slot 3 in sequence (see `src/gateway/routes.py:90-100`), so a hijack-then-extract payload is caught by whichever pattern fires first. The anchor is CVE-2025-54135 — the Cursor incident.
 
 Slot 2 — fire a PII-bearing payload to see the redaction path (not a block):
 
@@ -88,7 +88,7 @@ curl -s -X POST http://localhost:8080/query \
 
 `NormalizeAll` does not exist in scikit-learn. The retriever returns no relevant chunks, the generator either refuses or invents, and the judge flips the verdict to NOT_SUPPORTED. The response is `SAFE_FILTERED_MESSAGE` with `blocked_by: "hallucination: <reason>"`. The same query lands an extra row in `data/cost_log.jsonl` with `query_type="hallucination_check"` — `tail -1 data/cost_log.jsonl` confirms the judge call.
 
-Slot 4 — read `src/guardrails/rate_limit.py`. Two mechanisms, both anchored on CVE-2025-53773 (the August 2025 GitHub Copilot RCE / cost-amplification incident). The first is `MAX_OUTPUT_TOKENS = 1024` at line 34 — a per-request cap the gateway passes to `generate(..., max_tokens=1024)` so any single answer is bounded. The second is `check_rate_limit(client_id)` at line 73 — a token-bucket request limiter keyed by the `X-Client-Id` header (the contract Module 18 wired up). The defaults are `RATE_LIMIT_REQUESTS = 20` requests per `RATE_LIMIT_WINDOW_SECONDS = 60` seconds. The bucket lives in module-level state; production teams swap for Redis or a managed limiter. Fire a 21-call burst against `:8080` from a script to see the 21st call block with `blocked_by: "unbounded_consumption: rate limit exceeded"`. Exercise 3 walks through the cost-amplification measurement and the tuning rationale.
+Slot 4 — read `src/guardrails/rate_limit.py`. Two mechanisms, both anchored on CVE-2025-53773 (the August 2025 GitHub Copilot RCE / cost-amplification incident). The first is `MAX_OUTPUT_TOKENS = 1024` at line 34 — a per-request cap the gateway passes to `generate(..., max_tokens=1024)` so any single answer is bounded. The second is `check_rate_limit(client_id)` at line 73 — a token-bucket request limiter keyed by the `X-Client-Id` header (the gateway's client-id contract). The defaults are `RATE_LIMIT_REQUESTS = 20` requests per `RATE_LIMIT_WINDOW_SECONDS = 60` seconds. The bucket lives in module-level state; production teams swap for Redis or a managed limiter. Fire a 21-call burst against `:8080` from a script to see the 21st call block with `blocked_by: "unbounded_consumption: rate limit exceeded"`. Exercise 3 walks through the cost-amplification measurement and the tuning rationale.
 
 ---
 

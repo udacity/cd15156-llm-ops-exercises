@@ -1,11 +1,11 @@
-"""HTTP route handlers for the ScikitDocs gateway (Module 18 + Module 20).
+"""HTTP route handlers for the ScikitDocs gateway.
 
 ``POST /query`` accepts a Pydantic-validated body plus the optional
 ``X-Client-Id`` request header (per ``constants.CLIENT_ID_HEADER``).
 ``GET /health`` is a static liveness probe so the runtime check has a
 zero-cost endpoint to ping.
 
-Module 20 inserted the guardrail stack between the route handler
+The guardrail stack is inserted between the route handler
 and :func:`src.gateway.router.route_query`. The order is deliberate
 (documented in the handler body): rate-limit first (LLM10 — cheapest
 check, fails before any work), prompt-injection regex/DeBERTa second,
@@ -15,8 +15,8 @@ guard (LLM-judge hallucination check) runs after dispatch.
 
 Why ``X-Client-Id`` is optional: the gateway must accept the header
 when the gateway sends it for sticky-by-user bucketing, and it must also
-serve clean traffic from callers that do not provide one (the Module 11
-RAGAS eval harness, for example, fires un-headered requests). Pydantic
+serve clean traffic from callers that do not provide one (the RAGAS
+eval harness, for example, fires un-headered requests). Pydantic
 + FastAPI's ``Header(default=None)`` gives both behaviors in one line.
 """
 
@@ -46,8 +46,8 @@ from src.models import QueryResponse
 class QueryRequest(BaseModel):
     """Validated request body for ``POST /query``.
 
-    The ``question`` cap mirrors the capstone's 4,000-char ceiling —
-    enough room for paragraph-length queries, well under the
+    The ``question`` cap is 4,000 chars — enough room for
+    paragraph-length queries, well under the
     context-window budget for either tier. ``top_k`` is bounded to keep
     Chroma latency predictable; widening it past 20 in practice trades
     off retrieval signal-to-noise for chunk-budget pressure on the

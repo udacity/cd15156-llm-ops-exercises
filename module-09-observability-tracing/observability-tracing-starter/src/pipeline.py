@@ -1,21 +1,20 @@
-"""End-to-end RAG pipeline: retrieve → prompt → generate → respond (Module 07).
+"""End-to-end RAG pipeline: retrieve → prompt → generate → respond.
 
-Composes the three single-purpose modules scaffolded:
+Composes three provided functions:
 
 - ``embedder.embed_query`` — turn the question into a vector.
 - ``store.query`` — top-k cosine search against the ``scikit_docs`` collection.
 - ``generator.generate`` — render the system prompt and call OpenAI.
 
-The capstone factored these into ``project/src/rag/{retriever,generator,pipeline}.py``;
-the ScikitDocs starter inlines the embed-plus-search half (no separate
-``retriever.py``) so each frozen ``src/*.py`` file maps 1:1 to one module's
-walkthrough. The composition is otherwise identical — same five RAG stages,
-same confidence-from-similarity averaging, same ``QueryResponse`` shape.
+Each stage is its own function so it stays a clean tracing seam, prompt-edit
+surface, and cache hook. The composition is five RAG stages — embed, search,
+render, generate, and a confidence-from-similarity average — returned as a
+``QueryResponse``.
 
-Phoenix tracing (Module 09) wraps this function from the outside with a
-top-level span and child spans for each composed call. Don't import
-opentelemetry here — Module 09 patches the function reference rather than asking
-Module 07 to know about tracing.
+Tracing wraps this function from the outside with a top-level span and child
+spans for each composed call. Don't import opentelemetry here — the tracing
+layer patches the function reference rather than asking the pipeline to know
+about tracing.
 """
 
 from src.config import settings
@@ -32,7 +31,7 @@ def run_pipeline(
 
     Args:
         question: User's question (raw string; sanitization is the gateway's
-            job at the scaffolded modules, not the pipeline's).
+            job, not the pipeline's).
         top_k:    Retrieval depth. Defaults to ``constants.DEFAULT_TOP_K``.
         model:    OpenAI model. Defaults to ``settings.model_complex`` /
                   ``constants.MODEL_COMPLEX``.
@@ -42,8 +41,8 @@ def run_pipeline(
         ``confidence`` (mean of retrieval similarity scores; ``0.0`` if no
         sources came back), ``model``, ``tokens``, and ``cost_usd``. The
         ``cached`` / ``trace_id`` / ``blocked_by`` fields are left at their
-        Pydantic defaults — the cache, tracing, and other scaffold defaults
-        (guardrails) populate them in their respective wrappers.
+        Pydantic defaults — the cache, tracing, and guardrail wrappers
+        populate them when present.
     """
     chosen_model = model or settings.model_complex
     query_embedding = embed_query(question)

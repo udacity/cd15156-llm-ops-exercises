@@ -1,8 +1,8 @@
 # Solution notes — Module 15 (Semantic Caching)
 
-The starter already ships the complete cache stack — `src/cache/semantic.py` (`lookup`, `store`, `clear`), `src/cache/wrapper.py` (`cached_route_query`), and `src/cache/__init__.py` (public API). **There are no new files for this module's solution to author.** All three exercises are analysis runs whose deliverables are writeup artifacts (output captures, interpretation paragraphs, and a monthly cost projection). This file documents the expected shape of each artifact.
+The starter already ships the complete cache stack — `src/cache/semantic.py` (`lookup`, `store`, `clear`), `src/cache/wrapper.py` (`cached_route_query`), and `src/cache/__init__.py` (public API). **There are no new files to author for this module.** All three exercises are analysis runs whose deliverables are writeup artifacts (output captures, interpretation paragraphs, and a monthly cost projection). These notes document the expected shape of each artifact.
 
-## Files this solution adds
+## Files added
 
 None. The cache primitives are pre-wired in the starter; the exercises measure their behavior.
 
@@ -108,4 +108,4 @@ Should print `OK cache`.
 
 ## KNOWN-LIMITATIONs
 
-None. Module 15's exercises are pure measurement against a pre-wired cache stack; no code in the starter needs to be modified to complete them. The single `src/cache/` module ships in both starter and solution unchanged.
+None. This module's exercises are pure measurement against a pre-wired cache stack; no code in the starter needs to be modified to complete them. The single `src/cache/` module ships unchanged.

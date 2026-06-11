@@ -1,6 +1,6 @@
 # Solution Notes — Module 03 Prompt Versioning
 
-This solution implements the three exercises from `INSTRUCTIONS.md`. Files
+These notes cover the three exercises from `INSTRUCTIONS.md`. Files
 added or modified relative to the starter:
 
 ## Exercise 1 — Template extension

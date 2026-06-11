@@ -23,7 +23,7 @@ If that returns a grounded answer about `rbf`, you are ready. Follow the demo wa
 
 ---
 
-> A walkthrough of this codebase is in DEMO.md.
+> The recorded demo walks through this codebase; the exercises below build on it.
 
 # USD per 1M tokens (OpenAI public pricing as of 2026-04).
 MODEL_PRICING: dict[str, tuple[float, float]] = {
@@ -39,11 +39,11 @@ def compute_cost(model: str, usage: TokenUsage) -> float:
     ) / 1_000_000
 ```
 
-Three things to notice. The rates are dated in the module docstring — `as of 2026-04` — so a future maintainer reading the file knows when to re-verify against the live OpenAI pricing page. Pricing pages move. The starter's table matches the capstone's exactly because they share the same `MODEL_COMPLEX` / `MODEL_SIMPLE` invariants in `src/constants.py:25-26`; production teams version-control this dict the same way they version-control any other config that drifts. Second, an unknown model raises `KeyError` rather than silently logging $0 — that is deliberate so a typo in `.env` fails loudly. Third, the function lives outside both `src.generator` (which captures the usage) and `src.cost.tracker` (which logs it) so neither has to import the other. That separation is what makes the cost stack composable across whichever path later modules layer on top — the synchronous `/query` route in the gateway module, the streaming variant in the latency module, the eval loop in the evaluation module.
+Three things to notice. The rates are dated in the docstring — `as of 2026-04` — so a future maintainer reading the file knows when to re-verify against the live OpenAI pricing page. Pricing pages move. The table keys off the same `MODEL_COMPLEX` / `MODEL_SIMPLE` invariants in `src/constants.py:25-26`; production teams version-control this dict the same way they version-control any other config that drifts. Second, an unknown model raises `KeyError` rather than silently logging $0 — that is deliberate so a typo in `.env` fails loudly. Third, the function lives outside both `src.generator` (which captures the usage) and `src.cost.tracker` (which logs it) so neither has to import the other. That separation is what makes the cost stack composable across whichever path layers on top — the synchronous `/query` route, the streaming variant, the eval loop.
 
-The asymmetry from the pricing concept module shows up immediately. Output tokens cost four times what input tokens cost on `gpt-4o` (ten dollars versus two-fifty per million) and four times what input costs on `gpt-4o-mini` (sixty cents versus fifteen). The dial you watch for cost regressions is output length — exactly the framing the concept module anchored. A verbose system prompt change adds linearly; a verbose response template adds four-times-linearly. Read the cost log with that ratio in mind.
+The asymmetry of token pricing shows up immediately. Output tokens cost four times what input tokens cost on `gpt-4o` (ten dollars versus two-fifty per million) and four times what input costs on `gpt-4o-mini` (sixty cents versus fifteen). The dial you watch for cost regressions is output length. A verbose system prompt change adds linearly; a verbose response template adds four-times-linearly. Read the cost log with that ratio in mind.
 
-`src/generator.py` is where the token counts come off the response and become a cost. The patch this module wired in is the import at the top — `from src.pricing import compute_cost` — and the final line of `generate()`:
+`src/generator.py` is where the token counts come off the response and become a cost. The piece that connects pricing in is the import at the top — `from src.pricing import compute_cost` — and the final line of `generate()`:
 
 ```python
 usage = TokenUsage(
@@ -54,13 +54,13 @@ cost_usd = compute_cost(model, usage)
 return answer, usage, cost_usd
 ```
 
-Before this module, that line returned `cost_usd = 0.0` with a comment promising this module would fix it. The promise is now kept. The returned tuple `(answer, usage, cost)` flows up into `run_pipeline` at `src/pipeline.py:51`, which threads `cost` into the `QueryResponse.cost_usd` field. Every caller of `run_pipeline` — the RAGAS eval loop, the gateway, the streaming endpoint — now reads a real dollar number instead of a placeholder zero.
+Before the pricing piece was connected, that line returned `cost_usd = 0.0`. Now it returns a real number. The returned tuple `(answer, usage, cost)` flows up into `run_pipeline` at `src/pipeline.py:51`, which threads `cost` into the `QueryResponse.cost_usd` field. Every caller of `run_pipeline` — the eval loop, a gateway, a streaming endpoint — now reads a real dollar number instead of a placeholder zero.
 
-`src/cost/tracker.py` is `log_request`. It appends one JSONL row per completed call with six fields: ISO timestamp, model name, `prompt_tokens`, `completion_tokens`, `cost_usd`, and `query_type` (`simple`, `complex`, or `hallucination_check`). The function opens the file in append mode and writes one line — line-level append is the standard pattern for concurrent-write safety on POSIX, and it sidesteps the file-locking question the concept module's "what could go wrong" list flagged. The schema is intentionally flat. No nesting, no optional sub-objects, one row per call. Flat rows are what makes the downstream rollup queries trivial — a one-liner over the file gives you per-model, per-day, or per-endpoint slices.
+`src/cost/tracker.py` is `log_request`. It appends one JSONL row per completed call with six fields: ISO timestamp, model name, `prompt_tokens`, `completion_tokens`, `cost_usd`, and `query_type` (`simple`, `complex`, or `hallucination_check`). The function opens the file in append mode and writes one line — line-level append is the standard pattern for concurrent-write safety on POSIX, and it sidesteps the file-locking question. The schema is intentionally flat. No nesting, no optional sub-objects, one row per call. Flat rows are what makes the downstream rollup queries trivial — a one-liner over the file gives you per-model, per-day, or per-endpoint slices.
 
 ## Walkthrough 2 — Fire a query and watch the log row land
 
-The gateway module mounts the router that calls `log_request` automatically on every `/query`. Until then, you call both functions by hand:
+A gateway can mount the router so `log_request` is called automatically on every `/query`. Doing it by hand, you call both functions yourself:
 
 ```bash
 uv run python -c "
@@ -97,7 +97,7 @@ You should see a single JSON object with the six-field shape:
 {"timestamp": "2026-05-18T...", "model": "gpt-4o", "prompt_tokens": 1438, "completion_tokens": 42, "cost_usd": 0.004015, "query_type": "simple"}
 ```
 
-That row is the foundation. The dashboard reads it through `load_log`, `summarize` rolls it up by model, the cost-vs-baseline math reads the same JSONL, and every alert in Exercise 3 traces back to this append. The gateway's `/query` route plumbs `log_request` into the request pipeline so this happens automatically on every call; for the demo you wired one row by hand to see the contract.
+That row is the foundation. The dashboard reads it through `load_log`, `summarize` rolls it up by model, the cost-vs-baseline math reads the same JSONL, and every alert in Exercise 3 traces back to this append. A gateway `/query` route can plumb `log_request` into the request pipeline so this happens automatically on every call; here you wired one row by hand to see the contract.
 
 ## Walkthrough 3 — Render the dashboard
 
@@ -121,9 +121,9 @@ print(render_html(summarize(load_log()))[:500])
 "
 ```
 
-Both options produce the same HTML — the standalone server is `render_html(summarize(load_log()))` wrapped in a FastAPI route. The `APIRouter` instance at `src/cost/dashboard.py:30` is the unit the gateway module will mount on the full gateway. When that lands, the `localhost:8080/cost-dashboard` URL keeps working; you just stop needing `make cost-dashboard` because the gateway's `serve` target serves both `/query` and `/cost-dashboard`.
+Both options produce the same HTML — the standalone server is `render_html(summarize(load_log()))` wrapped in a FastAPI route. The `APIRouter` instance at `src/cost/dashboard.py:30` is the unit a full gateway can mount. When it is mounted, the `localhost:8080/cost-dashboard` URL keeps working; you just stop needing `make cost-dashboard` because the gateway's `serve` target serves both `/query` and `/cost-dashboard`.
 
-One more detail worth surfacing. `summarize()` at `src/cost/tracker.py:84-100` is what the dashboard renders, and it is the same function Exercise 1 calls when it walks per-model totals against a seeded log. The dict it returns has three top-level keys — `total_requests`, `total_cost_usd`, `by_model` — and the `by_model` sub-dict carries per-model `requests`, `cost_usd`, and `avg_cost_usd`. That shape is the contract every downstream visualization keys off. A production team would add per-day, per-endpoint, and per-user rollups on top by extending `summarize` with more groupers; the renderer in `dashboard.py` becomes a small set of additional tables. The starter ships the per-model slice because that is the rubric-required diagnostic — which tier costs you the most — and the per-day and per-query-type slices fall out of one-liner aggregations against the same JSONL log, which Exercise 1 walks through.
+One more detail worth surfacing. `summarize()` at `src/cost/tracker.py:84-100` is what the dashboard renders, and it is the same function Exercise 1 calls when it walks per-model totals against a seeded log. The dict it returns has three top-level keys — `total_requests`, `total_cost_usd`, `by_model` — and the `by_model` sub-dict carries per-model `requests`, `cost_usd`, and `avg_cost_usd`. That shape is the contract every downstream visualization keys off. A production team would add per-day, per-endpoint, and per-user rollups on top by extending `summarize` with more groupers; the renderer in `dashboard.py` becomes a small set of additional tables. The starter ships the per-model slice because that is the diagnostic that matters most — which tier costs you the most — and the per-day and per-query-type slices fall out of one-liner aggregations against the same JSONL log, which Exercise 1 walks through.
 
 That is the demo loop. The exercises take it further. Exercise 1 seeds fifty synthetic rows so you can see per-day and per-query-type rollups against a populated log without paying for fifty real queries. Exercise 2 fires twenty real queries through `run_pipeline` and watches the log grow. Exercise 3 writes a rolling-baseline alert and a pre-call tiktoken budget gate — the operational surface that turns instrumentation into protection.
 
@@ -235,7 +235,7 @@ Three artifacts pasted into your writeup. The total + per-model breakdown lines 
 
 ## Exercise 2 — Instrument twenty real ScikitDocs queries and watch the log grow
 
-Exercise 1 used synthetic data. Exercise 2 fires real queries through `run_pipeline` and confirms the cost log captures them with the same shape the seed produces. This proves the instrumentation works end-to-end — usage object off the OpenAI response, `compute_cost` against the model rate table, one JSONL row appended per call — and produces the cost delta a real (small) load adds. The gateway module will eventually call `log_request` automatically on every `/query`; for this exercise you call both functions by hand so you can see the contract.
+Exercise 1 used synthetic data. Exercise 2 fires real queries through `run_pipeline` and confirms the cost log captures them with the same shape the seed produces. This proves the instrumentation works end-to-end — usage object off the OpenAI response, `compute_cost` against the model rate table, one JSONL row appended per call — and produces the cost delta a real (small) load adds. A gateway can call `log_request` automatically on every `/query`; for this exercise you call both functions by hand so you can see the contract.
 
 ### What to do
 
@@ -247,7 +247,7 @@ Exercise 1 used synthetic data. Exercise 2 fires real queries through `run_pipel
 
    Or accept that this run appends to the existing fifty rows. Both are valid — the writeup just needs to name which path you took.
 
-2. Write a small Python script that fires twenty queries with mixed shape. Use five scikit-learn questions from `data/golden_set.csv` covering different `query_type` buckets so the model routing (the gateway module will add classification; here you tag manually) has variety:
+2. Write a small Python script that fires twenty queries with mixed shape. Use five scikit-learn questions from `data/golden_set.csv` covering different `query_type` buckets so the model routing (here you tag manually) has variety:
 
    ```bash
    uv run python -c "
@@ -414,12 +414,12 @@ A few traps that catch most learners on this module:
 
 - **Tokenizer mismatch.** `tiktoken.encoding_for_model("gpt-5-something")` raises `KeyError` for any model name the library has not seen — the encoding tables update with each `tiktoken` release. Falling back to `tiktoken.get_encoding("o200k_base")` is the safe default for any GPT-4o-and-newer model; `cl100k_base` is the safe default for the older `gpt-3.5-turbo` and `gpt-4` generations. Using the wrong encoding does not crash, it silently miscounts — the budget gate then passes calls it should have refused, or refuses calls it should have passed.
 - **`cached_tokens` undercounting.** Once OpenAI's auto-caching activates on a stable prefix, `response.usage.prompt_tokens` still reports the full input count, and `prompt_tokens_details.cached_tokens` reports how many of those were cache hits. The starter's current `compute_cost` treats every input token as full-rate, so the cost log overstates spend on cache-heavy workloads. The fix is the two-step extension named in Exercise 2's bonus.
-- **Cost log file locking under concurrent writes.** `log_request` uses `open(path, "a")` and writes one line. On POSIX, append-mode writes shorter than `PIPE_BUF` (4 KiB on Linux) are atomic across processes — one JSONL row of cost data fits comfortably under that ceiling. On Windows or under multi-process writers where rows might exceed the buffer, the safe pattern is `os.O_APPEND | os.O_WRONLY` plus an explicit per-line flush, or a file lock. The starter's single-process FastAPI server (once the gateway module lands) does not need either.
-- **Stale model rates in `MODEL_PRICING`.** Vendor pricing pages move — the concept module anchored that point and the starter's table is dated `as of 2026-04`. When you adopt this pattern for your own project, the first audit step is re-verifying the rates against the live pricing page on the day you ship. A stale table silently understates or overstates cost across every row.
+- **Cost log file locking under concurrent writes.** `log_request` uses `open(path, "a")` and writes one line. On POSIX, append-mode writes shorter than `PIPE_BUF` (4 KiB on Linux) are atomic across processes — one JSONL row of cost data fits comfortably under that ceiling. On Windows or under multi-process writers where rows might exceed the buffer, the safe pattern is `os.O_APPEND | os.O_WRONLY` plus an explicit per-line flush, or a file lock. A single-process FastAPI server does not need either.
+- **Stale model rates in `MODEL_PRICING`.** Vendor pricing pages move, and the starter's table is dated `as of 2026-04`. When you adopt this pattern for your own project, the first audit step is re-verifying the rates against the live pricing page on the day you ship. A stale table silently understates or overstates cost across every row.
 - **Pre-call estimate vs post-call truth.** The estimate from tiktoken plus a heuristic `expected_output_tokens` lands within 10-30% of the post-call usage on most queries and is way off on the few queries where the model produces a much shorter or much longer answer than expected. That is fine for budget gating — the gate's job is to refuse pathological cases, not predict cost to the cent — and it is not fine for billing or chargeback. Use the gate for refusal; use the cost log for accounting.
 
 ## What you have now
 
-A fifty-row seeded cost log with a per-day breakdown and a costliest-query-type callout. A twenty-query real-traffic load that proves the instrumentation works end-to-end on Vocareum or a direct OpenAI account. A rolling-baseline anomaly alert and a pre-call tiktoken budget gate, both as artifacts you can drop into a production codebase with minimal modification. Together those four artifacts cover the four-layer instrumentation stack the concept module named: per-request log, aggregation, alerting, and the pre-call estimate that gates spend before it happens.
+A fifty-row seeded cost log with a per-day breakdown and a costliest-query-type callout. A twenty-query real-traffic load that proves the instrumentation works end-to-end on Vocareum or a direct OpenAI account. A rolling-baseline anomaly alert and a pre-call tiktoken budget gate, both as artifacts you can drop into a production codebase with minimal modification. Together those four artifacts cover the four-layer instrumentation stack: per-request log, aggregation, alerting, and the pre-call estimate that gates spend before it happens.
 
-Three forward references. The semantic caching module reduces cost by removing calls entirely — the cache hit returns the prior answer without a fresh model invocation, and your cost log records nothing for those requests. The gateway module mounts `/cost-dashboard` and calls `log_request` automatically on every `/query`, so the manual `log_request` calls in Exercise 2 become implicit. The guardrails module sometimes adds a hallucination-check call per response, which doubles the log volume on the protected endpoints — Exercise 1's per-query-type breakdown is the diagnostic shape for that added cost. The instrumentation you wired today is upstream of every one of those decisions.
+The instrumentation you wired today is upstream of every later cost decision. Semantic caching reduces cost by removing calls entirely — a cache hit returns the prior answer without a fresh model invocation, and your cost log records nothing for those requests. A gateway that mounts `/cost-dashboard` and calls `log_request` automatically on every `/query` makes the manual `log_request` calls from Exercise 2 implicit. A hallucination-check call added per response doubles the log volume on the protected endpoints, and Exercise 1's per-query-type breakdown is the diagnostic shape for that added cost.

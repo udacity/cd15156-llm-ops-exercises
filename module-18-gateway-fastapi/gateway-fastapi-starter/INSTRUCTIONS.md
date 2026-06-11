@@ -19,15 +19,13 @@ Smoke-check the pipeline before any gateway work:
 uv run python -c "from src.pipeline import run_pipeline; print(run_pipeline('What kernel does SVC use by default?').answer[:80])"
 ```
 
-If that returns a grounded answer about `rbf`, you are ready. Follow the demo walkthrough first, then work through the three exercises in order.
+If that returns a grounded answer about `rbf`, you are ready. Watch the recorded demo first, then work through the three exercises in order.
 
 ---
 
-> A walkthrough of this codebase is in DEMO.md.
-
 # Exercises — Extend the Classifier, Wrap with Retry, Add a Second Provider
 
-The demo wired the gateway into your hands. These exercises put muscle on three of the gateway architecture's named patterns — tier routing, retries with backoff and jitter, and multi-provider abstraction — directly into the ScikitDocs starter. Plan twenty minutes, roughly seven each on the first two exercises and six on the third. The third exercise is structurally the heaviest (a new adapter file) but the smallest in linecount because most of the work is reusing the shape the starter already enforces.
+The recorded demo wired the gateway into your hands. These exercises put muscle on three of the gateway architecture's named patterns — tier routing, retries with backoff and jitter, and multi-provider abstraction — directly into the ScikitDocs starter. Plan twenty minutes, roughly seven each on the first two exercises and six on the third. The third exercise is structurally the heaviest (a new adapter file) but the smallest in linecount because most of the work is reusing the shape the starter already enforces.
 
 ## Setup
 
@@ -427,4 +425,4 @@ A few traps that catch most learners on this module:
 
 A three-tier classifier with `simple`, `complex`, and `premium` dispatch arms and a five-query run that exercises each tier. A retry-wrapped OpenAI client call with two passing tests demonstrating retry-on-5xx and no-retry-on-4xx semantics. A thin Anthropic adapter, a `provider` field on `QueryRequest`, and a side-by-side curl invocation showing the same response shape across providers. Three of the patterns the concept module named — tier routing, retry with backoff and jitter, multi-provider abstraction — wired into the ScikitDocs starter with code you wrote and tests you can rerun.
 
-Two forward references. The next two modules are the input/output guardrails — the gateway is where they plug in because every request flows through it, and `route_query`'s existing cache-then-trace composition already names the seam each guard will land on. The A/B testing module is downstream — the `X-Client-Id` header the starter already accepts becomes the bucketing key for sticky-by-user variant assignment, and the `provider` field you added in Exercise 3 generalizes to a feature-flag-driven model choice. The chassis you wired today carries every operational concern the rest of the course bolts on. This walks ScikitDocs (a Q&A assistant for the scikit-learn library); the capstone applies the same skill to the ThirdShotHub workload.
+The chassis you wired today is the seam later layers attach to. Input/output guardrails plug in here because every request flows through the gateway, and `route_query`'s existing cache-then-trace composition already names the seam each guard lands on. The `X-Client-Id` header the starter already accepts becomes the bucketing key for sticky-by-user variant assignment, and the `provider` field you added in Exercise 3 generalizes to a feature-flag-driven model choice. The gateway carries every operational concern the rest of the stack bolts on.

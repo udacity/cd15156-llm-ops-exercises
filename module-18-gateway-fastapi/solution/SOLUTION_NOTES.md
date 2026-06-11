@@ -2,7 +2,7 @@
 
 The starter ships the gateway scaffold (lifespan + tracing init, `route_query` composition, classifier, generator, cost log, semantic cache, guardrails) from the prior module. This module exercises three extension patterns — add a tier, wrap the OpenAI call with retries, add a second provider — by editing the existing scaffold rather than authoring greenfield files.
 
-## Files this solution edits
+## Files these notes edit
 
 | File | Maps to |
 |---|---|
@@ -51,7 +51,7 @@ gpt-4o | Explain every parameter of GridSearchCV's __init__ and how scorin...
 
 Because the placeholder `model_premium` is also `gpt-4o`, the dispatch observability comes from the cost log's `query_type` column rather than the model name. `tail -5 data/cost_log.jsonl | python -c "import json, sys; [print(json.loads(l)['query_type']) for l in sys.stdin]"` should show a mix of `simple`, `complex`, and `premium`. The exact split is not deterministic — gpt-4o-mini self-classification oscillates on borderline queries.
 
-Acceptance paragraph: pay for the premium tier when long-context queries strain the cheaper model's window (a multi-thousand-token requirements brief that gets truncated at the input boundary loses material the answer needs), or when the use case cannot tolerate the mid-tier model's hallucination rate on a particular query class (deprecated-API checks against scikit-learn where wrong answers ship bugs). The evaluation module's RAGAS loop is where you settle the latter argument — the dollar premium pays for itself only if the better-model hallucination rate is materially lower on the queries that actually route to the tier.
+Acceptance paragraph: pay for the premium tier when long-context queries strain the cheaper model's window (a multi-thousand-token requirements brief that gets truncated at the input boundary loses material the answer needs), or when the use case cannot tolerate the mid-tier model's hallucination rate on a particular query class (deprecated-API checks against scikit-learn where wrong answers ship bugs). A RAGAS evaluation loop is where you settle the latter argument — the dollar premium pays for itself only if the better-model hallucination rate is materially lower on the queries that actually route to the tier.
 
 ### Exercise 2 — Retry production conditions
 

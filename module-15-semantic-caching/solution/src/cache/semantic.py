@@ -1,7 +1,7 @@
-"""Chroma-backed semantic cache primitives (Module 15).
+"""Chroma-backed semantic cache primitives.
 
 Three public functions — ``lookup``, ``store``, ``clear`` — implement the
-four-move semantic-cache architecture Module 14 named:
+four-move semantic-cache architecture:
 
 1. Embed the incoming question with the same model used for retrieval.
 2. Similarity-search a dedicated ``cache`` collection for the single
@@ -20,7 +20,7 @@ similarity on the natural ``[0, 1]`` "higher is better" scale.
 
 The default threshold is :data:`src.constants.CACHE_SIMILARITY_THRESHOLD`
 (0.85 at the time of this writing) — the typical retail-FAQ baseline for
-sentence-transformer-class embedders. Exercises in Module 15 sweep this knob
+sentence-transformer-class embedders. The exercises sweep this knob
 at 0.70 / 0.85 / 0.95 to surface the wrong-answer mode at loose
 thresholds.
 """
@@ -41,7 +41,7 @@ from src.models import QueryResponse
 
 # Silence onnxruntime's C++ stderr warning on import, matching the
 # fd-2 trick in src/store.py. Any importer of src.cache.semantic
-# (the Module 15 walkthrough, Module 11 RAGAS, Module 18 gateway) inherits the quiet.
+# inherits the quiet.
 _saved_fd2 = os.dup(2)
 _devnull = os.open(os.devnull, os.O_WRONLY)
 try:
@@ -61,8 +61,7 @@ COLLECTION_NAME = "cache"
 def _client() -> "chromadb.PersistentClient":
     """Private singleton client against ``settings.chroma_path``.
 
-    Mirrors the capstone shape (``project/src/cache/semantic.py``) by
-    owning a separate client object rather than reaching into
+    Owns a separate client object rather than reaching into
     ``src.store._client``. Both clients point at the same on-disk
     directory, so the ``scikit_docs`` retrieval collection and the
     ``cache`` collection share one Chroma store.
@@ -93,7 +92,7 @@ def lookup(
         question: User's question, raw string (no normalisation).
         threshold: Minimum cosine similarity for a hit. Defaults to
             ``constants.CACHE_SIMILARITY_THRESHOLD`` (0.85). Pass a lower
-            value to demonstrate the wrong-answer mode (Module 15 Exercise 2).
+            value to demonstrate the wrong-answer mode (Exercise 2).
 
     Returns:
         A ``QueryResponse`` with ``cached=True`` on a hit, ``None`` on a
@@ -148,8 +147,8 @@ def store(
         response: The ``QueryResponse`` to cache. Serialised to JSON for
             storage; ``cached`` is reset to ``False`` on write so the
             ``True`` only ever appears on the read path.
-        ttl_s: Time-to-live in seconds. Default 3,600 (one hour) — the
-            retail-FAQ-appropriate starting point Module 14 named. A
+        ttl_s: Time-to-live in seconds. Default 3,600 (one hour) — a
+            retail-FAQ-appropriate starting point. A
             value of ``0`` marks the entry immortal.
 
     Returns:

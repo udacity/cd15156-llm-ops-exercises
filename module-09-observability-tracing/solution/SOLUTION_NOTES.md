@@ -1,6 +1,6 @@
 # Solution notes — Module 09
 
-The only code change in this solution is the Exercise 3 edit to `src/tracing.py`:
+The only code change is the Exercise 3 edit to `src/tracing.py`:
 adding one `retrieve_span.set_attribute("rag.retrieve.top_score", ...)` call inside
 the `retrieve` span. Exercises 1 and 2 produce writeups and a regenerated evidence
 file rather than code edits — those reference solutions live below.

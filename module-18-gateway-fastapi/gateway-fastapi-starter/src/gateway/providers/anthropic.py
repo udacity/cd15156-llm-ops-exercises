@@ -1,10 +1,12 @@
 """Anthropic Messages API adapter — converts gateway I/O to Anthropic's shape.
 
-Demonstrates the multi-provider abstraction pattern the gateway concept module
-named. The starter routes only OpenAI in production; this adapter is the
-pattern, not the credentials. A live integration would import the
-``anthropic`` SDK and replace the stub at ``_call_anthropic`` below with
-``anthropic.Anthropic(api_key=...).messages.create(...)``.
+This adapter shows the multi-provider routing pattern. The stub at
+``_call_anthropic`` below returns a canned Anthropic-shaped response so
+you can test routing without a second key — point ``provider="anthropic"``
+at it and the rest of the gateway treats it like any other backend. To go
+live, you would import the ``anthropic`` SDK and replace the stub body with
+``anthropic.Anthropic(api_key=...).messages.create(...)``; nothing else
+changes.
 
 Three shape conversions are pinned here because they are the gotchas every
 multi-provider adapter eventually re-discovers:

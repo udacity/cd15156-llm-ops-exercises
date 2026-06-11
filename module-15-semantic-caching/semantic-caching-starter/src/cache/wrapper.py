@@ -1,10 +1,9 @@
-"""Cache-then-route composition for the Module 15 demo + exercises.
+"""Cache-then-route composition for the demo + exercises.
 
-The capstone's HTTP route at ``project/src/gateway/routes.py`` reproduces
-this same shape inline, between the input guards and the output guards.
-Until Module 18 ships the gateway in the starter, Module 15 calls
-:func:`cached_route_query` directly from Python so learners can run the
-demo and exercises without standing up a FastAPI server.
+A production HTTP route reproduces this same shape inline, between the
+input guards and the output guards. Here :func:`cached_route_query` is
+called directly from Python so learners can run the demo and exercises
+without standing up a FastAPI server.
 
 The composition has three steps:
 
