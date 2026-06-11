@@ -11,7 +11,7 @@ Run `make setup` to install dependencies, then `make load-data` once to populate
 ---
 
 
-> A walkthrough of this codebase is in DEMO.md.
+> The recorded demo walks through this codebase; the exercises below build on it.
 
 # same loop, redirect to /tmp/words-tighter.txt
 ```
@@ -32,7 +32,7 @@ tighter: 19.8 avg words
 
 The tighter prompt cuts response length roughly sixty percent on this five-question sample. That is a real effect on the metric, and it is a real cost reduction at output-token prices — completion tokens are typically two to four times more expensive than prompt tokens on `gpt-4o`-class models, so a sixty-percent drop in output length translates roughly to a sixty-percent drop in completion cost per request.
 
-What you cannot conclude from five questions is whether the tighter prompt also changed answer quality. The candidate might be cutting padding, or it might be cutting the qualified-name citations that make the answer auditable. To distinguish those cases you would run RAGAS faithfulness + context precision on both variants (Module 11) and need many more samples — a five-percent shift in a binary quality metric at ninety-five percent confidence needs on the order of ten thousand requests per variant. Five questions is enough to feel the workflow, not enough to ship a decision.
+What you cannot conclude from five questions is whether the tighter prompt also changed answer quality. The candidate might be cutting padding, or it might be cutting the qualified-name citations that make the answer auditable. To distinguish those cases you would run RAGAS faithfulness + context precision on both variants and need many more samples — a five-percent shift in a binary quality metric at ninety-five percent confidence needs on the order of ten thousand requests per variant. Five questions is enough to feel the workflow, not enough to ship a decision.
 
 Clean up before moving on:
 
@@ -417,6 +417,6 @@ A few traps that catch most learners on this module. Skim before submitting:
 
 Three skills, each tied to a starter file you can grep for. A template you can extend with variables and conditionals — that is the rendering half of versioning. An environment-aware loader that selects the right prompt at runtime — that is the runtime half. An A/B harness that gives you a real metric and an honest read on whether the difference is significant — that is the decision half. From here, every prompt change in the starter — and in every LLM application you build after this course — should pass through this same Git-then-evaluate loop.
 
-Two skills you do not have yet, but will pick up in later modules. The eval gate that the concept module called out — a CI-time check that a prompt change does not regress quality below a threshold — uses RAGAS metrics and lands in Module 11. The richer monitoring window — watching latency, cost, and refusal rate over a defined post-deploy interval — uses Phoenix tracing and lands in Module 9. The pieces compose: this module gives you the artifact, Module 9 gives you the observation, Module 11 gives you the score. When you see them all in the same repo at the end of the course, that composition is the operational loop the concept module diagrammed.
+Two skills you do not have yet, but will pick up in later modules. The eval gate that the concept module called out — a CI-time check that a prompt change does not regress quality below a threshold — uses RAGAS metrics. The richer monitoring window — watching latency, cost, and refusal rate over a defined post-deploy interval — uses Phoenix tracing. The pieces compose: this module gives you the artifact, tracing gives you the observation, evaluation gives you the score. When you see them all in the same repo at the end of the course, that composition is the operational loop the concept module diagrammed.
 
 Commit cleanly before moving on. The next module shifts to vector databases, where the artifact you version is the embedding configuration rather than the prompt — same MLOps discipline, different surface.

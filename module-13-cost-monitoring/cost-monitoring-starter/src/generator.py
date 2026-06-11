@@ -1,4 +1,4 @@
-"""OpenAI generation + system-prompt rendering (Module 03).
+"""OpenAI generation + system-prompt rendering.
 
 Renders ``prompts/docbot_system.j2`` with the retrieved chunks as context
 and calls OpenAI chat completions. Frozen contract documented in
@@ -11,9 +11,8 @@ Two design choices worth naming:
 - ``keep_trailing_newline=True`` because Jinja strips the final newline
   by default and removing it can shift tokenization on some models.
 
-``cost_usd`` is computed by ``src.pricing.compute_cost`` (added by
-Module 13). The signature still matches ``INTERFACES.md`` —
-Module 13 wired the real cost in without changing the return shape.
+``cost_usd`` is computed by ``src.pricing.compute_cost``. The signature
+matches the frozen contract in ``INTERFACES.md``.
 """
 
 from pathlib import Path
@@ -27,9 +26,8 @@ from src.models import Source, TokenUsage
 from src.pricing import compute_cost
 
 # ``parents[1]`` lands on the starter root (src/ is one level under it).
-# The capstone uses ``parents[2]`` because its generator lives in
-# src/rag/. Don't generalise this — it should be obvious which directory
-# the templates live in from the file path alone.
+# Don't generalise this — it should be obvious which directory the
+# templates live in from the file path alone.
 _PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
 _env = Environment(
     loader=FileSystemLoader(_PROMPTS_DIR),
@@ -65,7 +63,7 @@ def generate(
 
     Returns:
         ``(answer, TokenUsage, cost_usd)``. ``cost_usd`` comes from
-        ``src.pricing.compute_cost`` (wired in by Module 13).
+        ``src.pricing.compute_cost``.
     """
     client = OpenAI(base_url=settings.openai_base_url or None)
     system_prompt = render_system_prompt(sources)

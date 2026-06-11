@@ -6,7 +6,7 @@ This starter is the ScikitDocs RAG app with the prompt loader, vector DB layer (
 
 ---
 
-> A walkthrough of this codebase is in DEMO.md.
+> The recorded demo walks through this codebase; the exercises below build on it.
 
 # Module 05 — Exercises: Operate the ScikitDocs Vector Store
 
@@ -40,7 +40,7 @@ Goal: starting from an empty `data/chroma/` directory, run the full ingestion pi
    uv run python -c "from src import store; print(store.get_collection().count())"
    ```
 
-   The number should match the `chunks upserted` line from `make load-data` exactly. If it is smaller, a previous `make load-data` ran against a different `chroma_path` and the count you are reading is from a stale collection; check `settings.chroma_path` against your `.env`. If it is larger, you also ran `make seed-difficulty` previously, which adds eight deliberately-confusing chunks documented for retrieval-quality work in Module 11 — that is a feature, not a bug, and we will see those chunks in Exercise 2.
+   The number should match the `chunks upserted` line from `make load-data` exactly. If it is smaller, a previous `make load-data` ran against a different `chroma_path` and the count you are reading is from a stale collection; check `settings.chroma_path` against your `.env`. If it is larger, you also ran `make seed-difficulty` previously, which adds eight deliberately-confusing chunks for retrieval-quality work — that is a feature, not a bug, and we will see those chunks in Exercise 2.
 
 4. Inspect one chunk in detail. Chroma's `peek` returns a small sample with embeddings, documents, and metadatas attached:
 
@@ -69,7 +69,7 @@ The embed step is the one with the bill attached. The output line "embedded N ne
 
 The upsert step is fast because Chroma's HNSW index appends incrementally; the only time you would see this stage slow down is when the corpus crosses ~100,000 chunks, where index rebuild costs start to matter. We are three orders of magnitude below that for ScikitDocs, so it does not surface here.
 
-The write-version step touches `data/CORPUS_VERSION` — a four-line text file that records the scikit-learn tag, the resolved git SHA, the ingest timestamp, and the chunk count. Module 24 (RAGOps) reads this file to detect when the corpus has changed and a blue/green index swap is warranted.
+The write-version step touches `data/CORPUS_VERSION` — a four-line text file that records the scikit-learn tag, the resolved git SHA, the ingest timestamp, and the chunk count. A RAGOps workflow reads this file to detect when the corpus has changed and a blue/green index swap is warranted.
 
 ### Where Chroma stores what
 
@@ -89,7 +89,7 @@ Goal: run the filled embedder + store against twelve real questions from the gol
 
 ### Why a 12-question subset
 
-The full golden set is thirty questions across six query types: factual (12), procedural (6), conceptual (5), comparative (3), edge_case (2), and off_topic (2). For a retrieval-only measurement the last two buckets are misleading — edge-case questions ("Which classifier is the best one?") have ambiguous expected answers, and off-topic questions ("What's the weather in Paris today?") test the *refusal* pathway, not retrieval. They belong in the Module 03 (generator) and Module 20 (guardrails) evaluations, not here. The twelve-question subset below is five factual, three procedural, two conceptual, and two comparative — heavy on the buckets where a "right answer" is unambiguous enough to score.
+The full golden set is thirty questions across six query types: factual (12), procedural (6), conceptual (5), comparative (3), edge_case (2), and off_topic (2). For a retrieval-only measurement the last two buckets are misleading — edge-case questions ("Which classifier is the best one?") have ambiguous expected answers, and off-topic questions ("What's the weather in Paris today?") test the *refusal* pathway, not retrieval. They belong in the generator and guardrails evaluations, not here. The twelve-question subset below is five factual, three procedural, two conceptual, and two comparative — heavy on the buckets where a "right answer" is unambiguous enough to score.
 
 ### Steps
 
@@ -164,9 +164,9 @@ The full golden set is thirty questions across six query types: factual (12), pr
 
 Question 1 ("default value of `n_estimators` in `RandomForestClassifier`") is a textbook factual lookup. The expected sections — `modules.ensemble.random-forests`, `modules.ensemble.parameters`, `modules.ensemble.forests-of-randomized-trees` — together cover most of the scikit-learn ensemble user-guide page. The expected_doc_ids field is generous on purpose: the answer (100 trees, raised from 10 in version 0.22) lives in any of those sections depending on which scikit-learn version you read. A retriever that finds any of them within top-5 has done its job; choosing which one to cite is the generator's problem.
 
-Question 6 ("How do I scale features before clustering them?") is procedural and crosses two user-guide pages — preprocessing and clustering. The expected_doc_ids set is `modules.preprocessing|modules.clustering` rather than a specific subsection, because the "correct" procedural answer is a two-step recipe that combines knowledge from both pages. This is the shape most procedural questions take in a docs corpus: the right answer is not in any single section, and the generator has to compose. Module 07 will show how the retrieval-plus-generation composition turns a multi-section hit into a coherent answer; Module 11 will show how to measure when the composition stays faithful to the cited sources versus drifting into model knowledge.
+Question 6 ("How do I scale features before clustering them?") is procedural and crosses two user-guide pages — preprocessing and clustering. The expected_doc_ids set is `modules.preprocessing|modules.clustering` rather than a specific subsection, because the "correct" procedural answer is a two-step recipe that combines knowledge from both pages. This is the shape most procedural questions take in a docs corpus: the right answer is not in any single section, and the generator has to compose. The retrieval-plus-generation composition turns a multi-section hit into a coherent answer; a later evaluation step measures when the composition stays faithful to the cited sources versus drifting into model knowledge.
 
-Question 12 ("difference between `OneHotEncoder` and `LabelEncoder`") is comparative. The expected_doc_ids set is `modules.preprocessing|modules.preprocessing_targets` because the answer needs both — `OneHotEncoder` lives in feature preprocessing, `LabelEncoder` lives in target preprocessing, and confusing the two is a real bug pattern in newer scikit-learn users. A retriever that returns only one of the two pages would still score as a hit under the lenient prefix rule, but the answer the generator produces from a one-sided hit would be incomplete. Top-K hit-any is the easiest retrieval metric to compute and the loosest one to argue from; the better evaluation question, which Module 11 builds out, is whether the retrieved set is jointly sufficient to answer the question.
+Question 12 ("difference between `OneHotEncoder` and `LabelEncoder`") is comparative. The expected_doc_ids set is `modules.preprocessing|modules.preprocessing_targets` because the answer needs both — `OneHotEncoder` lives in feature preprocessing, `LabelEncoder` lives in target preprocessing, and confusing the two is a real bug pattern in newer scikit-learn users. A retriever that returns only one of the two pages would still score as a hit under the lenient prefix rule, but the answer the generator produces from a one-sided hit would be incomplete. Top-K hit-any is the easiest retrieval metric to compute and the loosest one to argue from; the better evaluation question, built out in a later module, is whether the retrieved set is jointly sufficient to answer the question.
 
 ### What the numbers mean
 
@@ -181,7 +181,7 @@ Q 3 -> seeded.version_conflict.logreg_solver_old   (hit)
 Q 4 -> seeded.version_conflict.knn_metric_new      (hit)
 ```
 
-Those `seeded.*` ids are not from the scikit-learn corpus — they are the eight deliberately-confusing chunks the seed-difficulty step inserts. They rank top-1 above the real `modules.ensemble.*` and `modules.preprocessing.*` chunks for these short factual questions because they are tighter paraphrases of the question text itself, and a dense embedding model rewards textual paraphrase. Recall@5 still counts the hit (the real chunk is somewhere in the top-5), but the answer the generator builds in Module 07 will be assembled from the seeded chunk first. Module 11 walks this exact pattern — recall stays high, answer faithfulness collapses, and the gap is the reason RAGAS evaluates both metrics independently.
+Those `seeded.*` ids are not from the scikit-learn corpus — they are the eight deliberately-confusing chunks the seed-difficulty step inserts. They rank top-1 above the real `modules.ensemble.*` and `modules.preprocessing.*` chunks for these short factual questions because they are tighter paraphrases of the question text itself, and a dense embedding model rewards textual paraphrase. Recall@5 still counts the hit (the real chunk is somewhere in the top-5), but the answer the generator builds will be assembled from the seeded chunk first. This exact pattern recurs later — recall stays high, answer faithfulness collapses, and the gap is the reason RAGAS evaluates both metrics independently.
 
 ### Acceptance criterion
 
@@ -198,7 +198,7 @@ The model swap is one line in `src/embedder.py`. The problem is that everything 
 1. Write a side-by-side wrapper so you can run both embedders without modifying the production embedder. Create `scripts/embed_with_st.py`:
 
    ```python
-   """Local sentence-transformers embedder for the Module 05 swap exercise."""
+   """Local sentence-transformers embedder for the embedder-swap exercise."""
    from sentence_transformers import SentenceTransformer
 
    _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -287,11 +287,11 @@ You can produce a side-by-side comparison table like the one above, with your ow
 
 Chroma's HNSW index is a graph data structure where every vector in the collection is a node, and edges connect nearby vectors. The "nearby" relation is computed by the distance function declared at create time — here, cosine — and the function operates on vectors of a fixed dimension. The dimension is determined by the first vector inserted; subsequent inserts at a different dimension would either be silently truncated or padded with zeros, which would corrupt the index, so Chroma refuses them with `InvalidDimensionException` and forces you to surface the mismatch.
 
-This is not a design limitation specific to Chroma. Every dense vector store works this way: pgvector with an `IVFFlat` index, Pinecone with its serverless pods, Weaviate with its HNSW segments — all of them fix dimensionality at first insert and reject mismatched queries. The only way to "swap embedders" in a production system is to build a parallel collection the way Exercise 3 does, then atomically swap which collection the application reads from. Module 24 (RAGOps) walks the blue/green pattern end-to-end and reuses Exercise 3's two-collection setup as its starting point.
+This is not a design limitation specific to Chroma. Every dense vector store works this way: pgvector with an `IVFFlat` index, Pinecone with its serverless pods, Weaviate with its HNSW segments — all of them fix dimensionality at first insert and reject mismatched queries. The only way to "swap embedders" in a production system is to build a parallel collection the way Exercise 3 does, then atomically swap which collection the application reads from. A later RAGOps module walks the blue/green pattern end-to-end and reuses Exercise 3's two-collection setup as its starting point.
 
 ### What stays the same across embedders
 
-Two pieces of the Module 05 stack survive the embedder swap untouched: `src/chunker.py` and the structure of `src/store.py`. Chunking is a function of the source corpus, not the embedder, so the same chunk_doc output feeds both rebuilds. The store's `get_collection / add / query` API is also embedder-agnostic — the only thing that varies is which collection name you pass in and what dimensionality the vectors happen to have. That separation is why the rebuild script is so short: most of the work is already done.
+Two pieces of the vector-DB stack survive the embedder swap untouched: `src/chunker.py` and the structure of `src/store.py`. Chunking is a function of the source corpus, not the embedder, so the same chunk_doc output feeds both rebuilds. The store's `get_collection / add / query` API is also embedder-agnostic — the only thing that varies is which collection name you pass in and what dimensionality the vectors happen to have. That separation is why the rebuild script is so short: most of the work is already done.
 
 ### When the trade is worth it
 

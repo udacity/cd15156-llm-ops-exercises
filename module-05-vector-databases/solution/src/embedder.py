@@ -1,4 +1,4 @@
-"""OpenAI embeddings wrapper (Module 05).
+"""OpenAI embeddings wrapper.
 
 Single-string and list-of-strings inputs share one entry point. List
 inputs are sent in batches of ``_BATCH_SIZE`` per OpenAI request — the

@@ -1,19 +1,16 @@
-# Module 09 — Implement LLM Call Tracing with Phoenix
+# Implement LLM Call Tracing with Phoenix
 
 ## Setup
 
-This starter is the ScikitDocs RAG app with the prompt loader, vector database, RAG pipeline, tracing, evaluation, cost monitoring, semantic caching, gateway, guardrails, A/B testing, RAGOps watcher, and latency optimization already wired. In this module you will (1) read `src/tracing.py` end to end and fire one traced query against the corpus, (2) export the rubric §7 evidence file via `make seed-traces`, and (3) add one custom span attribute (`rag.retrieve.top_score`) to the `retrieve` span. Run `make setup && make load-data` to bring up the corpus, then follow the demo walkthrough and the exercise tasks below.
+This starter is the ScikitDocs RAG app with the prompt loader, vector database, RAG pipeline, tracing, evaluation, cost monitoring, semantic caching, gateway, guardrails, A/B testing, RAGOps watcher, and latency optimization already wired. You will (1) read `src/tracing.py` end to end and fire one traced query against the corpus, (2) export the rubric §7 evidence file via `make seed-traces`, and (3) add one custom span attribute (`rag.retrieve.top_score`) to the `retrieve` span. Run `make setup && make load-data` to bring up the corpus, then follow the exercise tasks below.
 
+# Exercise: Read One Trace, Export the §7 Evidence File, Add a Custom Span Attribute
 
-> A walkthrough of this codebase is in DEMO.md.
-
-# Module 09 — Exercise: Read One Trace, Export the §7 Evidence File, Add a Custom Span Attribute
-
-The demo wired Phoenix into the ScikitDocs pipeline and walked one traced query through the UI. These exercises make the workflow producible. Three exercises, each ending in a small artifact you can paste into a writeup or check into the repo: a one-paragraph description of a trace you opened yourself, the rubric §7 evidence file at `data/trace_evidence.md`, and a four-line diff that adds a new attribute the downstream modules will read. Plan for twenty minutes total, weighted slightly toward exercise 2 because the evidence-file workflow is the canonical path for environments without browser access to `localhost:6006`.
+The recorded demo wired Phoenix into the ScikitDocs pipeline and walked one traced query through the UI. These exercises make the workflow producible. Three exercises, each ending in a small artifact you can paste into a writeup or check into the repo: a one-paragraph description of a trace you opened yourself, the rubric §7 evidence file at `data/trace_evidence.md`, and a four-line diff that adds a new attribute the downstream modules will read. Plan for twenty minutes total, weighted slightly toward exercise 2 because the evidence-file workflow is the canonical path for environments without browser access to `localhost:6006`.
 
 ## Setup
 
-Same setup as the demo. ScikitDocs starter cloned, `make setup` ran, `.env` populated with `OPENAI_API_KEY` (plus `OPENAI_BASE_URL=https://openai.vocareum.com/v1` if you are on Vocareum), `make load-data` printed `Wrote N chunks`. Each exercise fires queries through direct Python rather than `make serve` + curl — the tracing surface is identical either way, but a short-lived Python process keeps the example focused on the spans rather than the HTTP layer.
+Same setup as the recorded demo. ScikitDocs starter cloned, `make setup` ran, `.env` populated with `OPENAI_API_KEY` (plus `OPENAI_BASE_URL=https://openai.vocareum.com/v1` if you are on Vocareum), `make load-data` printed `Wrote N chunks`. Each exercise fires queries through direct Python rather than `make serve` + curl — the tracing surface is identical either way, but a short-lived Python process keeps the example focused on the spans rather than the HTTP layer.
 
 If `localhost:6006` is reachable from your browser, open it now. If it is not, you will lean on `make seed-traces` and the `data/trace_evidence.md` artifact — that is the rubric §7 backstop, and exercise 2 is exactly the workflow for environments without UI access.
 
@@ -43,7 +40,7 @@ The goal of this exercise is to develop the muscle of looking at a trace before 
 
 2. Open `http://localhost:6006/` in your browser. Pick the `scikitdocs` project (the project name comes from `constants.PHOENIX_PROJECT_NAME`). You should see three traces in the list, newest first.
 
-3. Click into one of them. The Gantt-chart view in the right pane shows the span tree. You are looking at the same six-span hierarchy the demo named: a root `rag_query`, a `retrieve` parent with `embed` and `search` children, an `augment` sibling, a `generate` sibling, and the OpenAIInstrumentor's auto-children inside `embed` and `generate`.
+3. Click into one of them. The Gantt-chart view in the right pane shows the span tree. You are looking at the same six-span hierarchy the recorded demo named: a root `rag_query`, a `retrieve` parent with `embed` and `search` children, an `augment` sibling, a `generate` sibling, and the OpenAIInstrumentor's auto-children inside `embed` and `generate`.
 
 4. Click the root `rag_query` span. Read the attributes panel on the right. Identify and write down five attributes — preferred picks: `rag.latency_ms`, `rag.confidence`, `rag.cost_usd`, `rag.model`, and `rag.sources`. For each, write one sentence about what it tells you operationally. Example: *`rag.confidence = 0.529` — mean similarity score across the retrieved chunks, in [0, 1]; below the `CONFIDENCE_THRESHOLD = 0.7` constant, so the answer is one a production system would surface a hedge for.*
 
@@ -75,7 +72,7 @@ Phoenix captures every OpenAI SDK call as its own trace by default — the embed
 
 ## Exercise 2 — Export the rubric §7 evidence file
 
-The rubric for the capstone project specifies that §7 evidence is either a screenshot of the Phoenix UI showing a representative trace with spans labeled, or the markdown output of `make seed-traces` for environments where port 6006 is not reachable. This exercise produces the markdown path end to end and is the canonical workflow for any environment without browser access to `localhost:6006`.
+The project rubric specifies that §7 evidence is either a screenshot of the Phoenix UI showing a representative trace with spans labeled, or the markdown output of `make seed-traces` for environments where port 6006 is not reachable. This exercise produces the markdown path end to end and is the canonical workflow for any environment without browser access to `localhost:6006`.
 
 ### What to do
 
@@ -194,4 +191,4 @@ A traced ScikitDocs pipeline you wired by hand, plus three artifacts that make t
 
 A note on what the three exercises share, in case the framing was not obvious. Each ends in an artifact a teammate can reproduce. The trace ID list from exercise 1 is reproducible because the queries are written out — anyone can re-fire the same three and find equivalent traces in their own Phoenix. The evidence file from exercise 2 is regeneratable on every `make seed-traces` invocation, which means a reviewer who suspects the file is stale can re-run the script and diff the output against what was checked in. The diff snippet from exercise 3 is reviewable on its own and rerunnable inside the existing test suite. None of the three asks you to copy a screenshot blindly — every artifact is something the next person can verify by running the same code you ran, against the same starter, with the same `.env`. That reproducibility property is what separates production tracing evidence from a one-off screenshot from a debugging session.
 
-Three forward references. The RAGAS evaluation layer (Module 11) wires evals on top of trace exports — the same `input.value` and `output.value` attributes you read in exercise 1 are exactly the fields RAGAS consumes for faithfulness and context-precision scoring. The cost-monitoring layer (Module 13) reads `llm.token_count.prompt` and `llm.token_count.completion` off the `generate` span to build per-request cost reports. The gateway (Module 18) puts `init_tracing()` in the FastAPI lifespan so `make serve` brings Phoenix up alongside `localhost:8080/query` — the same wiring you ran by hand from `python -i` happens automatically when the gateway boots. The latency layer (Module 26) starts from the latency-tail row in your `data/trace_evidence.md` file and works backward into streaming and caching. The instrumentation you wire in this module is upstream of all of them.
+Where this trace surface feeds the rest of the stack. The RAGAS evaluation layer wires evals on top of trace exports — the same `input.value` and `output.value` attributes you read in exercise 1 are exactly the fields RAGAS consumes for faithfulness and context-precision scoring. The cost-monitoring layer reads `llm.token_count.prompt` and `llm.token_count.completion` off the `generate` span to build per-request cost reports. The gateway puts `init_tracing()` in the FastAPI lifespan so `make serve` brings Phoenix up alongside `localhost:8080/query` — the same wiring you ran by hand from `python -i` happens automatically when the gateway boots. The latency layer starts from the latency-tail row in your `data/trace_evidence.md` file and works backward into streaming and caching. The instrumentation you wire here is upstream of all of them.

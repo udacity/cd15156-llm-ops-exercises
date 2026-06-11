@@ -1,30 +1,26 @@
-"""Server-Sent Events streaming endpoint for ScikitDocs (Module 26).
+"""Server-Sent Events streaming endpoint for ScikitDocs.
 
 Lives flat under ``src/`` rather than in a separate ``optimization``
-subpackage so the starter keeps its "one file per module" convention.
-The capstone factored the same functionality into
-``project/src/optimization/{streaming,routes}.py``; the starter inlines
-both surfaces here.
+subpackage so the starter keeps its one-file-per-topic convention.
 
 The route ``POST /query/stream`` is mounted on the gateway app via
-:func:`src.gateway.app.create_app` (the gateway scaffold mounted the blocking ``/query`` + cost dashboard, and this module adds the streaming router as the third include). The forward-dependency exception is the same one the
-gateway docstring already documents: ``src.streaming`` is taught after
-``src.gateway`` in the curriculum, but the app is a wiring layer and is
-allowed to know about every module.
+:func:`src.gateway.app.create_app`, which adds the streaming router
+alongside the blocking ``/query`` route and the cost dashboard. The app
+is a wiring layer and is allowed to import every part of ``src``.
 
 Two design notes worth naming:
 
 * **Cache bypass.** The streaming endpoint deliberately does not consult
-  the Module 15 cache. A streamed response cannot meaningfully short-circuit
-  on a cache hit — the cache stores a fully realized ``QueryResponse``,
-  not a token sequence. The blocking ``/query`` route is what learners
-  benchmark for cache wins; the streaming route is what they benchmark
-  for time-to-first-byte. Module 26 Common Pitfalls names this as a gotcha so
-  no one mistakes a missing speedup for a broken endpoint.
+  the semantic answer cache. A streamed response cannot meaningfully
+  short-circuit on a cache hit — the cache stores a fully realized
+  ``QueryResponse``, not a token sequence. The blocking ``/query`` route
+  is what you benchmark for cache wins; the streaming route is what you
+  benchmark for time-to-first-byte. The exercise Common Pitfalls names
+  this as a gotcha so no one mistakes a missing speedup for a broken
+  endpoint.
 
-* **Input-guards seam.** :func:`_pre_stream_guards` is a no-op shim at scaffolding. Module 20 will fill it with the LLM Guard + Presidio
-  scanners the capstone uses at
-  ``project/src/guardrails/llm_guard/input_guards.py``. The contract:
+* **Input-guards seam.** :func:`_pre_stream_guards` is a no-op shim.
+  Filling it wires in the LLM Guard + Presidio scanners. The contract:
   the shim returns ``(possibly_redacted_question, blocked_by_reason)``
   — when ``blocked_by_reason`` is ``None`` the question is safe to
   stream; when it starts with ``"prompt_injection"`` the stream is
@@ -85,17 +81,14 @@ class StreamQueryRequest(BaseModel):
 
 
 def _pre_stream_guards(question: str) -> tuple[str, str | None]:
-    """Run input guards before the SSE stream opens. **No-op at Module 26.**
+    """Run input guards before the SSE stream opens. **No-op shim.**
 
-    Module 20 (Guardrails Implementation) fills this shim with the
-    LLM Guard prompt-injection scanner + the Presidio PII redactor that
-    the capstone uses at
-    ``project/src/guardrails/llm_guard/input_guards.py``. Until then
-    the shim returns the question unchanged with ``None`` for the
-    ``blocked_by`` reason, and the streaming route proceeds straight to
-    retrieval + generation.
+    Filling this shim wires in the LLM Guard prompt-injection scanner +
+    the Presidio PII redactor. Until then the shim returns the question
+    unchanged with ``None`` for the ``blocked_by`` reason, and the
+    streaming route proceeds straight to retrieval + generation.
 
-    The contract Module 20 will fill against is:
+    The contract to fill against is:
 
     * ``(question, None)`` — safe; stream the answer.
     * ``(cleaned_question, "pii_redacted: EMAIL,PHONE")`` — PII was
@@ -106,9 +99,9 @@ def _pre_stream_guards(question: str) -> tuple[str, str | None]:
       the route short-circuits to :func:`_blocked_stream` and never
       makes an LLM call.
 
-    Keeping the shim explicit (rather than letting Module 20 add the call
-    site directly) gives Module 26's demo a concrete file:line to point at
-    when walking the input-guards-before-stream design.
+    Keeping the shim explicit (rather than inlining the call site at the
+    guard wiring) gives the demo a concrete file:line to point at when
+    walking the input-guards-before-stream design.
     """
     return question, None
 
@@ -136,13 +129,12 @@ def stream_completion(
 ) -> Iterator[str | tuple[str, TokenUsage, float]]:
     """Yield each token as a ``str``; finally yield ``(answer, usage, cost)``.
 
-    Mirrors ``project/src/optimization/streaming.py:22-62``. The
-    ``stream_options={"include_usage": True}`` argument on line 38 of
-    the capstone is the load-bearing API choice: without it, the OpenAI
-    streaming response omits the ``usage`` field on its final chunk and
-    the per-call cost computation has nothing to work from. Module 26 Demo
-    Part 2 names this line explicitly; the Common Pitfalls block names
-    forgetting it as the gotcha.
+    The ``stream_options={"include_usage": True}`` argument below is the
+    load-bearing API choice: without it, the OpenAI streaming response
+    omits the ``usage`` field on its final chunk and the per-call cost
+    computation has nothing to work from. The recorded demo names this
+    line explicitly; the Common Pitfalls block names forgetting it as the
+    gotcha.
 
     Args:
         question: User's question (already past the input-guards seam).
@@ -183,8 +175,7 @@ def stream_completion(
             )
 
     # Defensive fallback — some self-hosted OpenAI-compatible providers
-    # omit usage even when stream_options requests it. Same fallback as
-    # capstone streaming.py.
+    # omit usage even when stream_options requests it.
     if usage is None:
         usage = TokenUsage(prompt_tokens=0, completion_tokens=0)
 
@@ -252,7 +243,8 @@ def query_stream(request: StreamQueryRequest) -> StreamingResponse:
 
     Pipeline:
 
-    1. :func:`_pre_stream_guards` runs first (no-op at Module 26 — Module 20 fills it).
+    1. :func:`_pre_stream_guards` runs first (a no-op shim until input
+       guards are wired in).
        A prompt-injection match short-circuits to :func:`_blocked_stream`
        and the SSE response carries exactly one ``done`` event; PII in
        the question is redacted in place before retrieval and generation.

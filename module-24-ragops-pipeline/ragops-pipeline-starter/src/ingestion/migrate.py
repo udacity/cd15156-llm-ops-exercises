@@ -1,4 +1,4 @@
-"""Blue/green re-ingest with golden-set eval gate (Module 24).
+"""Blue/green re-ingest with golden-set eval gate.
 
 A migration is four moves:
 
@@ -17,7 +17,7 @@ A migration is four moves:
 This is intentionally the simplest blue/green that teaches the
 property — atomic cutover with a quality gate. A production system
 would add traffic-shadowing, gradual ramp-up, longer eval sets, and
-likely a human approval step at the swap. Module 24's exercise reasons about
+likely a human approval step at the swap. The exercise reasons about
 those extensions; the runnable code is the minimum that demonstrates
 why an atomic alias swap is safer than in-place re-ingest.
 """
@@ -47,8 +47,8 @@ GOLDEN_SET_PATH: Path = Path("data/golden_set.csv")
 DEFAULT_RECALL_THRESHOLD: float = 0.70
 DEFAULT_TOP_K: int = 5
 # Use a subset of the full 30-question golden set for the gate.
-# Migration eval is a fast confidence check; the long RAGAS sweep in
-# Module 11 is the rigorous post-merge run.
+# Migration eval is a fast confidence check; the full RAGAS sweep is
+# the rigorous post-merge run.
 DEFAULT_EVAL_SAMPLE_SIZE: int = 12
 
 

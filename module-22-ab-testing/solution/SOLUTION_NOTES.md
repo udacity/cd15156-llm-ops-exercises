@@ -1,8 +1,8 @@
 # Solution notes — Module 22 (Prompt A/B Testing)
 
-The starter ships every production primitive Module 22 needs: `src/optimization/ab.py` (three functions), both prompt variants at `prompts/docbot_system_{A,B}.j2`, the analyzer at `scripts/ab_analyze.py`, the `make ab-analyze` Makefile target, and the 16-test suite at `tests/test_ab.py`. The only new file this exercise authors is one script.
+The starter ships every production primitive this module needs: `src/optimization/ab.py` (three functions), both prompt variants at `prompts/docbot_system_{A,B}.j2`, the analyzer at `scripts/ab_analyze.py`, the `make ab-analyze` Makefile target, and the 16-test suite at `tests/test_ab.py`. The only new file this exercise authors is one script.
 
-## Files this solution adds
+## Files these notes add
 
 | File | Maps to |
 |---|---|
@@ -60,7 +60,7 @@ The honest one-paragraph interpretation: "Underpowered for sticky-by-user at 50 
 
 ### Exercise 3 — Written decision docstring
 
-The docstring at the top of `scripts/ab_simulate.py` in this solution is the canonical example. It names the winning variant (A), the deciding metric (cost + latency at quality parity), the confidence caveat (sticky-effective-N), and the proposed next step (rerun at 500 unique clients).
+The docstring at the top of `scripts/ab_simulate.py` in these notes is the canonical example. It names the winning variant (A), the deciding metric (cost + latency at quality parity), the confidence caveat (sticky-effective-N), and the proposed next step (rerun at 500 unique clients).
 
 ## Verification
 

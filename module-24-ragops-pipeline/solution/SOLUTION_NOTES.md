@@ -1,10 +1,10 @@
 # Solution notes — Module 24 (RAGOps Pipeline)
 
-The starter already ships every source file this module exercises: `src/ingestion/watcher.py`, `src/ingestion/alias.py`, `src/ingestion/migrate.py`, `src/store.py` (alias-resolving `get_collection`), `scripts/start_watcher.py`, `scripts/migrate_blue_green.py`, plus the inbox templates at `data/docs_inbox-templates/{good,bad_invalid_json,bad_missing_field}.json` and the `make watch` / `make migrate-blue-green` Makefile targets. The exercises are operational — drop files, run scripts, read logs, query the gateway — and the solution is therefore *expected outputs* rather than authored code.
+The starter already ships every source file this module exercises: `src/ingestion/watcher.py`, `src/ingestion/alias.py`, `src/ingestion/migrate.py`, `src/store.py` (alias-resolving `get_collection`), `scripts/start_watcher.py`, `scripts/migrate_blue_green.py`, plus the inbox templates at `data/docs_inbox-templates/{good,bad_invalid_json,bad_missing_field}.json` and the `make watch` / `make migrate-blue-green` Makefile targets. The exercises are operational — drop files, run scripts, read logs, query the gateway — and the deliverables are therefore *expected outputs* rather than authored code.
 
-## Files this solution adds
+## Files these notes add
 
-None. The solution directory mirrors the starter exactly. The only difference is this `SOLUTION_NOTES.md`, which captures the expected outputs and writeup-style deliverables for each exercise.
+None. This directory mirrors the starter exactly. The only difference is this `SOLUTION_NOTES.md`, which captures the expected outputs and writeup-style deliverables for each exercise.
 
 If you were grading, the artifacts to look for are: a populated `data/ACTIVE_COLLECTION` file naming a color (`scikit_docs_green` after Part B of Exercise 3), a non-empty `data/docs_inbox/failed/` directory with two `.error.txt` siblings after Exercise 2, and a successful `/query` response that cites the `modules.inbox_demo.intro` chunk after Exercise 1.
 
@@ -176,6 +176,6 @@ grep -q "scikit_docs_green" data/ACTIVE_COLLECTION
 
 ## KNOWN-LIMITATIONs
 
-- **No authored solution code.** Module 24's exercises are pure ops — no fenced code blocks in `exercise.md` name a file to create or extend, so there is nothing to commit into `solution/src/` or `solution/scripts/` that does not already ship in the starter. Verification is empirical (run the make targets, inspect log lines, read the alias file) rather than `pytest`-driven for the exercise deliverables themselves; the starter's existing `tests/test_ingestion.py` covers the underlying watcher/alias/migrate units.
+- **No authored solution code.** These exercises are pure ops — no fenced code blocks in the instructions name a file to create or extend, so there is nothing to commit into `solution/src/` or `solution/scripts/` that does not already ship in the starter. Verification is empirical (run the make targets, inspect log lines, read the alias file) rather than `pytest`-driven for the exercise deliverables themselves; the starter's existing `tests/test_ingestion.py` covers the underlying watcher/alias/migrate units.
 - **Exercise 3 requires real OpenAI embedding calls.** The blue/green migration re-embeds any cache-miss chunks, and on a cold-cache or new-tag run this costs ~$0.05-0.10 per migration. The expected-output recall numbers assume the cached `data/embedding_cache.jsonl` from a prior `make load-data` is present; on a clean clone, the first migration is slower and slightly more expensive.
 - **scikit-learn checkout state.** `make migrate-blue-green` will `git clone` (or `git fetch`) the scikit-learn repo at `data/scikit-learn-cache/`. On the Workspace this is fast; on a clean grader machine without git installed, the migration will fail at the clone step rather than at the eval gate. The starter assumes git is available.

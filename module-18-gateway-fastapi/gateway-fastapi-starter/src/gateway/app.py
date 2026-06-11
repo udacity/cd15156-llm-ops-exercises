@@ -1,24 +1,19 @@
-"""FastAPI application factory for the ScikitDocs gateway (Module 18).
+"""FastAPI application factory for the ScikitDocs gateway.
 
 ``make serve`` boots ``uvicorn src.gateway.app:app --port 8080``, which
 imports ``app`` from this module. ``app`` is the output of
 :func:`create_app`, a thin factory that mounts three routers:
 
 - :data:`src.gateway.routes.router` — ``POST /query`` + ``GET /health``
-- :data:`src.cost.dashboard.router` — ``GET /cost-dashboard`` (Module 13)
-- :data:`src.streaming.streaming_router` — ``POST /query/stream`` (Module 26)
+- :data:`src.cost.dashboard.router` — ``GET /cost-dashboard``
+- :data:`src.streaming.streaming_router` — ``POST /query/stream``
 
-The streaming router is a curriculum-later addition (Module 26) mounted on a
-curriculum-earlier surface (Module 18). The app is a wiring layer and is
-allowed to know about every package; importing the streaming router
-here is the documented exception to the forward-dependency rule the
-gateway otherwise honors.
+The app is a wiring layer and is allowed to know about every package;
+mounting all three routers here keeps the request surface in one place.
 
 The :func:`lifespan` async context manager boots Phoenix tracing on
-startup (Module 09) and force-flushes any in-flight spans on shutdown so the
-last few requests are not silently dropped. The two side effects mirror
-the capstone's ``project/src/gateway/app.py`` exactly — same hooks,
-same ordering.
+startup and force-flushes any in-flight spans on shutdown so the
+last few requests are not silently dropped.
 """
 
 from contextlib import asynccontextmanager

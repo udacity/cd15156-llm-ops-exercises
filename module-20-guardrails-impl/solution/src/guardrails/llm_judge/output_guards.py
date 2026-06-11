@@ -1,4 +1,4 @@
-"""LLM-as-judge hallucination check (Module 20).
+"""LLM-as-judge hallucination check.
 
 A single function — :func:`check_hallucination` — that takes a generated
 answer and the retrieved source chunks, asks gpt-4o-mini whether every
@@ -9,9 +9,8 @@ failure cannot block a grounded answer.
 
 Cost rows are written to ``data/cost_log.jsonl`` via
 :func:`src.cost.tracker.log_request` with ``query_type="hallucination_check"``
-so the Module 13 dashboard surfaces them in a separate bucket from real
-answers. Exercise 2 in Module 20 sweeps the judge's behavior against a 10-row
-golden cohort.
+so the cost dashboard surfaces them in a separate bucket from real
+answers.
 """
 
 from __future__ import annotations

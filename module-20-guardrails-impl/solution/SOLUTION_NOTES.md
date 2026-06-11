@@ -1,12 +1,12 @@
 # Module 20 Solution Notes
 
-This `solution/` is the ScikitDocs starter with **Exercise 4 (Pydantic `QueryResponse` validator at the gateway boundary)** already applied. The other three exercises produce per-learner artifacts (added input guard, calibration markdown report, cost-amplification table + burst-test script output) rather than code that ships in the repo; reference outputs are described below.
+These notes accompany the ScikitDocs starter with **Exercise 4 (Pydantic `QueryResponse` validator at the gateway boundary)** already applied. The other three exercises produce per-learner artifacts (added input guard, calibration markdown report, cost-amplification table + burst-test script output) rather than code that ships in the repo; reference outputs are described below.
 
 ## Exercise 4 — Pydantic output validator (code-in-repo)
 
 The change is bracketed by `# TODO(m20-exercise-4)-start` / `-end` markers so a learner can `grep` the seam.
 
-- `src/models.py` — `QueryResponse` itself carries the constraints: `citations: list[Source] = Field(..., min_length=1)` and `confidence: float = Field(..., ge=0.0, le=1.0)`. `Field` is imported from `pydantic` alongside `BaseModel`. The field rename (`sources` → `citations`) is local to this m20 exercise; other modules in this course keep `sources`.
+- `src/models.py` — `QueryResponse` itself carries the constraints: `citations: list[Source] = Field(..., min_length=1)` and `confidence: float = Field(..., ge=0.0, le=1.0)`. `Field` is imported from `pydantic` alongside `BaseModel`. The field rename (`sources` → `citations`) is local to this exercise.
 - `src/gateway/routes.py` — `try/except ValidationError` block at the boundary, after the hallucination check, just before the final `return response`. On `ValidationError`, returns `JSONResponse(status_code=502, content={"detail": "output_validation_failed", "field": str(exc.errors()[0]['loc'][0])})`. Imports widened to bring in `JSONResponse` and `ValidationError`. Return type widened to `QueryResponse | JSONResponse`.
 - `tests/test_gateway_output_validator.py` — the two tests the exercise asks the learner to author: (1) well-formed response → 200, (2) `citations=[]` → 502 with `field=="citations"`. Both mock `route_query` and `check_hallucination` so the test exercises only the validator seam, and `reset_rate_limit_state()` runs at the top of each test so the LLM10 bucket doesn't leak between runs. The citation-stripped fixture uses `QueryResponse.model_construct(...)` to bypass the constructor's own validation; the test is about the boundary re-validation, not the constructor.
 
@@ -29,7 +29,7 @@ Acceptance is a parametrised pytest case in `tests/test_guardrails.py` (one trig
 
 ## Exercise 2 — LLM-judge calibration (per-learner markdown)
 
-Expected deliverable: `exercises/Module 20/judge-calibration-sweep.md` containing two confusion matrices (one per configuration the learner sweeps), a one-paragraph interpretation, and a recommendation with rationale. The sweep cohort is ten queries: five grounded scikit-learn API questions (true-negatives) + five subtly-wrong-API questions (true-positives). Reference table shape:
+Expected deliverable: `exercises/judge-calibration-sweep.md` containing two confusion matrices (one per configuration the learner sweeps), a one-paragraph interpretation, and a recommendation with rationale. The sweep cohort is ten queries: five grounded scikit-learn API questions (true-negatives) + five subtly-wrong-API questions (true-positives). Reference table shape:
 
 ```
 | config | TP | FN | TN | FP | FP rate | FN rate |
@@ -56,6 +56,6 @@ Bonus: tighten `RATE_LIMIT_REQUESTS = 5` and `RATE_LIMIT_WINDOW_SECONDS = 30` in
 
 ## KNOWN-LIMITATIONs
 
-- **Exercise 1/2/3 code not authored in `solution/`.** Exercises 1 (input guard), 2 (calibration report), and 3 (cost-amplification + `max_tokens` patch + burst script) produce per-learner deliverables — the exercise menu offers three input-guard options, the calibration knob is a learner choice, and the burst-script implementation can be bash or Python. SOLUTION_NOTES.md above describes the expected shape and acceptance criteria; the solution repo only carries the Exercise 4 code (which has one canonical answer).
+- **Exercise 1/2/3 code not authored here.** Exercises 1 (input guard), 2 (calibration report), and 3 (cost-amplification + `max_tokens` patch + burst script) produce per-learner deliverables — the exercise menu offers three input-guard options, the calibration knob is a learner choice, and the burst-script implementation can be bash or Python. These notes describe the expected shape and acceptance criteria; only the Exercise 4 code (which has one canonical answer) is pre-applied.
 - **Live-route tests need OpenAI keys + heavy NLI models.** `tests/test_guardrails.py` is skipped in the central verification pass because the DeBERTa prompt-injection model (~250 MB), the `dslim/bert-base-NER` Presidio backend, and `en_core_web_sm` all need to be downloadable on the verification box. The Exercise 4 tests in `tests/test_gateway_output_validator.py` mock `route_query` and `check_hallucination` so they run in well under a second without any model load.
-- **`max_tokens` plumbing for Exercise 3 not pre-applied in `solution/`.** Exercise 3 step 2 explicitly asks the learner to patch `src/generator.py`. Pre-applying it would obviate the exercise. The `MAX_OUTPUT_TOKENS = 1024` constant exists in `src/guardrails/rate_limit.py`; the learner's job is to thread it through.
+- **`max_tokens` plumbing for Exercise 3 not pre-applied.** Exercise 3 step 2 explicitly asks the learner to patch `src/generator.py`. Pre-applying it would obviate the exercise. The `MAX_OUTPUT_TOKENS = 1024` constant exists in `src/guardrails/rate_limit.py`; the learner's job is to thread it through.

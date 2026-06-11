@@ -1,14 +1,14 @@
 > A walkthrough of the codebase you'll work with. See INSTRUCTIONS.md for the exercise tasks.
 
-# Module 09 — Demo: Wire Phoenix into the ScikitDocs Pipeline and Read One Trace
+# Demo: Wire Phoenix into the ScikitDocs Pipeline and Read One Trace
 
-Module 08 named the vocabulary — traces, spans, attributes, the OpenTelemetry and OpenInference standards on top. This demo connects that vocabulary to running code. You will read `src/tracing.py` end to end, fire one traced `run_pipeline` call against the ScikitDocs corpus, open the Phoenix UI at `localhost:6006`, and read the six-span tree it produced. Then you will export the same data as markdown with `make seed-traces` — the rubric §7 evidence path for environments where the UI port is not reachable.
+Traces, spans, attributes, the OpenTelemetry and OpenInference standards on top — this demo connects that vocabulary to running code. You will read `src/tracing.py` end to end, fire one traced `run_pipeline` call against the ScikitDocs corpus, open the Phoenix UI at `localhost:6006`, and read the six-span tree it produced. Then you will export the same data as markdown with `make seed-traces` — the rubric §7 evidence path for environments where the UI port is not reachable.
 
-## One CSV-vs-capstone deviation to name up front
+## Why Arize Phoenix
 
-The submitted module dictionary calls this module "Implement LLM Call Tracing with LangSmith." The starter uses **Arize Phoenix**, not LangSmith, per the locked decision in `docs/2026-04-29-udacity-deliverable-deltas.md` §7.4. The reason is operational: Phoenix runs in-process inside any Python entry point with no SaaS account, no Docker daemon, and no API key — which fits the Udacity Workspace constraints (4 GB RAM, 2 vCPU, no AWS). Phoenix's community version is Apache 2.0, exposes its UI at `localhost:6006`, and stores traces in a local SQLite database under `data/phoenix/` when persistence is configured.
+The starter uses **Arize Phoenix** as its tracing backend. The reason is operational: Phoenix runs in-process inside any Python entry point with no SaaS account, no Docker daemon, and no API key — which fits the Udacity Workspace constraints (4 GB RAM, 2 vCPU, no AWS). Phoenix's community version is Apache 2.0, exposes its UI at `localhost:6006`, and stores traces in a local SQLite database under `data/phoenix/` when persistence is configured.
 
-The patterns transfer. Module 08 covered the ecosystem comparison; the trace UI, the span tree, the attribute schema, and the diagnostic workflows look the same in LangSmith, Langfuse, and Datadog LLM Observability. The choice here is deployment topology, not concepts.
+The patterns transfer. The trace UI, the span tree, the attribute schema, and the diagnostic workflows look the same in LangSmith, Langfuse, and Datadog LLM Observability. The choice here is deployment topology, not concepts.
 
 ## Setup
 
@@ -48,7 +48,7 @@ OpenAIInstrumentor().instrument(tracer_provider=_tracer_provider)
 
 `px.launch_app()` starts the in-process Phoenix UI bound to the host and port from settings. `phoenix.otel.register(...)` registers an OpenTelemetry `TracerProvider` configured to export spans to that Phoenix instance over OTLP, under the project name `scikitdocs`. `OpenAIInstrumentor().instrument(...)` patches the OpenAI SDK so every chat-completions and embeddings call emits an OpenInference-shaped span with the model name, input messages, output messages, and token counts as attributes. You wrote zero instrumentation code in `src/embedder.py` or `src/generator.py` — the instrumentor does the work at the SDK seam.
 
-The custom root + child spans live in `traced_pipeline` further down the same file, at `src/tracing.py:120-205`. The function imports `embed_query`, `query`, `render_system_prompt`, and `generate` directly (rather than calling `run_pipeline`) so each stage gets its own named span. The resulting hierarchy matches the vocabulary Module 08 named in the abstract:
+The custom root + child spans live in `traced_pipeline` further down the same file, at `src/tracing.py:120-205`. The function imports `embed_query`, `query`, `render_system_prompt`, and `generate` directly (rather than calling `run_pipeline`) so each stage gets its own named span. The resulting hierarchy:
 
 ```
 rag_query           (root, the request)
@@ -59,7 +59,7 @@ rag_query           (root, the request)
   └── generate      (auto-child: OpenAI ChatCompletion span)
 ```
 
-The duplication with `src/pipeline.py` is deliberate. The plain RAG composition in `pipeline.py` stays free of any opentelemetry import; the tracing wrapper here is where the instrumentation surface lives. Each named span carries the attributes the eval, cost, and latency layers will read from later, plus a 32-character hex `trace_id` injected back into `QueryResponse` via `model_copy(update={"trace_id": ...})`.
+The duplication with `src/pipeline.py` is deliberate. The plain RAG composition in `pipeline.py` stays free of any opentelemetry import; the tracing wrapper here is where the instrumentation surface lives. Each named span carries the attributes the eval, cost, and latency layers read from, plus a 32-character hex `trace_id` injected back into `QueryResponse` via `model_copy(update={"trace_id": ...})`.
 
 ## Walkthrough 2 — fire one traced query, read the span tree
 
@@ -110,9 +110,9 @@ The `Slowest child` column is the diagnostic hook. On most runs against `gpt-4o`
 
 ## Wrap-up
 
-Three calls wire Phoenix in: `px.launch_app()`, `phoenix.otel.register(...)`, and `OpenAIInstrumentor().instrument(...)`. One wrapper — `traced_pipeline` — composes the pipeline with six named spans matching the request → retrieve → embed → search → augment → generate hierarchy from Module 08. One Python invocation produces a complete trace, viewable in the UI at `localhost:6006` or as markdown via `make seed-traces` at `data/trace_evidence.md`. The exercises take this further: open one trace in the UI, export the rubric §7 evidence file, and edit `src/tracing.py` to add a custom span attribute the rest of the stack reads.
+Three calls wire Phoenix in: `px.launch_app()`, `phoenix.otel.register(...)`, and `OpenAIInstrumentor().instrument(...)`. One wrapper — `traced_pipeline` — composes the pipeline with six named spans matching the request → retrieve → embed → search → augment → generate hierarchy. One Python invocation produces a complete trace, viewable in the UI at `localhost:6006` or as markdown via `make seed-traces` at `data/trace_evidence.md`. The exercises take this further: open one trace in the UI, export the rubric §7 evidence file, and edit `src/tracing.py` to add a custom span attribute the rest of the stack reads.
 
-One operational note before you move on. The trace evidence file is regeneratable — `make seed-traces` overwrites it on every run, so checking the file in is not a one-shot ritual. It is the simplest evidence path a reviewer can verify without running anything, and it stays useful as the corpus, models, and retrieval parameters evolve across the rest of the course. Modules 11, 13, and 26 will each read attributes off the same span tree; the wiring you watched come together in this demo is the data backbone for everything operational that follows.
+One operational note before you move on. The trace evidence file is regeneratable — `make seed-traces` overwrites it on every run, so checking the file in is not a one-shot ritual. It is the simplest evidence path a reviewer can verify without running anything, and it stays useful as the corpus, models, and retrieval parameters evolve. The eval, cost, and latency layers each read attributes off the same span tree; the wiring you watched come together in this demo is the data backbone for everything operational that follows.
 
 ---
 

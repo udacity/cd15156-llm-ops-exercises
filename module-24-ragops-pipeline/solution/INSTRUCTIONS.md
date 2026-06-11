@@ -1,4 +1,4 @@
-# Module 24 — Automate the ScikitDocs Pipeline (watchdog ingest + blue/green index swap)
+# Automate the ScikitDocs Pipeline (watchdog ingest + blue/green index swap)
 
 ## Setup
 
@@ -19,11 +19,9 @@ Smoke-check the pipeline before any RAGOps work:
 uv run python -c "from src.pipeline import run_pipeline; print(run_pipeline('What kernel does SVC use by default?').answer[:80])"
 ```
 
-If that returns a grounded answer about `rbf`, you are ready. Follow the demo walkthrough first, then work through the three exercises in order.
+If that returns a grounded answer about `rbf`, you are ready. Watch the recorded demo first, then work through the three exercises in order.
 
 ---
-
-> A walkthrough of this codebase is in DEMO.md.
 
 # Exercises — Drive the Watcher End to End, Then Atomically Swap an Index
 
@@ -41,7 +39,7 @@ uv run python -c "from src.config import settings; print(repr(settings.openai_ba
 
 You want `''` on direct OpenAI or `'https://openai.vocareum.com/v1'` on Vocareum. Any other value will fail with a confusing 401 the first time the watcher tries to embed an incoming section — fix the `.env` before continuing.
 
-Confirm the corpus is loaded and the alias is in its default pre-Module 24 state:
+Confirm the corpus is loaded and the alias is in its default pre-migration state:
 
 ```
 uv run python -c "
@@ -92,7 +90,7 @@ The pattern is: watcher in one terminal, file-drop in the other, then a query th
    ingestion.watcher: Ingested my_first_section.json → modules.inbox_demo.intro#... (active=scikit_docs)
    ```
 
-   The `active=scikit_docs` portion is the alias resolver reporting itself — since the alias file does not exist yet, writes land in the legacy `scikit_docs` collection that Module 05 created. Exercise 3 is where this changes to a color name.
+   The `active=scikit_docs` portion is the alias resolver reporting itself — since the alias file does not exist yet, writes land in the original `scikit_docs` collection from before the alias mechanism existed. Exercise 3 is where this changes to a color name.
 
 4. Confirm the new section is queryable through the gateway. From terminal two:
 
@@ -104,7 +102,7 @@ The pattern is: watcher in one terminal, file-drop in the other, then a query th
 
    The response body should mention the inbox watcher by name, cite the content-hashed chunk id detail from the template, and include `modules.inbox_demo.intro` somewhere in the `sources` array. The exact ranking depends on the rest of the corpus, but the new section should land in the top five hits.
 
-5. Look at the inbox in terminal two. The file you dropped is still there — the watcher does not delete successful ingestions. That is by design: the inbox is the audit trail, and a separate retention policy (a cron job, a manual cleanup) decides when old files go away. In the AWS production form from the demo's sidebar, the S3 bucket plays this role and an S3 Lifecycle policy is what eventually moves old objects to Glacier.
+5. Look at the inbox in terminal two. The file you dropped is still there — the watcher does not delete successful ingestions. That is by design: the inbox is the audit trail, and a separate retention policy (a cron job, a manual cleanup) decides when old files go away. In the AWS production form from the recorded demo's sidebar, the S3 bucket plays this role and an S3 Lifecycle policy is what eventually moves old objects to Glacier.
 
 ### Success Criteria
 
@@ -195,7 +193,7 @@ Write a Python one-liner that walks `data/docs_inbox/failed/` and prints a CSV-s
 
 ## Exercise 3 — Run a blue/green migration and verify the alias swap
 
-Two parts. Part A runs the migration end-to-end against the same corpus tag (the rebuild form of blue/green — same source, new collection, atomic swap). Part B reasons about what changes when the source tag is actually different (the version-upgrade form), and verifies the alias mechanism itself with a manual swap-back. This is the migration mechanism you reason about *and* run; the alias swap is the load-bearing operational property Module 23's Video 3 named.
+Two parts. Part A runs the migration end-to-end against the same corpus tag (the rebuild form of blue/green — same source, new collection, atomic swap). Part B reasons about what changes when the source tag is actually different (the version-upgrade form), and verifies the alias mechanism itself with a manual swap-back. This is the migration mechanism you reason about *and* run; the alias swap is the load-bearing operational property at the heart of the pattern.
 
 Two ideas worth holding in mind before you run it. First, the alias swap is not the same operation as "delete and rebuild." A delete-and-rebuild against the live `scikit_docs` collection serves partial results for the minutes the rebuild takes — every query during that window hits a half-populated index whose recall is unpredictable, and there is no clean way to roll back if the rebuild produces a worse collection than what you had. The blue/green pattern fixes both problems by building into a *separate* collection that the gateway is not querying, then flipping the alias only after the new collection has been measured against the same golden set the old one was measured against. Second, the eval gate is the load-bearing detail. Without it, the swap is just a fast way to ship a regression. With it, the swap is a release procedure — measurement first, swap second, and a knob (the recall floor) that decides what "good enough" means.
 
@@ -293,8 +291,8 @@ The point is to see the alias file appear, the cutover happen atomically, and th
 - **Running the watcher and the migration concurrently.** The migration drops and rebuilds the inactive color; while it runs, the watcher's content-hashed upserts into the *active* color are fine — but the embedding cache file is appended-to by both, and a torn write would corrupt one entry. The watcher's `_embed_one` uses the same cache helpers and serializes per-call, but the safer pattern is to stop the watcher for the migration window. Exercise 3 step 1 names this.
 - **Editing files in-place inside the inbox.** Watchdog fires `modified` events on in-place edits (the handler only listens for `created` and `moved`, so most edits are silently ignored on Linux — but on macOS/FSEvents you may see surprises). The atomic pattern is the same as for `cp`: write the file under a different name, then `mv` it into the inbox.
 - **Network filesystems silencing events.** NFS and SMB do not emit native filesystem events to the kernel layer watchdog uses, so the default `Observer` will sit silent. The mitigation is `PollingObserver` from `watchdog.observers.polling`, which stat-loops the directory. The Workspace runs on local disk, so the default is the right choice here.
-- **Forgetting to invalidate the semantic cache after a migration.** Module 15's cache may hold paraphrased answers that referenced the prior color. A blunt eviction with `clear()` is the simplest fix; targeted invalidation by source citation is the rigorous one. Either way, the cache and the alias are coupled — a migration that swaps the alias should also bust the cache, or the first cohort of queries serves answers built against the previous color.
+- **Forgetting to invalidate the semantic cache after a migration.** The semantic answer cache may hold paraphrased answers that referenced the prior color. A blunt eviction with `clear()` is the simplest fix; targeted invalidation by source citation is the rigorous one. Either way, the cache and the alias are coupled — a migration that swaps the alias should also bust the cache, or the first cohort of queries serves answers built against the previous color.
 - **Treating `data/ACTIVE_COLLECTION` as scratch.** Deleting the file mid-experiment reverts the alias to legacy mode (the resolver falls back to the literal `scikit_docs`), which silently re-routes the gateway to the original collection from before the migration. If you want to roll back, run another migration; do not edit the file by hand.
 - **Setting `--threshold` too high.** A reasonable production starting point is the *previous* migration's recall@5, minus a small tolerance — not a hard 0.85 floor. The default `0.70` in `migrate_blue_green` matches the smoke gate; tightening it should be a deliberate calibration decision, not a typo.
 
-What you have at the end. A watcher that ingests new doc sections in roughly a second, a quarantine path that preserves failures for debugging, a blue/green migration that atomically cuts the gateway over to a freshly-built and gate-passed collection, and the operational reasoning to handle the three re-ingest events Module 23 named — drift, embedding-model migration, and source-version upgrade. The watchdog form runs locally; the AWS form from the demo sidebar is the same pattern at production scale; the alias swap is the load-bearing property that lets either form carry the index between versions without a serving window.
+What you have at the end. A watcher that ingests new doc sections in roughly a second, a quarantine path that preserves failures for debugging, a blue/green migration that atomically cuts the gateway over to a freshly-built and gate-passed collection, and the operational reasoning to handle the three re-ingest events that drive a re-index — drift, embedding-model migration, and source-version upgrade. The watchdog form runs locally; the AWS form from the recorded demo's sidebar is the same pattern at production scale; the alias swap is the load-bearing property that lets either form carry the index between versions without a serving window.

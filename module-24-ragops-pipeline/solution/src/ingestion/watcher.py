@@ -1,6 +1,6 @@
-"""Filesystem watcher for ad-hoc section drops (Module 24).
+"""Filesystem watcher for ad-hoc section drops.
 
-The watcher mirrors Module 23's producer–queue–consumer pattern at the
+The watcher applies the producer–queue–consumer pattern at the
 inbox layer. A JSON file dropped into ``data/docs_inbox/`` represents
 one pre-chunked scikit-learn doc section — the schema matches what
 :func:`src.corpus.load_corpus` yields, so the watcher path is the
@@ -15,7 +15,7 @@ the same id and Chroma's upsert overwrites the prior row instead of
 duplicating it. Drift-fixing the same section means a new hash, new id,
 and the previous row stays in the index until the next migration drops
 the inactive color — the deliberately conservative choice for a live
-serving collection. Module 24 names this trade-off in the exercise.
+serving collection.
 
 The watcher reuses ``scripts/load_data.embed_missing`` for the embedding
 call so the disk cache at ``data/embedding_cache.jsonl`` is shared with

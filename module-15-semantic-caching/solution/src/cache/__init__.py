@@ -1,6 +1,6 @@
-"""In-process semantic cache for the ScikitDocs starter (Module 15).
+"""In-process semantic cache for the ScikitDocs starter.
 
-Public surface mirrors ``project/src/cache/__init__.py``:
+Public surface:
 
 - ``lookup`` — embed a question, similarity-search the cache collection,
   apply the cosine-distance threshold gate, return a cached
@@ -9,8 +9,8 @@ Public surface mirrors ``project/src/cache/__init__.py``:
   key and four metadata fields.
 - ``clear`` — drop every entry in the cache collection.
 - ``cached_route_query`` — convenience composition of
-  ``lookup → run_pipeline → store`` used by the Module 15 demo and exercises
-  until Module 18 wires the same composition into the HTTP route.
+  ``lookup → run_pipeline → store`` used by the demo and exercises
+  in place of an HTTP route.
 """
 
 from src.cache.semantic import COLLECTION_NAME, clear, lookup, store

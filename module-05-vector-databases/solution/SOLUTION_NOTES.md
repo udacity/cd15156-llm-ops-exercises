@@ -1,6 +1,6 @@
 # Module 05 — Solution Notes
 
-This solution adds four scripts to the ScikitDocs starter under `scripts/`:
+These notes add four scripts to the ScikitDocs starter under `scripts/`:
 
 - `scripts/recall_at_5.py` — Exercise 2's twelve-question recall@5 measurement against the OpenAI-built `scikit_docs` collection.
 - `scripts/embed_with_st.py` — Exercise 3 step 1's sentence-transformers wrapper exposing `embed_query_st` over the local `all-MiniLM-L6-v2` model.
@@ -17,13 +17,13 @@ After `rm -rf data/chroma && make load-data`:
 
 ## Exercise 2 — expected output
 
-`uv run python scripts/recall_at_5.py` prints a 12-row HIT/MISS table and `recall@5: 12/12 = 1.00` in roughly eighteen seconds. Recall is not the binding constraint on retrieval quality at this corpus size; the seeded-chunk top-1 displacement is what Module 11 will measure.
+`uv run python scripts/recall_at_5.py` prints a 12-row HIT/MISS table and `recall@5: 12/12 = 1.00` in roughly eighteen seconds. Recall is not the binding constraint on retrieval quality at this corpus size; the seeded-chunk top-1 displacement is what a later evaluation module will measure.
 
 ## Exercise 3 — expected output and cost-vs-quality recommendation
 
 The cold MiniLM rebuild via `uv run python scripts/load_data_st.py` takes ~90 seconds on CPU and populates `scikit_docs_st` with ~747 chunks at 384 dimensions. `uv run python scripts/recall_at_5_st.py` then reports recall@5 around 10/12 = 0.83 against the same twelve-question subset.
 
-Cost-vs-quality recommendation for the ScikitDocs corpus: **stay on `text-embedding-3-small`**. The 1.00 → 0.83 recall gap on twelve questions is meaningful, and the cold-build cost (~$0.10) is one-time because the embedding cache makes warm rebuilds free. The MiniLM path is the right call when (a) the corpus is large enough that per-build cost is no longer rounding error, (b) regulatory or air-gap constraints forbid sending the corpus to a hosted API, or (c) sub-50ms query latency is a hard product requirement. None of those apply to ScikitDocs. The two-collection blue/green setup remains useful regardless — Module 24 reuses it for embedder upgrades (e.g., `text-embedding-3-small` → `text-embedding-3-large`), which suffer the same dimensional-mismatch rebuild problem as the OpenAI → MiniLM swap.
+Cost-vs-quality recommendation for the ScikitDocs corpus: **stay on `text-embedding-3-small`**. The 1.00 → 0.83 recall gap on twelve questions is meaningful, and the cold-build cost (~$0.10) is one-time because the embedding cache makes warm rebuilds free. The MiniLM path is the right call when (a) the corpus is large enough that per-build cost is no longer rounding error, (b) regulatory or air-gap constraints forbid sending the corpus to a hosted API, or (c) sub-50ms query latency is a hard product requirement. None of those apply to ScikitDocs. The two-collection blue/green setup remains useful regardless — a later RAGOps module reuses it for embedder upgrades (e.g., `text-embedding-3-small` → `text-embedding-3-large`), which suffer the same dimensional-mismatch rebuild problem as the OpenAI → MiniLM swap.
 
 ## KNOWN-LIMITATIONs
 

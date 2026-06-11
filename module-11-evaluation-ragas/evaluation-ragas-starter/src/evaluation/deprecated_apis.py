@@ -1,4 +1,4 @@
-"""Deprecated-API faithfulness sub-metric (Module 11).
+"""Deprecated-API faithfulness sub-metric.
 
 Scores whether any scikit-learn symbol cited in a generated answer is
 deprecated or removed as of the pinned corpus version. The check is a
@@ -13,7 +13,7 @@ plus the replacement and the version the change landed in. Extending
 the list is a small edit — add the symbol, the deprecation version,
 and the recommended replacement. Production teams would generate this
 from the scikit-learn release notes programmatically; the static list
-keeps the Module 11 exercise self-contained.
+keeps the exercise self-contained.
 
 CORPUS_VERSION pin: scikit-learn 1.5 (data/CORPUS_VERSION). Re-pin
 when the corpus is re-ingested at a newer version.

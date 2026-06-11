@@ -6,11 +6,11 @@ This starter is the ScikitDocs RAG app with the prompt loader, vector DB, RAG pi
 
 ---
 
-> A walkthrough of this codebase is in DEMO.md.
+> The recorded demo walks through this codebase; the exercises below build on it.
 
 # Module 11 — Exercise: Extend the Golden Set, Sweep `top_k`, Diagnose Two Failures, Wire a CI Gate
 
-The demo showed `make eval` running over the 30-row ScikitDocs golden set and how to read the four-metric output plus the deprecated-API sub-metric. These exercises make the workflow producible end-to-end. Four exercises, each ending in a small artifact: five golden-set rows that pull difficulty up, a `top_k` sweep table at 3-5-10, a two-question diagnostic report, and a CI threshold gate. Plan for twenty minutes, weighted toward the diagnostic exercise — that muscle memory is what production RAG eval pays for.
+The recorded demo showed `make eval` running over the 30-row ScikitDocs golden set and how to read the four-metric output plus the deprecated-API sub-metric. These exercises make the workflow producible end-to-end. Four exercises, each ending in a small artifact: five golden-set rows that pull difficulty up, a `top_k` sweep table at 3-5-10, a two-question diagnostic report, and a CI threshold gate. Plan for twenty minutes, weighted toward the diagnostic exercise — that muscle memory is what production RAG eval pays for.
 
 ## Setup
 
@@ -69,7 +69,7 @@ The generator's answer cited a symbol on the `DEPRECATED_APIS` allow-list. Open 
 
 ## Exercise 2 — Sweep `top_k` at 3, 5, and 10 and recommend a value
 
-Module 10 framed `top_k` as the lever that trades retrieval recall against precision. The starter exposes a sweep harness at `scripts/eval_topk_sweep.py`, wired to `make eval-topk-sweep` at `Makefile:58-59`. This exercise produces the sweep table and a one-sentence recommendation grounded in the recall-precision tradeoff.
+`top_k` is the lever that trades retrieval recall against precision. The starter exposes a sweep harness at `scripts/eval_topk_sweep.py`, wired to `make eval-topk-sweep` at `Makefile:58-59`. This exercise produces the sweep table and a one-sentence recommendation grounded in the recall-precision tradeoff.
 
 ### What to do
 
@@ -100,7 +100,7 @@ Module 10 framed `top_k` as the lever that trades retrieval recall against preci
    Save the table — pipe `make eval-topk-sweep > /tmp/topk-sweep.md` or copy the printed table into your writeup.
 
 3. Read the table for the two-axis tradeoff:
-   - **Context recall climbs with `top_k`** — more chunks in the bag means a higher chance the relevant one is in there. The Module 10 anchor of recall-at-5 ≥ 0.7 maps to `context_recall ≥ 0.7` in the RAGAS column, which is the LLM-judged analogue of binary-relevance recall-at-k. Check that your `top_k=5` row clears that floor. If it does not, the retrieval pipeline is below the rubric bar and the fix is upstream — chunking, embedding, or the similarity threshold.
+   - **Context recall climbs with `top_k`** — more chunks in the bag means a higher chance the relevant one is in there. A recall-at-5 ≥ 0.7 anchor maps to `context_recall ≥ 0.7` in the RAGAS column, which is the LLM-judged analogue of binary-relevance recall-at-k. Check that your `top_k=5` row clears that floor. If it does not, the retrieval pipeline is below the rubric bar and the fix is upstream — chunking, embedding, or the similarity threshold.
    - **Context precision drops with `top_k`** — more chunks means more noise. The rank-weighted precision metric falls because irrelevant chunks dilute the top-k.
    - **Faithfulness rises slightly with `top_k`** because the generator has more material to ground claims against. But it tops out — past `top_k=10`, the prompt gets long enough that the model starts ignoring the tail.
    - **Answer relevancy is mostly flat** across `top_k` because the question itself does not change.
@@ -125,32 +125,32 @@ Expected shape for a doc corpus with structured RST sections — the retriever p
 
 ## Exercise 3 — Diagnose two failures and recommend concrete fixes
 
-Aggregate metrics tell you whether the system is healthy in the median. The diagnostic value of RAGAS lives in the per-row breakdown — the rows where one metric collapses while the others stay high. This exercise asks you to pick the two lowest-scoring questions from your Exercise 1 or Exercise 2 run, separate retrieval failure from generation failure for each (and check the deprecated-API sub-metric for the library-specific surface), and prescribe one concrete fix per question with a forward reference to the module where the fix actually lands.
+Aggregate metrics tell you whether the system is healthy in the median. The diagnostic value of RAGAS lives in the per-row breakdown — the rows where one metric collapses while the others stay high. This exercise asks you to pick the two lowest-scoring questions from your Exercise 1 or Exercise 2 run, separate retrieval failure from generation failure for each (and check the deprecated-API sub-metric for the library-specific surface), and prescribe one concrete fix per question.
 
 ### What to do
 
 1. Open the `/tmp/learner-eval.json` from Exercise 1 (or run the eval again with `--output` if you skipped that step). For each row, the JSON carries the question, the four RAGAS metric scores, the retrieved contexts, the generated answer, the ground truth, the `deprecated_apis_score`, and `deprecated_apis_citations`.
 
-2. Sort the rows by the lowest single metric score (across all five surfaces, including the deprecated-API sub-metric). Pick the two rows with the lowest scores. If both lowest are faithfulness drops, that is fine — pick them; the diagnostic loop works the same. If one of your two is a `deprecated_apis_score = 0.0`, prioritize that pick — library-API hallucinations are the easiest to demonstrate and the most actionable for the Module 20 forward reference.
+2. Sort the rows by the lowest single metric score (across all five surfaces, including the deprecated-API sub-metric). Pick the two rows with the lowest scores. If both lowest are faithfulness drops, that is fine — pick them; the diagnostic loop works the same. If one of your two is a `deprecated_apis_score = 0.0`, prioritize that pick — library-API hallucinations are the easiest to demonstrate and the most actionable.
 
 3. For each picked row, apply the four-surface diagnostic from the demo:
-   - **Retrieval failure.** `context_recall` low (below 0.5) and `context_precision` low. Fix lives upstream — chunking, embedding choice, similarity threshold. Forward-ref: M5, M6, Module 24.
-   - **Generation failure.** `context_recall` and `context_precision` both high but `faithfulness` low. Fix lives in the prompt template, the model choice, or a downstream output guardrail. Forward-ref: Module 20.
+   - **Retrieval failure.** `context_recall` low (below 0.5) and `context_precision` low. Fix lives upstream — chunking, embedding choice, similarity threshold.
+   - **Generation failure.** `context_recall` and `context_precision` both high but `faithfulness` low. Fix lives in the prompt template, the model choice, or a downstream output guardrail.
    - **Routing failure.** `answer_relevancy` low while everything else is high. The pipeline answered a different question. Fix at the routing layer.
-   - **Deprecated-API failure.** `deprecated_apis_score = 0.0` with `deprecated_apis_citations` listing the offending symbol. Fix is a stricter prompt naming the corpus version, or an output guardrail that scans for removed symbols. Forward-ref: Module 20 — the same guardrail catches both faithfulness drops and deprecated-API drops, which is why the sub-metric lives in Module 11 rather than separately.
+   - **Deprecated-API failure.** `deprecated_apis_score = 0.0` with `deprecated_apis_citations` listing the offending symbol. Fix is a stricter prompt naming the corpus version, or an output guardrail that scans for removed symbols. The same guardrail catches both faithfulness drops and deprecated-API drops, which is why the sub-metric sits alongside the faithfulness check rather than separately.
 
 4. For each of the two picked rows, write two paragraphs.
    - **Paragraph 1.** State the question and the five metric scores (including `deprecated_apis_score`). Read the contexts and the answer side by side with the ground truth, and name the failure surface: retrieval, generation, routing, deprecated-API, or some combination. Acknowledge the Wilson 95% CI ±0.14 band when the metric score is close to a threshold.
    - **Paragraph 2.** Propose one concrete fix. "Use a re-ranker" is not concrete enough; "raise the retriever's similarity threshold from 0.0 to 0.3 to drop the noisy long tail, then re-run the sweep" is. "Improve the prompt" is not concrete enough; "add a sentence at the top of the system prompt instructing the model to refuse to recommend any API deprecated before scikit-learn 1.0" is.
 
-5. Add a third paragraph forward-referencing where these fixes live in the course:
-   - **Module 15 (semantic caching).** A semantic cache will hide some generation failures by reusing past good answers for paraphrased questions. That is a Band-Aid, not a fix — the underlying failure still bites on the first unique phrasing — but in production it raises the effective faithfulness floor by avoiding fresh model calls on cached questions.
-   - **Module 20 (output guardrails).** A faithfulness-style output guardrail is the deployment-time backstop for the generation failures and deprecated-API drops you just diagnosed. It runs after the model and before the response, and it can refuse or rewrite answers that fail either check.
-   - **Module 23 + Module 24 (RAGOps).** The eval suite you just ran is meant to live in CI as a regression gate (Module 23) and feed corpus-drift detection (Module 24). Every change to the prompt, the model, or the retrieval configuration runs the five metrics and fails the build if any falls more than (say) two points below the baseline. That is what makes the eval suite operational rather than diagnostic.
+5. Add a third paragraph naming where these fixes live downstream:
+   - **Semantic caching.** A semantic cache will hide some generation failures by reusing past good answers for paraphrased questions. That is a Band-Aid, not a fix — the underlying failure still bites on the first unique phrasing — but in production it raises the effective faithfulness floor by avoiding fresh model calls on cached questions.
+   - **Output guardrails.** A faithfulness-style output guardrail is the deployment-time backstop for the generation failures and deprecated-API drops you just diagnosed. It runs after the model and before the response, and it can refuse or rewrite answers that fail either check.
+   - **RAGOps.** The eval suite you just ran is meant to live in CI as a regression gate and feed corpus-drift detection. Every change to the prompt, the model, or the retrieval configuration runs the five metrics and fails the build if any falls more than (say) two points below the baseline. That is what makes the eval suite operational rather than diagnostic.
 
 ### Acceptance criterion
 
-A two-question diagnostic writeup in your project notes. For each question: the question text, the five metric scores, a one-paragraph surface-naming, and a one-paragraph concrete fix. A closing paragraph forward-referencing Modules 15, 20, 23, and 24 by one sentence each. The writeup should be defensible — a teammate reading it in a code review should be able to trace every claim to a number in your `/tmp/learner-eval.json`. Acknowledge the ±0.14 confidence band somewhere in the writeup so the reader knows you treated the metrics as directional rather than statistically conclusive.
+A two-question diagnostic writeup in your project notes. For each question: the question text, the five metric scores, a one-paragraph surface-naming, and a one-paragraph concrete fix. A closing paragraph naming the downstream fixes (semantic caching, output guardrails, RAGOps regression gating and corpus-drift detection) by one sentence each. The writeup should be defensible — a teammate reading it in a code review should be able to trace every claim to a number in your `/tmp/learner-eval.json`. Acknowledge the ±0.14 confidence band somewhere in the writeup so the reader knows you treated the metrics as directional rather than statistically conclusive.
 
 ### Hints
 
@@ -163,7 +163,7 @@ The seeded version-conflict chunks (4-6 in `data/seeded_chunks.jsonl`) confuse t
 <details>
 <summary>If `context_recall` is high but the generator says "I don't know"</summary>
 
-Generation failure where the model is over-cautious — right context, refused commit. Faithfulness high (refusing is faithful), answer relevancy low. Fix: lower the model's threshold for committing, or add a few-shot example of the same question answered correctly. Forward-ref to Module 20's output guardrails.
+Generation failure where the model is over-cautious — right context, refused commit. Faithfulness high (refusing is faithful), answer relevancy low. Fix: lower the model's threshold for committing, or add a few-shot example of the same question answered correctly. An output guardrail is the deployment-time backstop.
 </details>
 
 ## Exercise 4 — Configure a threshold gate for CI
@@ -189,7 +189,7 @@ Diagnostic value lives in per-row scores; operational value in a build-failing a
 
 ### Acceptance criterion
 
-Two transcripts: healthy `exit=0`; degraded stderr names the failed metric, `exit=2`. `scripts/run_eval.py --help` exposes both flags. Forward-ref: this gate is Module 23's GitHub-Action entry point.
+Two transcripts: healthy `exit=0`; degraded stderr names the failed metric, `exit=2`. `scripts/run_eval.py --help` exposes both flags. This gate is the entry point a CI workflow calls to fail a build on regression.
 
 ### Hints
 
@@ -211,4 +211,4 @@ Print parsed args at the top of `main()` to confirm `args.faithfulness_min` carr
 
 ## What you have now
 
-A five-row golden-set extension, a `top_k` sweep table at 3-5-10 with a caption pinning the recall-precision tradeoff against Module 10's recall-at-5 ≥ 0.7 anchor, a two-question diagnostic writeup, and a CI threshold gate. Module 15 (semantic caching) raises the effective hit rate for repeated questions but does not fix underlying failure modes. Module 20 (output guardrails) is the deployment-time backstop for faithfulness drops and the deprecated-API surface. Modules 23 and 24 (RAGOps) turn the eval suite into a regression gate plus corpus-drift detection. The suite you just built is upstream of all four.
+A five-row golden-set extension, a `top_k` sweep table at 3-5-10 with a caption pinning the recall-precision tradeoff against the recall-at-5 ≥ 0.7 anchor, a two-question diagnostic writeup, and a CI threshold gate. Semantic caching raises the effective hit rate for repeated questions but does not fix underlying failure modes. Output guardrails are the deployment-time backstop for faithfulness drops and the deprecated-API surface. RAGOps turns the eval suite into a regression gate plus corpus-drift detection. The suite you just built is upstream of all of them.

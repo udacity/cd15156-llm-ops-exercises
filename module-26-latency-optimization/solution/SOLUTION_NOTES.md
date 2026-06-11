@@ -6,11 +6,11 @@ semantic cache (`src/cache/`), the FastAPI gateway with tier classifier
 (`src/gateway/`), the cost dashboard (`src/cost/dashboard.py`), the
 streaming endpoint (`src/streaming.py`), and the HNSW collection setup
 (`src/store.py`). This module does not add new components; it **profiles**
-them. The only new files this solution authors are the two scratch
+them. The only new files these notes author are the two scratch
 scripts the exercises name explicitly. The rest of the deliverables are
 writeup tables and interpretive paragraphs.
 
-## Files this solution adds
+## Files these notes add
 
 | File | Maps to |
 |---|---|
@@ -20,9 +20,9 @@ writeup tables and interpretive paragraphs.
 Both scripts are direct transcriptions of the fenced code blocks in
 `INSTRUCTIONS.md`. The instructions tell learners to place them in
 "scratch space — do not modify the starter tree" — that warning protects
-the starter from drift while learners iterate. For the canonical solution
-they live in `scripts/` so they are discoverable next to the other
-operational scripts (`run_eval.py`, `seed_cost_log.py`, etc.).
+the starter from drift while learners iterate. In these notes they live
+in `scripts/` so they are discoverable next to the other operational
+scripts (`run_eval.py`, `seed_cost_log.py`, etc.).
 
 Run them after `make setup && make load-data` with `make serve` up in
 another terminal:
@@ -196,4 +196,4 @@ ingest run's chunking output. Learners are expected to pick five chunks
 they have inspected from a live `make show-traces` output rather than
 copy-paste the placeholder ids. This is called out in the instructions
 ("pick chunks you have inspected from the live collection") and is the
-correct shape for the recall metric, not a gap in the solution.
+correct shape for the recall metric, not a gap in these notes.

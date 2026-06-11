@@ -1,4 +1,4 @@
-"""LLM10 Unbounded Consumption — slot 4 (Module 20).
+"""LLM10 Unbounded Consumption — slot 4.
 
 Two mechanisms, both anchored on CVE-2025-53773 (the August 2025 GitHub
 Copilot RCE / cost-amplification incident, where prompt injection in
@@ -52,9 +52,8 @@ is within ``RATE_LIMIT_WINDOW_SECONDS`` of ``time.monotonic()`` now.
 
 _BUCKETS: dict[str, Deque[float]] = {}
 """Per-client request timestamps. ``client_id="anonymous"`` is the bucket
-for un-headered requests (the rubric §6 default — un-headered traffic
-still counts against a shared bucket so an unauthenticated burst can
-not bypass the limit).
+for un-headered requests — un-headered traffic still counts against a
+shared bucket so an unauthenticated burst can not bypass the limit.
 """
 
 

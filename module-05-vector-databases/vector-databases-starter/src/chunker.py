@@ -1,4 +1,4 @@
-"""Section-header chunker for scikit-learn doc sections (Module 05).
+"""Section-header chunker for scikit-learn doc sections.
 
 Takes one section dict from :func:`src.corpus.load_corpus` and returns a
 list of chunk dicts ready for embedding. Strategy:
@@ -13,7 +13,7 @@ list of chunk dicts ready for embedding. Strategy:
 - ``has_code``, ``code_languages``, ``xrefs`` propagate from the source
   doc's metadata unchanged: a chunk inherits the section's code/xref
   flags even if a particular split piece doesn't contain the code block
-  itself, because retrieval-by-metadata downstream (Module 11) filters at
+  itself, because retrieval-by-metadata downstream filters at
   section granularity.
 
 The chunk-size knobs match :mod:`scripts.load_data` so a chunk built

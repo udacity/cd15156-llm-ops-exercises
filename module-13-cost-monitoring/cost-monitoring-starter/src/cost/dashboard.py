@@ -1,16 +1,16 @@
-"""FastAPI router exposing ``GET /cost-dashboard`` as a simple HTML report (Module 13).
+"""FastAPI router exposing ``GET /cost-dashboard`` as a simple HTML report.
 
 Two ways to serve this:
 
-1. **As part of the full gateway (Module 18 wires it in):** the Module 18
-   gateway mounts ``router`` on the main FastAPI app at startup, so the
-   dashboard lives alongside ``/query`` and ``/health`` on port 8080.
+1. **Mounted on the full gateway:** ``router`` can be included on the main
+   FastAPI app at startup, so the dashboard lives alongside ``/query`` and
+   ``/health`` on port 8080.
 
 2. **Standalone (this module's ``__main__``):** ``uv run python -m
    src.cost.dashboard`` spins a tiny FastAPI app on
    ``constants.SERVICE_PORT`` (8080) with just the dashboard mounted.
-   That's what ``make cost-dashboard`` uses so Module 13 learners can render
-   the dashboard without waiting for Module 18.
+   That's what ``make cost-dashboard`` uses to render the dashboard on
+   its own.
 
 Every value interpolated into the HTML is run through ``html.escape``
 even though the cost log is currently operator-controlled. The escape
@@ -94,9 +94,9 @@ async def cost_dashboard() -> str:
 
 
 # Standalone app — used by ``make cost-dashboard`` / ``uv run python -m
-# src.cost.dashboard``. Module 18 mounts ``router`` on the full
-# gateway app instead, at which point this standalone path is just one
-# extra way to reach the same view.
+# src.cost.dashboard``. When ``router`` is mounted on a full gateway app
+# instead, this standalone path is just one extra way to reach the same
+# view.
 app = FastAPI(title="ScikitDocs Cost Dashboard (standalone)")
 app.include_router(router)
 

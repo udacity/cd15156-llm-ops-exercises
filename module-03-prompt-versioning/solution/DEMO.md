@@ -30,7 +30,7 @@ Leave it running. Every `curl` in the demo hits it on `localhost:8080`.
 
 ## Part 1 — Build `generator.py` from the stub
 
-Open `src/generator.py`. Before this REQ landed it was a stub — two functions, both raising `NotImplementedError`, with their signatures frozen by `INTERFACES.md`. Now it is filled in, and the entire prompt-templating system for the ScikitDocs RAG sits in this one file. Walk through it from top to bottom; every line is doing something specific.
+Open `src/generator.py`. In the starter it is a stub — two functions, both raising `NotImplementedError`, with their signatures frozen by `INTERFACES.md`. Filled in, the entire prompt-templating system for the ScikitDocs RAG sits in this one file. Walk through it from top to bottom; every line is doing something specific.
 
 The first piece is the template directory and a Jinja `Environment`:
 
@@ -53,7 +53,7 @@ The template itself lives at `prompts/docbot_system.j2`. Open it and read the fi
 <<<END_CONTEXT>>>
 ```
 
-Everything outside the `{{ contexts }}` placeholder is fixed text. The placeholder is where retrieved scikit-learn doc chunks get spliced in at request time. The `<<<BEGIN_CONTEXT>>>` / `<<<END_CONTEXT>>>` markers are the indirect-prompt-injection mitigation we dig into in Module 20 — for now, just note that data and instructions are visually separated in the rendered prompt and that the template instructions explicitly tell the model to treat anything inside the markers as data, never as instructions to follow.
+Everything outside the `{{ contexts }}` placeholder is fixed text. The placeholder is where retrieved scikit-learn doc chunks get spliced in at request time. The `<<<BEGIN_CONTEXT>>>` / `<<<END_CONTEXT>>>` markers are an indirect-prompt-injection mitigation — note that data and instructions are visually separated in the rendered prompt and that the template instructions explicitly tell the model to treat anything inside the markers as data, never as instructions to follow.
 
 The render itself is one function:
 
@@ -95,7 +95,7 @@ Three lines deserve attention. `OpenAI(base_url=settings.openai_base_url or None
 
 `temperature=constants.GENERATION_TEMPERATURE` imports from `src/constants.py`. The locked value is `0.2` — low enough for factual recall, not zero so the model can paraphrase. Hardcoding `0.2` in a call site is a review-blocker caught by `make consistency-check`.
 
-`cost_usd = 0.0` is a placeholder. Module 13 (Cost Monitoring) lands `src/pricing.py` and replaces the literal with `pricing.compute_cost(usage, model)`. Until then, cost-aware downstreams see zero — the slot-and-fill is intentional so Module 13 owns the pricing table without rework here.
+`cost_usd = 0.0` is a placeholder. Cost-aware downstreams see zero until a pricing table replaces the literal with `pricing.compute_cost(usage, model)` — the slot-and-fill is intentional so the cost concern stays a separate piece without rework here.
 
 Sanity check before you go further:
 

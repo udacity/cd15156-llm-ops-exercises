@@ -2,7 +2,7 @@
 
 The starter already ships `src/pricing.py`, `src/cost/tracker.py`, `src/cost/dashboard.py`, and `scripts/seed_cost_log.py`. The only new files this exercise authors are two scripts in `scripts/`. Everything else in this module is shell one-liners and writeup-only deliverables.
 
-## Files this solution adds
+## Files these notes add
 
 | File | Maps to |
 |---|---|
