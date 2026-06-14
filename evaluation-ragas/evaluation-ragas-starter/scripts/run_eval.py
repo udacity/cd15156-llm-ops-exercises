@@ -1,0 +1,116 @@
+"""CLI: ``make eval`` → ``uv run python scripts/run_eval.py`` (Module 11).
+
+Runs RAGAS over the ScikitDocs golden set, prints the four-metric
+aggregate plus the deprecated-API sub-metric, and optionally writes
+per-row results (RAGAS columns + deprecated-API citations) to JSON
+for the Module 11 Exercise 3 diagnostic loop.
+"""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from src.evaluation.run_eval import (
+    evaluate_pipeline,
+    load_golden_set,
+    score_deprecated_apis_per_row,
+    summarize,
+)
+from src.evaluation.deprecated_apis import aggregate as aggregate_deprecated
+
+GOLDEN_PATH = Path(__file__).resolve().parents[1] / "data" / "golden_set.csv"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Run RAGAS evaluation on the ScikitDocs RAG pipeline."
+    )
+    parser.add_argument(
+        "--golden",
+        type=Path,
+        default=GOLDEN_PATH,
+        help=f"Golden set CSV (default: {GOLDEN_PATH}).",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Run only the first N questions (default: all).",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Optional JSON file to write per-row results to.",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=None,
+        help=(
+            "Cap RAGAS executor concurrency. Default lets RAGAS use 16. "
+            "Set to 1 when running through a contended proxy (Vocareum) "
+            "to avoid parallel-load timeouts that produce NaN cells."
+        ),
+    )
+    # TODO(m11-exercise-4): add --faithfulness-min and --context-recall-min flags
+    # (type=float, default=None) so the gate only activates when set. See
+    # INSTRUCTIONS.md → Exercise 4 for the required help text and CI rationale.
+    args = parser.parse_args(argv)
+
+    golden = load_golden_set(args.golden)
+    if args.limit is not None:
+        golden = golden[: args.limit]
+
+    print(f"Evaluating {len(golden)} questions...")
+    result = evaluate_pipeline(golden, max_workers=args.max_workers)
+    aggregate = summarize(result)
+
+    rows = result.to_pandas().to_dict("records")
+    # RAGAS 0.4.x renames the dataset columns to its SingleTurnSample schema
+    # (user_input/response/retrieved_contexts/reference) inside evaluate();
+    # restore the documented names this module's prose and per-row JSON use.
+    _RAGAS_TO_DOCUMENTED = {
+        "user_input": "question",
+        "response": "answer",
+        "retrieved_contexts": "contexts",
+        "reference": "ground_truth",
+    }
+    for row in rows:
+        for canonical, documented in _RAGAS_TO_DOCUMENTED.items():
+            if canonical in row:
+                row[documented] = row.pop(canonical)
+    deprecated_rows = score_deprecated_apis_per_row([r["answer"] for r in rows])
+    aggregate["deprecated_apis"] = aggregate_deprecated(
+        r["score"] for r in deprecated_rows
+    )
+
+    print("\nAggregate metrics:")
+    for metric, score in aggregate.items():
+        print(f"  {metric}: {score:.3f}")
+
+    if args.output:
+        for row, deprecated in zip(rows, deprecated_rows):
+            row["deprecated_apis_score"] = deprecated["score"]
+            row["deprecated_apis_citations"] = deprecated["citations"]
+        args.output.write_text(
+            json.dumps(
+                {"aggregate": aggregate, "rows": rows},
+                indent=2,
+                default=str,
+            )
+        )
+        print(f"\nWrote per-row results to {args.output}")
+
+    # TODO(m11-exercise-4): after the aggregate is computed, compare each set
+    # threshold flag (args.faithfulness_min, args.context_recall_min) against
+    # the matching aggregate key. If any falls below its floor, print a
+    # stderr line naming the metric (actual vs floor) and sys.exit(2) — 2 so
+    # make's internal-error 1 does not collide. Keep stdout unchanged.
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
