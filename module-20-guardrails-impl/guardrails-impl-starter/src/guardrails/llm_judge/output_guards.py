@@ -92,7 +92,7 @@ def check_hallucination(
         if usage is not None:
             log_request(
                 model=constants.MODEL_SIMPLE,
-                tokens=TokenUsage(
+                usage=TokenUsage(
                     prompt_tokens=usage.prompt_tokens,
                     completion_tokens=usage.completion_tokens,
                 ),

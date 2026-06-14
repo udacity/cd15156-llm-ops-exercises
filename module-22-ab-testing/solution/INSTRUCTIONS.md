@@ -22,63 +22,6 @@ If that returns a grounded answer about `rbf`, you are ready. Follow the demo wa
 
 ---
 
-> The recorded demo walks through this codebase; the exercises below build on it.
-
-# ... extract answer, usage, compute cost ...
-return answer, usage, cost_usd, latency_ms
-```
-
-Two design choices worth naming. The `base_url=settings.openai_base_url or None` line is the same bridge `src.generator` uses: when `OPENAI_BASE_URL` is empty (direct OpenAI), the SDK uses its default; when it is set to the Vocareum URL, the SDK routes through the proxy. Same code, two deploy targets, no conditional. The exercise inherits this without any new configuration. The return tuple adds `latency_ms` next to `(answer, TokenUsage, cost_usd)` — `src.generator.generate` returns only the first three because the cost-tracking path did not need wall-clock latency, but A/B analysis does. Exercise 3 reads `latency_ms` for the per-variant latency aggregate.
-
-The two templates live next to the base prompt at `prompts/`. `docbot_system_A.j2` is a verbatim copy of `docbot_system.j2`. `docbot_system_B.j2` differs in exactly one instruction — number 4 changes from "Be concise and direct" to "Be expansive" with a request to add a sentence or two of related context from the documentation. Multi-variable variant drift is a source of "the two variants are different in seven ways and you cannot attribute the metric shift to any one of them"; constraining the diff to one instruction is the experimental-design discipline. The `tests/test_ab.py::test_call_with_variant_renders_correct_template` test pins this by checking that "Be expansive" appears in variant B's system prompt and not in variant A's.
-
-`log_assignment` at `src/optimization/ab.py:162-211` writes one JSONL row per call to a path the analyzer reads. The schema is small and stable: `client_id`, `variant`, `question` (truncated to 500 chars), `answer` (truncated to 2000), `latency_ms`, `prompt_tokens`, `completion_tokens`, `cost_usd`, and `success`. The `client_id` field is preserved as null when the per-request fallback ran, so the analyzer can distinguish sticky rows from fallback rows after the fact — useful when you want to compare the two assignment schemes on the same dataset.
-
-## Part 3 — Wiring through the gateway and the honest seam
-
-The gateway provides the `X-Client-Id` header on its `POST /query` route. Read `src/gateway/routes.py:48-62`:
-
-```python
-@router.post(constants.QUERY_ROUTE, response_model=QueryResponse)
-def query_endpoint(
-    request: QueryRequest,
-    client_id: Annotated[
-        str | None, Header(alias=constants.CLIENT_ID_HEADER)
-    ] = None,
-) -> QueryResponse:
-    return route_query(
-        request.question,
-        top_k=request.top_k,
-        client_id=client_id,
-    )
-```
-
-The header value flows to `route_query(..., client_id=client_id)` at `src/gateway/router.py:38-76`. Today `route_query` accepts the keyword and forwards it for downstream use without consuming it — that contract leaves a clean place to hook in A/B routing. To turn on A/B for the gateway, you wrap `route_query`:
-
-```python
-def ab_route_query(question, *, client_id, traffic_split, salt):
-    variant = pick_variant(client_id, traffic_split, salt=salt)
-    # ... retrieve sources via the same pipeline route_query uses ...
-    return call_with_variant(question, sources, variant)
-```
-
-The honest seam: this walkthrough does not modify `src/gateway/router.py` to permanently swap `route_query` for `ab_route_query`. Exercise 1 wraps it from a script instead, which keeps the cache, tracing, cost-logging, and classifier layers `route_query` already composes from being disturbed. In a production retrofit you would push the variant selection into `route_query` itself, log the variant onto the trace span, and let the existing observability flow carry the A/B labels downstream. That refactor is on the order of a day's work and out of scope for a thirty-minute module; the exercise's harness is the right shape for a development-time experiment.
-
-Run the demo once from the project root with a tiny `client_id` pool to confirm the wiring:
-
-```python
-from src.models import Source
-from src.optimization import pick_variant, call_with_variant
-sources = [Source(doc_id="d1", chunk_text="DBSCAN clusters by density.", similarity_score=0.95)]
-for cid in ["alice", "bob", "carol", "alice"]:  # alice appears twice
-    v = pick_variant(cid, {"A": 0.5, "B": 0.5}, salt="prompt-style-v1")
-    print(cid, v)
-```
-
-Four lines, alice's two assignments identical, bob and carol independent. That is sticky-by-user. To close, name what this walkthrough addresses from the four LLM-specific pitfalls and what it does not. Cost asymmetry is handled — `log_assignment` carries `cost_usd` per call, so Exercise 3's analyzer can break it down by variant and surface a price-per-call difference that a chi-squared on success rate alone would miss. Sticky-by-user assignment is the deliberate design — the gateway header, the hash function, and the salt all exist for it. Per-request assignment is the documented fallback for a user-less workload. Judge variance is out of scope because the success metric in Exercise 1 is a citation check, not a judge score — when you graduate to a judge, the same calibration discipline applies. Distribution drift would need wall-clock time the simulation does not consume. Two pitfalls handled, one named-and-fallback, two named-and-deferred. Bring the same discipline forward when you ship a real A/B harness behind the gateway.
-
----
-
 # Exercises — Run a Sticky-by-User Simulation, Test for Significance, Decide on a Winner
 
 Three exercises. The first wires the demo's `pick_variant` and `call_with_variant` into a runnable harness, fires two hundred calls across a fifty-`client_id` pool, and asserts that the same `client_id` always lands on the same variant — the sticky-ness verification. The second runs `make ab-analyze` to read the resulting JSONL log into a two-by-two contingency table, runs `scipy.stats.chi2_contingency`, and asks you to read the p-value honestly with the sticky-specific wrinkle that the effective sample size is the unique-client count, not the call count. The third adds cost and latency comparisons and forces a written decision; the engineering judgment is what closes the loop. Each exercise has a `Success Criteria` block that names what "done" looks like. Common pitfalls are at the end and worth reading before you start; the cost asymmetry warning in particular has caught learners on prior cohorts.
@@ -120,13 +63,19 @@ Two hundred calls across fifty `client_id` values, with `pick_variant` doing the
 
    Builds a 50-client_id pool, picks each call's client_id at random
    from the pool, calls pick_variant with a stable salt so assignments
-   are sticky across calls, calls OpenAI through call_with_variant, and
+   are sticky across calls, calls OpenAI through call_with_variant,
+   scores each answer with an LLM-as-judge faithfulness check, and
    appends one JSONL row per call to data/ab_log.jsonl. The analyzer
    reads that file.
    """
+   import json
    import random
    from pathlib import Path
 
+   from jinja2 import Environment, FileSystemLoader
+   from openai import OpenAI
+
+   from src.config import settings
    from src.models import Source
    from src.optimization import call_with_variant, log_assignment, pick_variant
    from src.pipeline import run_pipeline  # for real retrieval
@@ -145,6 +94,44 @@ Two hundred calls across fifty `client_id` values, with `pick_variant` doing the
        "What's the difference between fit_transform and transform?",
        # ... add five to ten more from your retrieval set
    ]
+
+   # LLM-as-judge success metric. A naive citation check
+   # `any(s.doc_id in answer ...)` never fires here: the corpus doc_ids
+   # are RST section anchors like `modules.svm.kernel-functions`, which
+   # the model never reproduces verbatim, so every call would score
+   # False and the chi-squared table degenerates. Reading the answer
+   # against the retrieved chunks gives a graded, honest success signal.
+   _judge_env = Environment(
+       loader=FileSystemLoader("prompts"),
+       keep_trailing_newline=True,
+       autoescape=False,
+   )
+   _judge_client = OpenAI(base_url=settings.openai_base_url or None)
+
+   def judge_supported(answer, sources):
+       # Render prompts/judge.j2 and ask gpt-4o-mini for a JSON verdict.
+       # Fail open (True) on an empty answer or judge error so a transient
+       # proxy hiccup doesn't depress the measured success rate.
+       if not answer.strip() or not sources:
+           return False
+       context = "\n\n".join(f"[{s.doc_id}]\n{s.chunk_text}" for s in sources)
+       prompt = _judge_env.get_template("judge.j2").render(
+           answer=answer, source=context
+       )
+       try:
+           resp = _judge_client.chat.completions.create(
+               model=settings.model_simple,
+               messages=[{"role": "user", "content": prompt}],
+               temperature=0,
+               response_format={"type": "json_object"},
+           )
+           verdict = (
+               json.loads(resp.choices[0].message.content or "{}").get("verdict")
+               or ""
+           ).upper()
+       except Exception:
+           return True
+       return verdict == "SUPPORTED"
 
    def retrieve(question):
        # Reuse the starter's pipeline retrieval seam — src/pipeline.py
@@ -165,8 +152,7 @@ Two hundred calls across fifty `client_id` values, with `pick_variant` doing the
            answer, usage, cost, latency_ms = call_with_variant(
                question, sources, variant
            )
-           source_ids = {s.doc_id for s in sources}
-           success = any(sid in answer for sid in source_ids)
+           success = judge_supported(answer, sources)
            log_assignment(
                LOG_PATH,
                client_id=client_id,
@@ -188,7 +174,7 @@ Two hundred calls across fifty `client_id` values, with `pick_variant` doing the
 3. Run it from the project root:
 
    ```
-   uv run python scripts/ab_simulate.py
+   make ab-simulate
    ```
 
    Expect the run to take roughly four to six minutes on Vocareum (the proxy serializes calls under load) or roughly two to three minutes on direct OpenAI. The `(i+1)/200 done` progress print at every twentieth call tells you the script is alive; the cold-start latency on the first call is the OpenAI client warmup and is normal.
@@ -263,7 +249,7 @@ The starter ships `scripts/ab_analyze.py` and a `make ab-analyze` target that re
 
 ### Stretch
 
-Rerun `scripts/ab_simulate.py` with `N_CLIENTS = 500` and `N_CALLS = 1000` and report whether the conclusion changes. The effective sample size is now 500 unique clients with two calls each; the test should be roughly ten times more powerful than the N=50 run. If variant B really is meaningfully different from A — verbose answers may genuinely cite more source IDs because they contain more text — the larger sample should make the difference detectable. If the variants are statistically indistinguishable at N=1000, that itself is a useful result.
+Rerun `scripts/ab_simulate.py` with `N_CLIENTS = 500` and `N_CALLS = 1000` and report whether the conclusion changes. The effective sample size is now 500 unique clients with two calls each; the test should be roughly ten times more powerful than the N=50 run. If variant B really is meaningfully different from A — its expansive answers may genuinely score higher on the judge when the extra context is well-grounded, or lower when they stray beyond the sources — the larger sample should make the difference detectable. If the variants are statistically indistinguishable at N=1000, that itself is a useful result.
 
 ## Exercise 3 — Cost and latency comparison, plus a written decision
 
@@ -311,7 +297,7 @@ Quality parity does not settle the question: two variants that score statistical
 
 ### Stretch
 
-Replace the simple `success = any(sid in answer for sid in source_ids)` heuristic with an LLM-as-judge faithfulness score. Use `gpt-4o-mini` as the judge, feed it the question, the sources, and the answer, and ask it to return a JSON verdict like `{"supported": true/false, "reason": "..."}`. Run this against the existing log and compare the chi-squared result on the judge label to the citation-check label. The judge itself has variance, so a single judge call per response is the cheap version and the rigorous version averages three calls. If the conclusion flips between the two labels, the underlying signal is weaker than either label suggests.
+The harness already scores success with a single LLM-judge call (`judge_supported`). Quantify the judge's own variance: average three judge calls per response and take the majority verdict instead of trusting one call, then rerun `make ab-analyze` and see whether the chi-squared conclusion moves. For a cheap deterministic contrast, also score each answer with a keyword-overlap heuristic — does the answer mention a topic token drawn from a retrieved source's id? — and compare its chi-squared result to the judge's. If the conclusion flips between the single-call judge, the averaged judge, and the heuristic, the underlying quality signal is weaker than any one label suggests.
 
 ## Common Pitfalls
 
@@ -326,4 +312,4 @@ A few traps that catch most learners on this module. Skim before submitting.
 - **Interpreting a non-significant p-value as "the variants are equivalent."** That is not what the test says. It says "the data does not let us reject the null hypothesis of equivalence at the chosen alpha." The two are different — equivalence requires a different test family (equivalence tests, two one-sided tests) and far more data than this exercise produces. State the underpowered finding honestly.
 - **Confusing the raw call count with the sticky effective N.** Two hundred calls across fifty clients is *not* the same as two hundred independent observations. The analyzer prints both numbers; the effective N is what powers the test, and the framing on within-user correlation is the conceptual handle. A per-request workload would not have this issue — it would have the opposite issue (no user-level metrics available at all). Naming which workload you are on and which scheme it implies is the discipline.
 
-What you have at the end. A two-hundred-call A/B harness that pushes traffic through two prompt variants via a sticky-by-user feature flag in `src/optimization/ab.py`, a chi-squared analyzer that reads the result honestly even when the result is "underpowered for the sticky design," and a per-variant cost and latency comparison plus a written decision that grounds the next step in numbers. In production you would push the flag into OpenFeature with a LaunchDarkly, Statsig, or Flipt backend; you would replace the citation-check success metric with a judge score or a behavioral signal; and you would run the test long enough to satisfy the sample-size formula Kohavi, Tang, and Xu derived in 2020 — corrected for clustering. Each of those upgrades is a layer on top of what you built here; the routing, logging, and analysis skeleton stays the same.
+What you have at the end. A two-hundred-call A/B harness that pushes traffic through two prompt variants via a sticky-by-user feature flag in `src/optimization/ab.py`, a chi-squared analyzer that reads the result honestly even when the result is "underpowered for the sticky design," and a per-variant cost and latency comparison plus a written decision that grounds the next step in numbers. In production you would push the flag into OpenFeature with a LaunchDarkly, Statsig, or Flipt backend; you would harden the single-call LLM-judge metric into an averaged judge or a behavioral signal; and you would run the test long enough to satisfy the sample-size formula Kohavi, Tang, and Xu derived in 2020 — corrected for clustering. Each of those upgrades is a layer on top of what you built here; the routing, logging, and analysis skeleton stays the same.

@@ -11,9 +11,9 @@ export PYTHONPATH := .
 # Workspace). Mirrors capstone Makefile.
 export UV_LINK_MODE := copy
 
-# Cap RAGAS executor concurrency (filled in by Module 11 — placeholder here
-# so the variable exists at scaffold time and consistency-check passes).
-EVAL_MAX_WORKERS ?= 1
+# Cap RAGAS executor concurrency. Default 8 parallelizes judge calls through the
+# Vocareum proxy (validated clean, ~2x faster); drop to 1 if a contended endpoint NaNs.
+EVAL_MAX_WORKERS ?= 8
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

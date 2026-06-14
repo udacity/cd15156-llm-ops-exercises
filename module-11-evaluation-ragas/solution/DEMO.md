@@ -41,7 +41,7 @@ With the corpus loaded and the `.env` in place:
 make eval
 ```
 
-The target at `Makefile:54-55` resolves to `uv run python scripts/run_eval.py --max-workers=$(EVAL_MAX_WORKERS)`. The default `EVAL_MAX_WORKERS=1` is set at `Makefile:16` — Vocareum's proxy throttles parallel judges into NaN cells at RAGAS's default of 16. On uncontended endpoints: `make eval EVAL_MAX_WORKERS=8`.
+The target at `Makefile:54-55` resolves to `uv run python scripts/run_eval.py --max-workers=$(EVAL_MAX_WORKERS)`. The default `EVAL_MAX_WORKERS=8` is set at `Makefile:16`. It runs eight judge calls in parallel through the Vocareum proxy, which roughly halves the wall-clock and still scores clean. RAGAS's own default of 16 over-saturates the proxy and produces NaN cells, so don't raise it that far. If a contended endpoint returns NaN, drop to `make eval EVAL_MAX_WORKERS=1`.
 
 Expected output (numbers drift across runs at RAGAS's internal sampling temperatures):
 
@@ -59,7 +59,7 @@ Aggregate metrics:
 
 Read the four RAGAS numbers. Faithfulness 0.86 says roughly 86% of claims in the generated answers were supported by retrieved context — a drop is the hallucination alarm. Answer relevancy 0.92 says the answers are on-topic. Context recall 0.79 is the RAGAS analogue of a recall-at-5 ≥ 0.7 floor. Context precision 0.71 says relevant chunks are landing near the top with some long-tail noise.
 
-The fifth number is scikit-learn-specific. `deprecated_apis: 1.00` says no answer cited a removed symbol. When it drops below 1.0, at least one row's answer mentioned something on the allow-list — `sklearn.cross_validation`, `sklearn.preprocessing.Imputer`, the `normalize=True` argument. RAGAS faithfulness would not catch it: if the retrieved chunk happened to include an old example, the generator's answer can be technically faithful to the chunk while still recommending a removed API. The sub-metric is the second pair of eyes. NaN in any column means a judge call failed mid-row — almost always rate-limit throttling, which `EVAL_MAX_WORKERS=1` prevents.
+The fifth number is scikit-learn-specific. `deprecated_apis: 1.00` says no answer cited a removed symbol. When it drops below 1.0, at least one row's answer mentioned something on the allow-list — `sklearn.cross_validation`, `sklearn.preprocessing.Imputer`, the `normalize=True` argument. RAGAS faithfulness would not catch it: if the retrieved chunk happened to include an old example, the generator's answer can be technically faithful to the chunk while still recommending a removed API. The sub-metric is the second pair of eyes. NaN in any column means a judge call failed mid-row, almost always rate-limit throttling. The default of 8 stays clear of it; drop to `EVAL_MAX_WORKERS=1` if a contended endpoint still shows NaN.
 
 ## Walkthrough 3 — Diagnose a low-scoring row
 

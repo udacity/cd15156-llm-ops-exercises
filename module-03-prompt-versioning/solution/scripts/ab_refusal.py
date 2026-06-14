@@ -61,9 +61,11 @@ def main():
         "variant_a_n": len(a),
         "variant_b_refusals": sum(b),
         "variant_b_n": len(b),
-        "chi2": chi2,
-        "p_value": p,
-        "significant_at_0.05": p < 0.05,
+        # chi2_contingency returns numpy scalars; numpy.bool_ is not a
+        # Python int subclass, so json.dump chokes on it without the casts.
+        "chi2": float(chi2),
+        "p_value": float(p),
+        "significant_at_0.05": bool(p < 0.05),
     }
     json.dump(report, sys.stdout, indent=2)
     sys.stdout.write("\n")

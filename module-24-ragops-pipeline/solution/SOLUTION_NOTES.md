@@ -127,16 +127,21 @@ swapped=True
 
 ### Part B stretch — failed gate
 
-`uv run python scripts/migrate_blue_green.py --threshold 0.99 --keep-failed` summary:
+`uv run python scripts/migrate_blue_green.py --threshold 1.01 --keep-failed` summary:
 
 ```
 target_color=scikit_docs_blue  (rebuilt; was the inactive color after Part B)
 previous_color=scikit_docs_green
-recall@5=0.83
-threshold=0.99
+recall@5=1.000
+threshold=1.01
 swapped=False
 note: --keep-failed retained scikit_docs_blue for forensics
 ```
+
+The 12-row eval sample scores a perfect recall@5, so the gate can only be
+forced to fail with a floor above 1.0 — `--threshold 1.01` does that. The
+point is the mechanism (a failed gate leaves the alias untouched), not the
+specific number.
 
 `cat data/ACTIVE_COLLECTION` still prints `scikit_docs_green`. The freshly-rebuilt blue color exists in Chroma but the gateway is not querying it. The production property the alias mechanism exists to guarantee — *a failed gate cannot point the public alias at a bad collection* — held.
 

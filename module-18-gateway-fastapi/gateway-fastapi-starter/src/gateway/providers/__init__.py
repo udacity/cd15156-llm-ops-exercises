@@ -5,5 +5,4 @@ so the gateway core stays provider-agnostic and new providers can land as
 new files under ``src/gateway/providers/`` without touching ``router.py``.
 """
 
-# TODO(m18-ex3): create the providers package so adapters can land without touching router.py
-raise NotImplementedError("TODO(m18-ex3)")
+# Package marker — adapters are imported lazily from src/gateway/router.py.

@@ -10,7 +10,7 @@ Bring up the corpus before you start:
 make setup                    # uv sync
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key)
 make load-data                # ~45–60s cold, ~5s warm; ~$0.10 in embeddings
-make seed-difficulty          # tags golden_set.csv rows simple|complex
+make seed-difficulty          # upsert 8 deliberately-confusing chunks
 ```
 
 Smoke-check the pipeline before any RAGOps work:
@@ -239,8 +239,8 @@ The point is to see the alias file appear, the cutover happen atomically, and th
    uv run python -c "
    from src import store
    client = store._client()
-   for c in client.list_collections():
-       print(c.name, '→', c.count(), 'rows')
+   for name in client.list_collections():
+       print(name, '→', client.get_collection(name).count(), 'rows')
    "
    ```
 
@@ -270,10 +270,10 @@ The point is to see the alias file appear, the cutover happen atomically, and th
 
    It now says `scikit_docs_green`. The gateway started serving hits from green the moment `os.replace` returned — no warmup, no restart, no in-process cache to bust. That is the operational property the whole pattern exists for.
 
-3. Stretch — simulate a regression. Edit `scripts/migrate_blue_green.py`'s default threshold by passing `--threshold 0.99` on the command line: a value the corpus genuinely cannot hit on twelve rows. Run:
+3. Stretch — simulate a regression. Edit `scripts/migrate_blue_green.py`'s default threshold by passing `--threshold 1.01` on the command line: a value above the maximum possible recall, so the corpus genuinely cannot hit it on twelve rows (this small eval sample scores a perfect recall@5, so any floor at or below 1.0 would pass). Run:
 
    ```
-   uv run python scripts/migrate_blue_green.py --threshold 0.99 --keep-failed
+   uv run python scripts/migrate_blue_green.py --threshold 1.01 --keep-failed
    ```
 
    The build runs, the gate fails, and the summary reports `swapped=False` with the recall number printed alongside the threshold. The alias stays where it was (still pointing at green from Step 2). The `--keep-failed` flag leaves the freshly-built color in Chroma for forensics; without it, the script drops the failed color so the next attempt starts clean. Either way, the production property held: a failed gate cannot point the public alias at a bad collection.
@@ -281,7 +281,7 @@ The point is to see the alias file appear, the cutover happen atomically, and th
 ### Success Criteria
 
 - Part A: `make migrate-blue-green` completes with `swapped=True`, `data/ACTIVE_COLLECTION` exists and names `scikit_docs_blue`, and a `/query` call without a gateway restart returns hits.
-- Part B: a second `make migrate-blue-green` swaps to `scikit_docs_green` and the file is updated. A migration with `--threshold 0.99` reports `swapped=False` and leaves the alias on the previously-swapped color.
+- Part B: a second `make migrate-blue-green` swaps to `scikit_docs_green` and the file is updated. A migration with `--threshold 1.01` reports `swapped=False` and leaves the alias on the previously-swapped color.
 - You can articulate, in two or three sentences, why an in-place re-ingest of the live `scikit_docs` collection would have served partial results during the rebuild window and why the alias swap fixes that without needing a load-balancer or gateway restart.
 
 ## Common Pitfalls

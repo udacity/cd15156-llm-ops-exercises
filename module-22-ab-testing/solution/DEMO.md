@@ -53,3 +53,55 @@ response = client.chat.completions.create(
     ],
 )
 latency_ms = int((time.perf_counter() - t0) * 1000)
+# ... extract answer, usage, compute cost ...
+return answer, usage, cost_usd, latency_ms
+```
+
+Two design choices worth naming. The `base_url=settings.openai_base_url or None` line is the same bridge `src.generator` uses: when `OPENAI_BASE_URL` is empty (direct OpenAI), the SDK uses its default; when it is set to the Vocareum URL, the SDK routes through the proxy. Same code, two deploy targets, no conditional. The exercise inherits this without any new configuration. The return tuple adds `latency_ms` next to `(answer, TokenUsage, cost_usd)` — `src.generator.generate` returns only the first three because the cost-tracking path did not need wall-clock latency, but A/B analysis does. Exercise 3 reads `latency_ms` for the per-variant latency aggregate.
+
+The two templates live next to the base prompt at `prompts/`. `docbot_system_A.j2` is a verbatim copy of `docbot_system.j2`. `docbot_system_B.j2` differs in exactly one instruction — number 4 changes from "Be concise and direct" to "Be expansive" with a request to add a sentence or two of related context from the documentation. Multi-variable variant drift is a source of "the two variants are different in seven ways and you cannot attribute the metric shift to any one of them"; constraining the diff to one instruction is the experimental-design discipline. The `tests/test_ab.py::test_call_with_variant_renders_correct_template` test pins this by checking that "Be expansive" appears in variant B's system prompt and not in variant A's.
+
+`log_assignment` at `src/optimization/ab.py:162-211` writes one JSONL row per call to a path the analyzer reads. The schema is small and stable: `client_id`, `variant`, `question` (truncated to 500 chars), `answer` (truncated to 2000), `latency_ms`, `prompt_tokens`, `completion_tokens`, `cost_usd`, and `success`. The `client_id` field is preserved as null when the per-request fallback ran, so the analyzer can distinguish sticky rows from fallback rows after the fact — useful when you want to compare the two assignment schemes on the same dataset.
+
+## Part 3 — Wiring through the gateway and the honest seam
+
+The gateway provides the `X-Client-Id` header on its `POST /query` route. Read `src/gateway/routes.py:48-62`:
+
+```python
+@router.post(constants.QUERY_ROUTE, response_model=QueryResponse)
+def query_endpoint(
+    request: QueryRequest,
+    client_id: Annotated[
+        str | None, Header(alias=constants.CLIENT_ID_HEADER)
+    ] = None,
+) -> QueryResponse:
+    return route_query(
+        request.question,
+        top_k=request.top_k,
+        client_id=client_id,
+    )
+```
+
+The header value flows to `route_query(..., client_id=client_id)` at `src/gateway/router.py:38-76`. Today `route_query` accepts the keyword and forwards it for downstream use without consuming it — that contract leaves a clean place to hook in A/B routing. To turn on A/B for the gateway, you wrap `route_query`:
+
+```python
+def ab_route_query(question, *, client_id, traffic_split, salt):
+    variant = pick_variant(client_id, traffic_split, salt=salt)
+    # ... retrieve sources via the same pipeline route_query uses ...
+    return call_with_variant(question, sources, variant)
+```
+
+The honest seam: this walkthrough does not modify `src/gateway/router.py` to permanently swap `route_query` for `ab_route_query`. Exercise 1 wraps it from a script instead, which keeps the cache, tracing, cost-logging, and classifier layers `route_query` already composes from being disturbed. In a production retrofit you would push the variant selection into `route_query` itself, log the variant onto the trace span, and let the existing observability flow carry the A/B labels downstream. That refactor is on the order of a day's work and out of scope for a thirty-minute module; the exercise's harness is the right shape for a development-time experiment.
+
+Run the demo once from the project root with a tiny `client_id` pool to confirm the wiring:
+
+```python
+from src.models import Source
+from src.optimization import pick_variant, call_with_variant
+sources = [Source(doc_id="d1", chunk_text="DBSCAN clusters by density.", similarity_score=0.95)]
+for cid in ["alice", "bob", "carol", "alice"]:  # alice appears twice
+    v = pick_variant(cid, {"A": 0.5, "B": 0.5}, salt="prompt-style-v1")
+    print(cid, v)
+```
+
+Four lines, alice's two assignments identical, bob and carol independent. That is sticky-by-user. To close, name what this walkthrough addresses from the four LLM-specific pitfalls and what it does not. Cost asymmetry is handled — `log_assignment` carries `cost_usd` per call, so Exercise 3's analyzer can break it down by variant and surface a price-per-call difference that a chi-squared on success rate alone would miss. Sticky-by-user assignment is the deliberate design — the gateway header, the hash function, and the salt all exist for it. Per-request assignment is the documented fallback for a user-less workload. Judge variance is handled head-on — the success metric in Exercise 1 is itself an LLM-as-judge faithfulness call, so the single-call-versus-averaged-calls tradeoff is live and Exercise 3's stretch quantifies it; the same calibration discipline keeps the label trustworthy. Distribution drift would need wall-clock time the simulation does not consume. Three pitfalls handled, one named-and-fallback, one named-and-deferred. Bring the same discipline forward when you ship a real A/B harness behind the gateway.

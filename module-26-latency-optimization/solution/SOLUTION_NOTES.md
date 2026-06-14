@@ -45,25 +45,26 @@ rubric §7 evidence target wants:
 ```
 | Span                    | Cold (ms)  | Cached (ms) |
 |-------------------------|------------|-------------|
-| classifier (LLM)        |    ~400    |    n/a      |
-| cache lookup            |    ~25     |    ~25      |
-| retrieve (embed+search) |    ~15     |    n/a      |
+| classifier (LLM)        |   ~1300    |    n/a      |
+| cache lookup            |    ~800    |    ~800     |
+| retrieve (embed+search) |    ~900    |    n/a      |
 | generator (LLM)         |   ~2200    |    n/a      |
-| TOTAL                   |   ~2640    |    ~25      |
+| TOTAL                   |   ~5200    |    ~800     |
 ```
 
-Speedup: `cold_total / cached_total ≈ 100×` on a clean paraphrase hit.
-Hedge the exact ratio in the writeup — the classifier may or may not
-short-circuit on the cache hit depending on whether the cache lookup
-fires before the classifier in your route order (the starter's
-`route_query` runs classifier first, then cache; a cache hit on the
-classifier-tagged variant returns immediately after the cache lookup).
+Speedup: `cold_total / cached_total ≈ 4-10×`, larger on a fast direct
+endpoint and smaller on the Vocareum proxy. `route_query` runs the cache
+lookup first, so a hit returns before the classifier or any other LLM
+call fires; only the embedding round-trip inside the lookup is paid. The
+cached total is therefore the embedding-lookup time (hundreds of ms on a
+hosted endpoint), not near zero — hedge the ratio accordingly.
 
 The one-paragraph interpretation should name:
 - The generator span dominates the cold total (the LLM call is the
   wall-clock floor; everything else is single-digit to low-tens of ms).
 - The cache hit eliminates the classifier, retrieval, and generator
-  spans in one move — only the cache lookup itself fires on the hit path.
+  spans in one move — only the embedding lookup itself fires on the hit
+  path, and on a hosted endpoint that lookup is the floor on cached latency.
 - The cache wins are bounded by the workload's repeat rate; on
   paraphrase-heavy traffic (FAQ, docs Q&A) the hit rate climbs and the
   compression is real. On unique-query traffic (one-off research) the
@@ -122,16 +123,17 @@ be reproducible:
 ```
 | ef_search | mean latency (ms) | recall@5 |
 |-----------|-------------------|----------|
-|    10     |       ~3.2        |   0.8    |
-|    50     |       ~5.1        |   1.0    |
-|   200     |       ~9.4        |   1.0    |
+|    10     |       ~5.7        |   1.0    |
+|    50     |       ~6.1        |   1.0    |
+|   200     |       ~6.4        |   1.0    |
 ```
 
 The right interpretation paragraph:
 
-> At a few thousand chunks the curve has measurable variance — `ef=200`
-> is roughly 3× slower than `ef=10` on the per-query mean — but the
-> absolute numbers are single-digit milliseconds across the sweep. The
+> At ~750 chunks the curve barely moves — `ef=200` is only a few percent
+> slower than `ef=10` on the per-query mean, a fraction of a millisecond,
+> and the absolute numbers are single-digit milliseconds across the sweep.
+> On a noisy run the gaps can even reorder; only the broad ordering holds. The
 > generator span from Exercise 1 dominates the wall-clock budget by
 > two orders of magnitude, so tuning effort spent here saves single
 > percentage points off total latency at best. Recall@5 saturates by

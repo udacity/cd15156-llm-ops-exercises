@@ -2,7 +2,7 @@
 
 ## Setup (read first)
 
-This starter is the ScikitDocs RAG app with the prompt loader, vector DB, RAG pipeline, in-process Phoenix tracing, RAGAS evaluation harness, cost monitoring, semantic caching (`src/cache/`), FastAPI gateway, guardrails, A/B testing, RAGOps watchers, and latency optimizations already wired. In this module you will: (1) run a fifteen-query paraphrase set through `cached_route_query` and report the hit rate, (2) construct a deliberate near-miss query and sweep the threshold at 0.70 / 0.85 / 0.95 to surface the wrong-answer mode, and (3) pair the cache hits with the cost log to compute a dollars-per-query delta plus a monthly projection. There is no new code to author in this module — the cache primitives (`lookup`, `store`, `clear`, `cached_route_query`) ship complete in `src/cache/`; your deliverables are three writeup artifacts. Run `make setup`, then `make load-data` to bring up the corpus, then follow the demo walkthrough and the exercise tasks below.
+This starter is the ScikitDocs RAG app with the prompt loader, vector DB, RAG pipeline, in-process Phoenix tracing, RAGAS evaluation harness, cost monitoring, semantic caching (`src/cache/`), FastAPI gateway, guardrails, A/B testing, RAGOps watchers, and latency optimizations already wired. In this module you will: (1) run a fifteen-query paraphrase set through `cached_route_query` and report the hit rate, (2) construct a deliberate near-miss query and sweep the threshold at 0.70 / 0.85 / 0.95 to surface the wrong-answer mode, and (3) pair the cache hits with the cost log to compute a dollars-per-query delta plus a monthly projection. There is no new code to author in this module — the cache primitives (`lookup`, `store`, `clear`, `cached_route_query`) ship complete in `src/cache/`; your deliverables are three writeup artifacts. Run `make setup`, then `make load-data` to bring up the corpus, then `make seed-difficulty` to upsert the eight confusion chunks the near-miss exercise leans on (without that step the docbot has no grounding for the RandomForestRegressor-versus-Classifier criterion facts and answers that it cannot find them), then follow the demo walkthrough and the exercise tasks below.
 
 ---
 
@@ -14,7 +14,7 @@ The demo wired the cache into your hands at one query at a time. These exercises
 
 ## Setup
 
-Same as the demo. With `make setup` complete and `make load-data` reporting the corpus is in Chroma, your `.env` carrying `OPENAI_API_KEY` plus `OPENAI_BASE_URL` when you are on Vocareum. All three exercises drive the cache through `cached_route_query` (Python-direct, no gateway yet) and need a working OpenAI key. Budget a few cents on Vocareum or any other endpoint; on `gpt-4o` the fifteen-query Exercise 1 run costs well under five cents end-to-end, and Exercise 2 adds maybe one more cent. Exercise 3 is analysis on the data you already have.
+Same as the demo. With `make setup` complete, `make load-data` reporting the corpus is in Chroma, and `make seed-difficulty` having added the confusion chunks, your `.env` carrying `OPENAI_API_KEY` plus `OPENAI_BASE_URL` when you are on Vocareum. All three exercises drive the cache through `cached_route_query` (Python-direct, no gateway yet) and need a working OpenAI key. Budget a few cents on Vocareum or any other endpoint; on `gpt-4o` the fifteen-query Exercise 1 run costs well under five cents end-to-end, and Exercise 2 adds maybe one more cent. Exercise 3 is analysis on the data you already have.
 
 Before you start, clear the cache from any prior runs so each exercise starts on a known state:
 
@@ -35,28 +35,28 @@ The starter's default cache threshold is 0.85, set on `src/cache/semantic.py:79`
    ```
    queries=(
      "What is the default criterion for RandomForestRegressor?"
-     "Default split criterion in RandomForestRegressor?"
-     "RandomForestRegressor default criterion?"
+     "What's the default criterion used by RandomForestRegressor?"
+     "What is the default value of the criterion parameter in RandomForestRegressor?"
 
-     "How many trees does RandomForestClassifier use by default?"
-     "Default n_estimators for RandomForestClassifier?"
-     "Number of trees in RandomForestClassifier default?"
-
-     "What kernel does SVC use by default?"
-     "Default kernel for SVC?"
-     "SVC's default kernel choice?"
-
-     "What scoring metric does cross_val_score use by default?"
-     "Default scoring for cross_val_score?"
-     "cross_val_score default scoring metric?"
+     "What is the default kernel for SVC?"
+     "What is the default kernel used by SVC?"
+     "What's the default kernel for the SVC classifier?"
 
      "What is the default test_size for train_test_split?"
-     "Default test_size for train_test_split?"
-     "train_test_split default test size?"
+     "What's the default test_size used by train_test_split?"
+     "What is the default value of test_size in train_test_split?"
+
+     "What is the default scoring metric for cross_val_score?"
+     "What's the default scoring metric in cross_val_score?"
+     "What is the default scoring used by cross_val_score?"
+
+     "What is the default init method for KMeans?"
+     "What is the default initialization method used by KMeans?"
+     "What's the default init for KMeans?"
    )
    ```
 
-   Order matters here. The first query in each group of three is the "original" the cache will miss on and write; the next two are the paraphrases that should hit that write. Running them in a different order changes which query lands in the cache as the original — the hit-rate total stays the same, but the per-query trace shifts.
+   The five base questions ask about deliberately distinct APIs — a RandomForest regressor parameter, an SVC parameter, a train/test split, a cross-validation default, a clustering default — so no base question is a near-neighbor of another and each one's first arrival is a clean miss that writes a fresh entry. Within each group the two paraphrases keep the API name and the key noun and vary only the framing words; on `text-embedding-3-small` that keeps them in their base question's neighborhood and well clear of the cache threshold. Order matters here. The first query in each group of three is the "original" the cache will miss on and write; the next two are the paraphrases that should hit that write. Running them in a different order changes which query lands in the cache as the original — the hit-rate total stays the same, but the per-query trace shifts.
 
 2. Fire all fifteen queries through `cached_route_query` and capture each response's `cached` flag. From a Python shell:
 
@@ -65,20 +65,20 @@ The starter's default cache threshold is 0.85, set on `src/cache/semantic.py:79`
    from src.cache import cached_route_query
    queries = [
        'What is the default criterion for RandomForestRegressor?',
-       'Default split criterion in RandomForestRegressor?',
-       'RandomForestRegressor default criterion?',
-       'How many trees does RandomForestClassifier use by default?',
-       'Default n_estimators for RandomForestClassifier?',
-       'Number of trees in RandomForestClassifier default?',
-       'What kernel does SVC use by default?',
-       'Default kernel for SVC?',
-       \"SVC's default kernel choice?\",
-       'What scoring metric does cross_val_score use by default?',
-       'Default scoring for cross_val_score?',
-       'cross_val_score default scoring metric?',
+       \"What's the default criterion used by RandomForestRegressor?\",
+       'What is the default value of the criterion parameter in RandomForestRegressor?',
+       'What is the default kernel for SVC?',
+       'What is the default kernel used by SVC?',
+       \"What's the default kernel for the SVC classifier?\",
        'What is the default test_size for train_test_split?',
-       'Default test_size for train_test_split?',
-       'train_test_split default test size?',
+       \"What's the default test_size used by train_test_split?\",
+       'What is the default value of test_size in train_test_split?',
+       'What is the default scoring metric for cross_val_score?',
+       \"What's the default scoring metric in cross_val_score?\",
+       'What is the default scoring used by cross_val_score?',
+       'What is the default init method for KMeans?',
+       'What is the default initialization method used by KMeans?',
+       \"What's the default init for KMeans?\",
    ]
    results = []
    for q in queries:
@@ -112,11 +112,11 @@ The starter's default cache threshold is 0.85, set on `src/cache/semantic.py:79`
 
 ### Acceptance criterion
 
-Three artifacts in your writeup. First, the fifteen-row hit-or-miss table (one line per query with the `True/False` and the question text). Second, the hit-rate summary (`hits/total` plus the percentage). Third, the cache-contents dump showing five entries with the five base questions as the cached originals. A one-paragraph note interpreting the pattern: which paraphrases hit which originals, and whether any paraphrase missed when you expected a hit (the most common reason is a near-miss at 0.83 cosine against the 0.85 threshold; that case is what Exercise 2 deliberately constructs).
+Three artifacts in your writeup. First, the fifteen-row hit-or-miss table (one line per query with the `True/False` and the question text). Second, the hit-rate summary (`hits/total` plus the percentage). Third, the cache-contents dump showing five entries with the five base questions as the cached originals. A one-paragraph note interpreting the pattern: which paraphrases hit which originals, and whether any paraphrase missed when you expected a hit (the most common reason is a paraphrase reworded aggressively enough that its cosine slipped below 0.85). Exercise 2 turns this around and constructs the opposite, more dangerous case — a query that is *not* a paraphrase but scores higher than your real paraphrases anyway.
 
 ## Exercise 2 — The near-miss case
 
-Exercise 1 stayed within the cache's correct-hit territory. This exercise constructs a deliberate near-miss — a query that is semantically close enough to a cached entry to score around 0.83 cosine but is asking about a different scikit-learn estimator with a different correct answer. At the default 0.85 threshold the cache misses (correctly). At a lowered 0.70 threshold the cache hits (incorrectly) and you get the wrong-answer mode. The exercise is to walk both sides of that boundary, look at what the cache would have served at the loose threshold, and put words to why that is the failure mode the threshold is guarding against.
+Exercise 1 stayed within the cache's correct-hit territory. This exercise constructs a deliberate near-miss — a query that asks about a *different* scikit-learn estimator, with a different correct answer, but is one word away from a cached entry in surface form. You might expect the default 0.85 threshold to reject it. It does not. On `text-embedding-3-small` the near-miss scores higher than several of the genuine paraphrases you wrote in Exercise 1, so no threshold setting both keeps your paraphrases and blocks the near-miss. The exercise is to measure that overlap, look at the wrong answer the cache serves, and put words to why raw embedding similarity is the wrong tool to gate a cache on — and what you reach for instead.
 
 ### What to do
 
@@ -153,22 +153,24 @@ Exercise 1 stayed within the cache's correct-hit territory. This exercise constr
    "
    ```
 
-   Expected output shape (your exact similarity number varies a few hundredths depending on the embedder run, but the boundary structure is reliable):
+   Expected output shape (`text-embedding-3-small` is deterministic, so your similarity reproduces to four places):
 
    ```
    query: What is the default criterion for RandomForestClassifier?
    nearest cached question: What is the default criterion for RandomForestRegressor?
-   similarity: 0.8312
-   threshold=0.70: HIT  -> answer head: The default criterion for RandomForestRegressor is squared_error ...
-   threshold=0.85: MISS
-   threshold=0.95: MISS
+   similarity: 0.9563
+   threshold=0.70: HIT  -> answer head: The default criterion for `sklearn.ensemble.RandomForestRegressor` is `'squared_
+   threshold=0.85: HIT  -> answer head: The default criterion for `sklearn.ensemble.RandomForestRegressor` is `'squared_
+   threshold=0.95: HIT  -> answer head: The default criterion for `sklearn.ensemble.RandomForestRegressor` is `'squared_
    ```
 
-   The similarity score in the low 0.83 range against a different scikit-learn estimator is the canonical near-miss pattern: the embedder identifies the shared template (the "what is the default criterion for X" structure) and rates the two queries as semantically close, but the answer that is correct for one is wrong for the other. This is the failure mode where embedding-similarity-as-cache-key breaks down — Zhu, Zhu, and Jiao's 2024 Berkeley paper makes the formal argument that off-the-shelf semantic embeddings are not optimized for caching prediction, and the same-template-different-estimator case is exactly the family of queries where stock embeddings score similar without sharing a correct answer.
+   Read that carefully, because it is the opposite of what the threshold is supposed to do. The one-word swap from `RandomForestRegressor` to `RandomForestClassifier` scores **0.9563** — a hit at the default 0.85, a hit even at a strict 0.95. The cache serves the regressor's `squared_error` answer to a question about the classifier. Now line that number up against the paraphrases from Exercise 1: they ran from about 0.86 to 0.99, and three of your ten genuine paraphrases (the more aggressively reworded ones) scored *below* 0.9563. So the wrong-answer near-miss is more similar to the cached question than several of your right-answer paraphrases are. There is no threshold that admits all your paraphrases and rejects this near-miss — set it low enough to catch the 0.86 paraphrase and the near-miss sails through; crank it to 0.95 and you throw away half your real paraphrases while *still* serving the wrong answer. This is where embedding-similarity-as-cache-key breaks down — `text-embedding-3-small` weights surface form heavily, so "what is the default criterion for RandomForest**X**" maps to one tight neighborhood regardless of which estimator X names. Zhu, Zhu, and Jiao's 2024 Berkeley paper makes the formal argument that off-the-shelf semantic embeddings are not optimized for caching prediction; the same-template-different-estimator case is exactly the family of queries where stock embeddings score similar without sharing a correct answer.
 
-4. Walk the consequences out loud. At the 0.70 threshold the cache served `RandomForestRegressor` content to a question about `RandomForestClassifier`. The learner who reads that answer is told the default criterion is `squared_error` and that the valid alternatives are `absolute_error`, `friedman_mse`, and `poisson` — none of which scikit-learn accepts as a `RandomForestClassifier(criterion=...)` argument. Passing `criterion="squared_error"` to a `RandomForestClassifier` raises `InvalidParameterError` in scikit-learn 1.5 and later. The cache answer is not just imprecise; it is operationally wrong, and a copy-and-paste user would discover the wrongness only when their training script crashed. That answer would not register on a cost dashboard as a failure — the response went out fast, no LLM call was made, no error was logged. The wrong-answer mode is silent. The three-technique tuning loop (offline eval, shadow mode, A/B) catches this in production; on the development workspace the equivalent is the threshold sweep you just ran, but the framing is the same — the threshold is the operating parameter you tune against your workload, and a careless setting trades savings for silent quality degradation.
+4. Walk the consequences out loud. At every threshold you tested, the cache served `RandomForestRegressor` content to a question about `RandomForestClassifier`. The learner who reads that answer is told the default criterion is `squared_error` and that the valid alternatives are `absolute_error`, `friedman_mse`, and `poisson` — none of which scikit-learn accepts as a `RandomForestClassifier(criterion=...)` argument. Passing `criterion="squared_error"` to a `RandomForestClassifier` raises `InvalidParameterError` in scikit-learn 1.5 and later. The cache answer is not just imprecise; it is operationally wrong, and a copy-and-paste user would discover the wrongness only when their training script crashed. That answer would not register on a cost dashboard as a failure — the response went out fast, no LLM call was made, no error was logged. The wrong-answer mode is silent.
 
-5. Optional extension: re-run the near-miss through `cached_route_query` at the default threshold to confirm the production path correctly misses and that the freshly generated answer talks about `gini`, not `squared_error`:
+   Here is the lesson that replaces "tune the threshold." A higher threshold buys you precision against *loose* paraphrases — the terse rewordings that drift down toward 0.85 — but it does nothing against a near-miss that lives at 0.96, because surface similarity and task relevance are not the same axis and this embedder cannot tell them apart. Cosine on a stock embedding measures how alike two sentences *read*, not whether they have the same answer. When those two things diverge — same template, different estimator — no scalar threshold recovers the distinction. The fixes are architectural, not a number you nudge: a re-ranker or a cross-encoder that actually scores question-to-question relevance instead of raw cosine; a metadata filter that refuses a cache hit unless the estimator class (or other structured key) matches; or a criterion-aware cache key that folds the disambiguating token into what you look up on. The threshold sweep is still worth running — it tells you where your *paraphrase* recall falls off — but Exercise 2's whole point is that the sweep cannot fix the near-miss, and reaching for a lower threshold to claw back hit rate makes it strictly worse.
+
+5. Confirm the production path is fooled too. Run the near-miss through `cached_route_query` at the default threshold — the same wrapper the demo and Exercise 1 use — and watch it take the bait:
 
    ```
    uv run python -c "
@@ -180,11 +182,11 @@ Exercise 1 stayed within the cache's correct-hit territory. This exercise constr
    "
    ```
 
-   The response shows `cached: False` and an LLM-produced answer about `gini` (the actual default for `RandomForestClassifier`). The default 0.85 threshold protected the call.
+   The response shows `cached: True` and the cached answer about `squared_error` — the *regressor's* default, served to a *classifier* question, at the shipped 0.85 threshold with no LLM call and no log entry. This is not a loose-threshold edge case you can dial away; it is the default path returning a confidently wrong answer. To see what the right answer would have been, clear the cache first (`uv run python -c "from src.cache import clear; clear()"`) and re-run — with an empty cache the query misses, the LLM is called, and the fresh answer correctly names `gini`. The gap between those two runs is the whole exercise: the only thing standing between your users and the wrong answer was an empty cache, not the threshold.
 
 ### Acceptance criterion
 
-Three pieces of evidence. First, the captured output of the threshold-sweep on the near-miss query — the similarity score, the nearest cached question, and the hit-or-miss decision at 0.70, 0.85, and 0.95. Second, a one-paragraph interpretation naming what the cache would have served at 0.70, why that answer is wrong for `RandomForestClassifier` (the `squared_error` criterion is not a valid argument for the classifier; the classifier accepts `gini`, `entropy`, `log_loss`), and why the default 0.85 threshold prevented the failure. Third, the through-the-route confirmation that the default threshold correctly missed and returned an LLM-generated answer about the right estimator. The interpretation paragraph is the deliverable that matters — the threshold curve only earns its tuning when you can articulate the wrong-answer mode in your own words.
+Three pieces of evidence. First, the captured output of the threshold-sweep on the near-miss query — the similarity score (about 0.9563) and the hit decision at 0.70, 0.85, and 0.95, all three hits. Second, a one-paragraph interpretation that places the near-miss's similarity against your Exercise 1 paraphrase band, names the fact that the near-miss outscores several genuine paraphrases, and concludes that no threshold separates them — then names the answer the cache served and why it is wrong for `RandomForestClassifier` (the `squared_error` criterion is not a valid argument for the classifier; the classifier accepts `gini`, `entropy`, `log_loss`). Third, the through-the-route confirmation that `cached_route_query` at the default threshold returned `cached: True` with the wrong regressor answer. The interpretation paragraph is the deliverable that matters — name the architectural fix you would reach for (re-ranker, metadata filter, or criterion-aware cache key) and say in your own words why a threshold tweak cannot do the job.
 
 ## Exercise 3 — Cost delta against the cost log
 
@@ -207,20 +209,20 @@ Exercise 1 showed the cache hits; Exercise 3 puts dollars on them. The cost log 
    from src.cost.tracker import log_request
    queries = [
        'What is the default criterion for RandomForestRegressor?',
-       'Default split criterion in RandomForestRegressor?',
-       'RandomForestRegressor default criterion?',
-       'How many trees does RandomForestClassifier use by default?',
-       'Default n_estimators for RandomForestClassifier?',
-       'Number of trees in RandomForestClassifier default?',
-       'What kernel does SVC use by default?',
-       'Default kernel for SVC?',
-       \"SVC's default kernel choice?\",
-       'What scoring metric does cross_val_score use by default?',
-       'Default scoring for cross_val_score?',
-       'cross_val_score default scoring metric?',
+       \"What's the default criterion used by RandomForestRegressor?\",
+       'What is the default value of the criterion parameter in RandomForestRegressor?',
+       'What is the default kernel for SVC?',
+       'What is the default kernel used by SVC?',
+       \"What's the default kernel for the SVC classifier?\",
        'What is the default test_size for train_test_split?',
-       'Default test_size for train_test_split?',
-       'train_test_split default test size?',
+       \"What's the default test_size used by train_test_split?\",
+       'What is the default value of test_size in train_test_split?',
+       'What is the default scoring metric for cross_val_score?',
+       \"What's the default scoring metric in cross_val_score?\",
+       'What is the default scoring used by cross_val_score?',
+       'What is the default init method for KMeans?',
+       'What is the default initialization method used by KMeans?',
+       \"What's the default init for KMeans?\",
    ]
    for q in queries:
        r = cached_route_query(q)
@@ -306,6 +308,6 @@ A few traps that catch most learners on this module.
 
 ## What you have now
 
-A fifteen-query hit-rate report at the default threshold (rubric §10 meets-spec evidence, with the paraphrase set sized larger than the rubric's six-query floor so the signal is statistically meaningful). A near-miss case demonstrating threshold sensitivity with a concrete wrong-answer example (rubric §10 stretch — the sweep at 0.70 / 0.85 / 0.95 with a false-positive call-out at the loose threshold). A cost-delta artifact pairing the cache hits with the cost log, plus a monthly-volume projection for production planning. Together those three artifacts cover the cache's full operational surface: hit rate as the savings driver, threshold as the quality knob, and dollar volume as the planning unit.
+A fifteen-query hit-rate report at the default threshold (rubric §10 meets-spec evidence, with the paraphrase set sized larger than the rubric's six-query floor so the signal is statistically meaningful). A near-miss case demonstrating the limit of similarity-as-cache-key with a concrete wrong-answer example (rubric §10 stretch — the sweep at 0.70 / 0.85 / 0.95 showing a near-miss that hits at every threshold and outscores real paraphrases, with the architectural fix named). A cost-delta artifact pairing the cache hits with the cost log, plus a monthly-volume projection for production planning. Together those three artifacts cover the cache's full operational surface: hit rate as the savings driver, threshold as the quality knob, and dollar volume as the planning unit.
 
 Two ways this cache extends. An HTTP gateway moves `cached_route_query`'s composition inline at the route boundary — caching and tiered routing compose multiplicatively, and the cost stack you now have is the substrate both layers run on. Guardrails pick up the safety side and the cache-poisoning concern — the no-cache-on-failed-guard rule wires into the gateway, and output guardrails revisit the cache write seam to confirm the safe-default holds across guard policies. The cache you built today is upstream of every one of those decisions.

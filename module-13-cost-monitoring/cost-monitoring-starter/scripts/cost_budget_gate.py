@@ -6,7 +6,7 @@ Running this module as a script demos both functions on a normal question
 and a pathological one, then runs the reconciliation against ``run_pipeline``.
 
 Run:
-    uv run python scripts/cost_budget_gate.py
+    PYTHONPATH=. uv run python scripts/cost_budget_gate.py
 """
 
 # TODO(m13-ex3): implement estimate_cost(question, model, system_prompt_tokens=1200,

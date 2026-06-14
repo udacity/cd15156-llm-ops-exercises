@@ -48,16 +48,22 @@ def main() -> None:
     # Embed each question via MiniLM, query top-5, score hit-any, print
     start = time.monotonic()
     hits = 0
+    hits1 = 0
     for i, row in enumerate(picked, 1):
         qv = embed_query_st(row["question"])
         returned = [doc_id for doc_id, _ in query_st(qv, n_results=5)]
         expected = [p for p in row["expected_doc_ids"].split("|") if p]
         is_hit = hit_any(returned, expected)
         hits += is_hit
+        # Strict hit@1 on the first non-seeded result — mirrors recall_at_5.py
+        # (the st collection carries no seeded chunks, so the filter is a no-op)
+        top1 = next((r for r in returned if not r.startswith("seeded.")), returned[0])
+        hits1 += hit_any([top1], expected)
         print(f"Q{i:>2} [{row['query_type']:<11}] {'HIT ' if is_hit else 'MISS'} {row['question'][:70]}")
-    # Print aggregate recall@5 plus runtime ($0 — embedder runs locally)
+    # Print aggregate recall@5, strict hit@1, plus runtime ($0 — local embedder)
     elapsed = time.monotonic() - start
     print(f"\nrecall@5: {hits}/{len(picked)} = {hits/len(picked):.2f}")
+    print(f"hit@1 (excluding seeded.*): {hits1}/{len(picked)} = {hits1/len(picked):.2f}")
     print(f"runtime:  {elapsed:.1f}s ({len(picked)} queries, $0.00000 [local])")
 
 if __name__ == "__main__":

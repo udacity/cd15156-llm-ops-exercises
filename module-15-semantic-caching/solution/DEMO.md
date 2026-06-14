@@ -6,7 +6,7 @@ A semantic cache has four moves — embed the query, similarity-search the cache
 
 ## Setup
 
-With `make setup` complete and `make load-data` reporting the scikit-learn docs are in Chroma at `data/chroma`, you should be able to import `run_pipeline` and answer a question end-to-end. Your `.env` carries the same two values every prior module needed:
+With `make setup` complete, `make load-data` reporting the scikit-learn docs are in Chroma at `data/chroma`, and `make seed-difficulty` having upserted the eight confusion chunks (the RandomForestRegressor-versus-Classifier criterion facts this demo's near-miss relies on live in those chunks), you should be able to import `run_pipeline` and answer a question end-to-end. Your `.env` carries the same two values every prior module needed:
 
 ```
 OPENAI_API_KEY=voc-...           # or sk-... on a direct OpenAI account
@@ -72,7 +72,7 @@ Now fire a paraphrase:
 ```
 uv run python -c "
 from src.cache import cached_route_query
-r = cached_route_query('Default split criterion in RandomForestRegressor?')
+r = cached_route_query(\"What's the default criterion used by RandomForestRegressor?\")
 print('cached:', r.cached, '/ answer head:', r.answer[:80])
 "
 ```
@@ -105,7 +105,7 @@ Run a threshold sweep against three test queries — a tight paraphrase, a terse
 uv run python -c "
 from src.cache.semantic import lookup
 queries = [
-    'Default split criterion in RandomForestRegressor?',
+    \"What's the default criterion used by RandomForestRegressor?\",
     'RandomForestRegressor default criterion?',
     'What is the default criterion for RandomForestClassifier?',
 ]
@@ -117,13 +117,13 @@ for q in queries:
 "
 ```
 
-What you should see, and why each row lands the way it does. The first query — a clean paraphrase of the warmup — hits at all three thresholds. The cosine similarity sits in the high 0.90s because the embedding model maps `"what is the default criterion for X"` and `"default split criterion in X"` into near-identical vector neighborhoods. This is the case the cache is built for.
+What you should see, and why each row lands the way it does. The first query — a clean paraphrase of the warmup — hits at all three thresholds. Its cosine similarity to the cached question is about 0.98 because `text-embedding-3-small` maps `"what is the default criterion for X"` and `"what's the default criterion used by X"` into near-identical vector neighborhoods. This is the case the cache is built for.
 
-The second query — terser phrasing — typically hits at 0.85 and 0.70 and may miss at 0.95. Word-order shifts and dropped function words pull the cosine down a few hundredths into the 0.88-0.93 range, depending on the embedder run. At 0.95 the cache becomes a paraphrase pedant; at 0.85 it forgives.
+The second query — terser phrasing, `"RandomForestRegressor default criterion?"` — hits at 0.70 but misses at 0.85 and 0.95. Dropping the leading `"what is the default"` and compressing to a noun phrase pulls the cosine down to about 0.83. At 0.85 the cache turns this real paraphrase away; tightening to 0.95 turns it away harder. This is the cost of a high threshold: it protects precision by sacrificing recall on the loosely-worded paraphrases you actually wanted to catch.
 
-The third query — about a different scikit-learn estimator — should miss at 0.95 and at 0.85, and may hit at 0.70. That last hit is the teaching moment. The cached answer is about the regressor's default criterion (`squared_error`), the query is about the classifier's default criterion (`gini`), and at 0.70 the cache will happily return regressor-flavored content to a classifier question because both sentences share the structural shape `"what is the default criterion for RandomForest<X>"` and the embedding model puts them within 0.30 cosine distance. That is the wrong-answer mode the cache is prone to at loose thresholds. Threshold is a quality knob first and a cost knob second; a 0.70 setting is where the savings stop being savings.
+The third query is the one to sit with. It asks about a *different* estimator — the classifier, not the regressor — so its correct answer (`gini`) is not the cached answer (`squared_error`). You would want the cache to reject it. It does not. The one-word swap scores about **0.9563**, so it hits at 0.70, at 0.85, and even at 0.95. Put the three rows side by side and the problem is stark: the wrong-answer near-miss (0.96) is *more* similar to the cached question than the terse-but-correct paraphrase (0.83) is. No threshold ordering separates them — any setting that admits the paraphrase admits the near-miss, and the strict 0.95 that finally rejects the paraphrase still serves the wrong answer. That is the wrong-answer mode, and it is not a loose-threshold edge case you can dial away; it is baked into using raw cosine as the cache key. `text-embedding-3-small` weights surface form heavily, and surface form is exactly what the near-miss shares.
 
-The default sits at 0.85 because it is the typical baseline for sentence-transformer-class embeddings on FAQ-style workloads. Portkey's managed gateway defaults higher, around 0.95, which biases the opposite direction — higher precision, lower hit rate. There is no universal right number. Exercise 1 runs a fifteen-paraphrase sweep on the default and reports the hit rate; Exercise 2 builds a deliberate near-miss out of the RandomForest classifier-vs-regressor pair to feel the wrong-answer mode in your own hands; Exercise 3 pairs the cache hits with the cost log to compute the dollars-per-query delta.
+The default sits at 0.85 because it is a reasonable midpoint between paraphrase recall and precision on FAQ-style workloads — but as the third row shows, no value of this one knob makes the near-miss safe. Portkey's managed gateway defaults higher, around 0.95, biasing toward precision; that still would not have caught this. The real fix lives a layer up from the threshold — a re-ranker, a metadata filter on the estimator class, or a criterion-aware cache key — and that is the thread Exercise 2 picks up. Exercise 1 runs a fifteen-paraphrase sweep on the default and reports the hit rate; Exercise 2 builds the RandomForest classifier-vs-regressor near-miss and shows why the threshold alone cannot save you; Exercise 3 pairs the cache hits with the cost log to compute the dollars-per-query delta.
 
 ---
 

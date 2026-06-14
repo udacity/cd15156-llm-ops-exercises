@@ -17,10 +17,17 @@ Run with `make load-data` already complete:
 
 # Build sandbox collections at ef_search of 10/50/200, replay the same queries
 # against each, and print mean per-query latency.
+import sys
 import time
+from pathlib import Path
 
 import chromadb
 from chromadb.config import Settings as CS
+
+# Make the project root importable when run directly (e.g.
+# `uv run python scripts/ef_search_sweep.py`). The make targets get this from
+# the Makefile's `export PYTHONPATH := .`; a direct script invocation does not.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import settings
 from src.embedder import embed_query

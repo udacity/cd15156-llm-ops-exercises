@@ -365,6 +365,39 @@ def render_json(summaries: list[dict]) -> str:
     return json.dumps(summaries, indent=2, default=str)
 
 
+def render_spans_json(df: Any, last_n: int) -> str:
+    """Dump raw spans (name + ``attributes.rag``) for the most-recent traces.
+
+    Unlike ``summarize_traces`` — which collapses each trace to one root
+    row — this preserves every child span, so custom child-span
+    attributes such as ``rag.retrieve.top_score`` on the ``retrieve`` span
+    are visible. This is the export-path evidence for environments without
+    browser access to the Phoenix UI.
+    """
+    if df is None or len(df) == 0:
+        return "[]"
+
+    recent_traces = (
+        df.sort_values("start_time", ascending=False)
+        .drop_duplicates("context.trace_id")["context.trace_id"]
+        .head(last_n)
+        .tolist()
+    )
+    rows = df[df["context.trace_id"].isin(recent_traces)].sort_values("start_time")
+
+    records = []
+    for _, row in rows.iterrows():
+        rag_attrs = row.get("attributes.rag")
+        records.append(
+            {
+                "trace_id": str(row.get("context.trace_id", ""))[:8],
+                "span": str(row.get("name", "")),
+                "rag": rag_attrs if isinstance(rag_attrs, dict) else {},
+            }
+        )
+    return json.dumps(records, indent=2, default=str)
+
+
 __all__ = [
     "init_tracing",
     "flush",
@@ -372,4 +405,5 @@ __all__ = [
     "summarize_traces",
     "render_markdown",
     "render_json",
+    "render_spans_json",
 ]
