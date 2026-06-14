@@ -1,4 +1,4 @@
-.PHONY: help setup serve serve-proxy load-data seed-difficulty smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-analyze test verify consistency-check
+.PHONY: help setup serve serve-proxy load-data seed-difficulty smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-simulate ab-analyze test verify consistency-check
 
 # Make `src` importable for scripts run via `uv run python scripts/...`.
 # (Pytest gets this from `pythonpath = ["."]` in pyproject.toml; scripts don't.)
@@ -62,6 +62,9 @@ watch: ## Start the docs-inbox watcher (Module 24) — ingests JSONs dropped int
 
 migrate-blue-green: ## Re-ingest the corpus into the inactive color and swap the alias on pass (Module 24)
 	uv run python scripts/migrate_blue_green.py
+
+ab-simulate: ## Fire 200 sticky-by-user A/B calls and write data/ab_log.jsonl (Module 22)
+	uv run python scripts/ab_simulate.py
 
 ab-analyze: ## Read data/ab_log.jsonl and print chi-squared + per-variant cost/latency (Module 22)
 	uv run python scripts/ab_analyze.py

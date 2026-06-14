@@ -18,7 +18,7 @@ Sanity check from the starter root:
 uv run python -c "from src import store; print(store.get_collection().count())"
 ```
 
-You want a number around 750 — that is the chunk count after `make load-data` and `make seed-difficulty` have both run. Zero means the corpus is empty (run `make load-data`); an import error means `src/store.py` is still a stub (Part 3 fills it in).
+You want a number around 750 — `make load-data` upserts 747 chunks, and `make seed-difficulty` (used in the exercises) adds eight more for 755. Zero means the corpus is empty (run `make load-data`); an import error means `src/store.py` is still a stub (Part 3 fills it in).
 
 ## Part 1 — Build `chunker.py` from the stub
 
@@ -47,14 +47,14 @@ uv run python -c "
 from pathlib import Path
 from src import chunker, corpus
 sec = next(s for s in corpus.load_corpus(Path('data/scikit-learn-cache'), 'demo')
-           if 'grid_search' in s['doc_id'])
+           if 'exhaustive-grid-search' in s['doc_id'])
 chunks = chunker.chunk_doc(sec)
 print(f'section: {sec[\"doc_id\"]} ({corpus.token_count(sec[\"text\"])} tokens)')
 print(f'-> {len(chunks)} chunks, first chunk_id={chunks[0][\"chunk_id\"]}, has_code={chunks[0][\"metadata\"][\"has_code\"]}')
 "
 ```
 
-You should see a multi-chunk split if the section is over 512 tokens, with `has_code=True` propagating to every piece because the section embeds Python code examples.
+This section is 634 tokens — over the 512 ceiling — so you see a two-chunk split (`.p0`, `.p1`), with `has_code=True` propagating to every piece because the section embeds Python code examples.
 
 ## Part 2 — Build `embedder.py` from the stub
 

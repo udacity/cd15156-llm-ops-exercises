@@ -69,11 +69,13 @@ The starter's classifier returns `simple` or `complex`; the gateway routes to `g
 
    The fallback target inside `classify` stays `complex` — when the classifier returns garbage, defaulting to the mid-tier model is the safer choice than escalating unexpected input to the priciest tier.
 
-3. Teach the prompt template the new label. Open `prompts/classifier.j2`. The existing rubric describes `simple` (factual lookup) and `complex` (comparison or multi-step). Add a third bullet:
+3. Teach the prompt template the new label. Open `prompts/classifier.j2` and make three edits so the tier count, the rubric, and the output-format list all agree. First, add a third rubric bullet below the `complex` one:
 
    ```
    - **premium**: A query with long context (multi-paragraph requirements, multiple constraints stacked), or a query where wrong answers carry high cost (deprecated-API checks, breaking changes across scikit-learn versions, parameter interactions across estimators). These benefit from a higher-capability model.
    ```
+
+   Then make two one-line edits so the rest of the prompt agrees. Change the intro "into one of two tiers" to "into one of three tiers", and extend the output-format line from "Use `simple` or `complex` ... those are the only valid values" to "Use `simple`, `complex`, or `premium` ...". That output-format list is load-bearing: leave it at two labels and the JSON-mode classifier is told `premium` is not allowed, so it rarely emits the tier you just added.
 
    The classifier is gpt-4o-mini self-classifying via JSON mode, so the prompt's wording does the load-bearing work. Keep the rubric language concrete — naming the *kind* of query that earns the tier beats abstract criteria like "high-stakes" alone.
 
@@ -130,7 +132,7 @@ The mechanics this exercise pins are the ones the concept module's video on retr
    "tenacity>=8.5,<10",
    ```
 
-   followed by `uv sync` to install. Confirm with `uv run python -c "import tenacity; print(tenacity.__version__)"`.
+   followed by `uv sync` to install. Confirm with `uv run python -c "import importlib.metadata as m; print(m.version('tenacity'))"`.
 
 2. Decorate the OpenAI chat-completions call site. Open `src/generator.py`. The current call at lines 72–79 is bare:
 
@@ -267,7 +269,7 @@ The two provider APIs are close enough that one adapter is small, and different 
 
 ### What to do
 
-1. Add an `AnthropicProvider` adapter at `src/gateway/providers/anthropic.py`. The directory `src/gateway/providers/` is new — create the `__init__.py` alongside. The adapter has one entry point that takes the gateway's existing inputs (a model name, a system prompt, a user question) and returns the existing `(answer, TokenUsage, cost_usd)` triple:
+1. Add an `AnthropicProvider` adapter at `src/gateway/providers/anthropic.py`. The `src/gateway/providers/` package already exists in the starter, with an `__init__.py` package marker in place and `anthropic.py` shipped as a stub that raises `NotImplementedError`. Replace that stub with the adapter below; you do not need to touch `__init__.py`. The adapter has one entry point that takes the gateway's existing inputs (a model name, a system prompt, a user question) and returns the existing `(answer, TokenUsage, cost_usd)` triple:
 
    ```python
    """Anthropic Messages API adapter — converts gateway I/O to Anthropic's request and response shape.
@@ -392,6 +394,12 @@ The two provider APIs are close enough that one adapter is small, and different 
      -H 'content-type: application/json' \
      -d '{"question": "Default criterion for RandomForestRegressor?", "provider": "openai"}' \
      | python -m json.tool | grep -E 'model|answer'
+
+   # Clear the answer cache before the Anthropic curl. The cache key is the
+   # question text, not the provider, so without this the second request hits
+   # the entry the OpenAI call just wrote and returns the cached OpenAI answer
+   # instead of routing to the adapter.
+   uv run python -c "from src.cache import clear; clear()"
 
    curl -s -X POST http://localhost:8080/query \
      -H 'content-type: application/json' \

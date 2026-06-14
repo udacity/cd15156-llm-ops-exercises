@@ -13,6 +13,45 @@ Run `make setup` to install dependencies, then `make load-data` once to populate
 
 > The recorded demo walks through this codebase; the exercises below build on it.
 
+# same loop, redirect to /tmp/words-tighter.txt
+```
+
+Compare:
+
+```
+echo "main:    $(awk '{s+=$1} END {print s/NR}' /tmp/words-main.txt) avg words"
+echo "tighter: $(awk '{s+=$1} END {print s/NR}' /tmp/words-tighter.txt) avg words"
+```
+
+Representative output:
+
+```
+main:    52.4 avg words
+tighter: 19.8 avg words
+```
+
+The tighter prompt cuts response length roughly sixty percent on this five-question sample. That is a real effect on the metric, and it is a real cost reduction at output-token prices — completion tokens are typically two to four times more expensive than prompt tokens on `gpt-4o`-class models, so a sixty-percent drop in output length translates roughly to a sixty-percent drop in completion cost per request.
+
+What you cannot conclude from five questions is whether the tighter prompt also changed answer quality. The candidate might be cutting padding, or it might be cutting the qualified-name citations that make the answer auditable. To distinguish those cases you would run RAGAS faithfulness + context precision on both variants and need many more samples — a five-percent shift in a binary quality metric at ninety-five percent confidence needs on the order of ten thousand requests per variant. Five questions is enough to feel the workflow, not enough to ship a decision.
+
+Clean up before moving on:
+
+```
+git checkout main
+git branch -D prompt-prod-tighter
+```
+
+Or keep it around for the exercises, which will revisit the same A/B pattern with a real success metric.
+
+## Wrap-up
+
+That is the full Git + Jinja2 prompt versioning loop, end to end. A template on disk under `prompts/`. A loader in `src/generator.py` that you just built from a stub. Git branches or tags to switch versions. A tiny A/B that surfaces a measurable difference. The pieces are small and the indirection is shallow, which is the strength of this pattern — there is nothing magic between the template file and the model call.
+
+The exercises take this further: extending the template with new variables, building an environment-based loader that selects dev or prod at runtime via a `PROMPT_ENV` setting, and running an A/B with a real success metric (refusal rate) and a chi-squared significance test from `scipy.stats`. Each exercise pins to a concrete acceptance criterion you can self-verify before moving on.
+
+---
+
+
 # Module 03 — Exercise: Build the Prompt Versioning Workflow
 
 The demo showed the ScikitDocs starter's prompt template, built `src/generator.py` from a stub, and walked through switching versions via Git. These exercises move you from "watched it work" to "shipped it yourself." Three exercises, increasing in scope: extend the template with a new variable and a conditional, build an environment-aware loader that selects the right template at runtime, and run a real A/B test with a quality metric and a significance check. Each one has an acceptance criterion you can verify without grading help, and each one ends in a small piece of working code you will reuse in later modules. The order matters — exercise 2 builds on the template you extend in exercise 1, and exercise 3 assumes the loader pattern from exercise 2.
@@ -305,9 +344,11 @@ This exercise is the longest of the three because the real lesson is not the har
            "variant_a_n": len(a),
            "variant_b_refusals": sum(b),
            "variant_b_n": len(b),
-           "chi2": chi2,
-           "p_value": p,
-           "significant_at_0.05": p < 0.05,
+           # chi2_contingency returns numpy scalars; numpy.bool_ is not a
+           # Python int subclass, so json.dump chokes on it without the casts.
+           "chi2": float(chi2),
+           "p_value": float(p),
+           "significant_at_0.05": bool(p < 0.05),
        }
        json.dump(report, sys.stdout, indent=2)
        sys.stdout.write("\n")

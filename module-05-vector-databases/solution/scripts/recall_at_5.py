@@ -24,16 +24,22 @@ def main() -> None:
     # Embed each question, query top-5, score hit-any, print per-question line
     start = time.monotonic()
     hits = 0
+    hits1 = 0
     for i, row in enumerate(picked, 1):
         qv = embedder.embed_query(row["question"])
         returned = [s.doc_id for s in store.query(qv, n_results=5)]
         expected = [p for p in row["expected_doc_ids"].split("|") if p]
         is_hit = hit_any(returned, expected)
         hits += is_hit
+        # Strict hit@1 on the first non-seeded result — measures the real
+        # corpus whether or not `make seed-difficulty` has run
+        top1 = next((r for r in returned if not r.startswith("seeded.")), returned[0])
+        hits1 += hit_any([top1], expected)
         print(f"Q{i:>2} [{row['query_type']:<11}] {'HIT ' if is_hit else 'MISS'} {row['question'][:70]}")
-    # Print aggregate recall@5 and the runtime/cost summary
+    # Print aggregate recall@5, strict hit@1, and the runtime/cost summary
     elapsed = time.monotonic() - start
     print(f"\nrecall@5: {hits}/{len(picked)} = {hits/len(picked):.2f}")
+    print(f"hit@1 (excluding seeded.*): {hits1}/{len(picked)} = {hits1/len(picked):.2f}")
     print(f"runtime:  {elapsed:.1f}s ({len(picked)} queries, ${len(picked)*2e-5:.5f})")
 
 if __name__ == "__main__":

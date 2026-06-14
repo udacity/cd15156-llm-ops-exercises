@@ -117,15 +117,19 @@ The full golden set is thirty questions across six query types: factual (12), pr
                remaining[row["query_type"]] -= 1
        start = time.monotonic()
        hits = 0
+       hits1 = 0
        for i, row in enumerate(picked, 1):
            qv = embedder.embed_query(row["question"])
            returned = [s.doc_id for s in store.query(qv, n_results=5)]
            expected = [p for p in row["expected_doc_ids"].split("|") if p]
            is_hit = hit_any(returned, expected)
            hits += is_hit
+           top1 = next((r for r in returned if not r.startswith("seeded.")), returned[0])
+           hits1 += hit_any([top1], expected)
            print(f"Q{i:>2} [{row['query_type']:<11}] {'HIT ' if is_hit else 'MISS'} {row['question'][:70]}")
        elapsed = time.monotonic() - start
        print(f"\nrecall@5: {hits}/{len(picked)} = {hits/len(picked):.2f}")
+       print(f"hit@1 (excluding seeded.*): {hits1}/{len(picked)} = {hits1/len(picked):.2f}")
        print(f"runtime:  {elapsed:.1f}s ({len(picked)} queries, ${len(picked)*2e-5:.5f})")
 
    if __name__ == "__main__":
@@ -134,11 +138,15 @@ The full golden set is thirty questions across six query types: factual (12), pr
 
    The `hit_any` helper implements the golden-set's documented "hit-any" semantics: a question scores 1 if any of the top-5 returned `doc_id`s starts with any of the pipe-separated expected prefixes. That matches the way `expected_doc_ids` is recorded as a section prefix (e.g., `modules.preprocessing`) rather than a specific chunk id, because the golden set was authored before chunking and should not be invalidated when a section splits into multiple pieces.
 
+   The `hit@1` line measures the stricter question — is the *first* result already the right section? — skipping any `seeded.*` ids so the number reflects the real corpus whether or not you have run `make seed-difficulty` yet. The seeded chunks get their turn below.
+
 2. Run it from the starter root:
 
    ```
-   uv run python scripts/recall_at_5.py
+   PYTHONPATH=. uv run python scripts/recall_at_5.py
    ```
+
+   The `PYTHONPATH=.` prefix is required for direct script runs: the `make` targets export it for you, but a bare `python scripts/...` puts `scripts/` (not the starter root) on the import path and `from src import ...` fails.
 
 3. Compare your output to the reference run (twelve hits, eighteen seconds at warm-cache):
 
@@ -157,6 +165,7 @@ The full golden set is thirty questions across six query types: factual (12), pr
    Q12 [comparative] HIT  What's the difference between `OneHotEncoder` and `LabelEncoder`?
 
    recall@5: 12/12 = 1.00
+   hit@1 (excluding seeded.*): 9/12 = 0.75
    runtime:  17.9s (12 queries, $0.00024)
    ```
 
@@ -170,9 +179,9 @@ Question 12 ("difference between `OneHotEncoder` and `LabelEncoder`") is compara
 
 ### What the numbers mean
 
-A perfect 12/12 is not a victory lap — it is the floor the smoke gate already pinned at recall@5 ≥ 0.70 on the full thirty-question set, and the smoke gate measured 1.00 there too. What you should take away is that on a corpus this small (~750 chunks) and with questions sourced from the scikit-learn docs themselves, recall is not the binding constraint on retrieval quality. The interesting failure modes show up at top-1 rank, not at top-5 hit-any.
+A perfect 12/12 is not a victory lap — it is the floor the smoke gate already pinned at recall@5 ≥ 0.70 on the full thirty-question set, and the smoke gate measured 1.00 there too. What you should take away is that on a corpus this small (~750 chunks) and with questions sourced from the scikit-learn docs themselves, recall is not the binding constraint on retrieval quality. The interesting failure modes show up at top-1 rank, not at top-5 hit-any — your script's `hit@1` line is already measuring this: 9/12 against the real corpus even while recall@5 sits at 1.00.
 
-To see one of those failure modes, modify the script to print the top-1 doc_id for each query and re-run. You will see entries like this for the factual questions:
+To see one of those failure modes, seed the eight deliberately-confusing chunks with `make seed-difficulty` (if you haven't already — Exercise 1 step 3 explains how they change the collection count), then modify the script to print the top-1 doc_id for each query and re-run. You will see entries like this for the factual questions:
 
 ```
 Q 1 -> seeded.near_dup.random_forest_estimators_a  (hit)
@@ -249,6 +258,10 @@ The model swap is one line in `src/embedder.py`. The problem is that everything 
        start = time.monotonic()
        chunks = [c for sec in load_corpus(Path("data/scikit-learn-cache"), "manual")
                  for c in chunk_doc(sec)]
+       unique: dict[str, dict] = {}
+       for c in chunks:
+           unique.setdefault(c["chunk_id"], c)  # first-wins dedup, mirrors scripts/load_data.py
+       chunks = list(unique.values())
        texts = [c["text"] for c in chunks]
        embeddings = _model.encode(
            texts, normalize_embeddings=True, batch_size=64, show_progress_bar=True
@@ -266,22 +279,24 @@ The model swap is one line in `src/embedder.py`. The problem is that everything 
        main()
    ```
 
-   Run it: `uv run python scripts/load_data_st.py`. On a CPU-only Workspace, expect ~90 seconds for ~750 chunks — slower than the batched OpenAI path because the local model runs serially without an accelerator, but the throughput is acceptable for a corpus this small. Cost: zero.
+   The dedup matters here the same way it does in `scripts/load_data.py`: the RST tree yields a handful of repeated section ids, and Chroma's `upsert` rejects duplicate ids within a single call with a `DuplicateIDError`.
+
+   Run it: `PYTHONPATH=. uv run python scripts/load_data_st.py`. On a CPU-only Workspace, expect ~90 seconds for ~750 chunks — slower than the batched OpenAI path because the local model runs serially without an accelerator, but the throughput is acceptable for a corpus this small. Cost: zero.
 
 5. Re-run the recall measurement against the new collection. Copy `scripts/recall_at_5.py` to `scripts/recall_at_5_st.py` and change two things: import `embed_query_st` in place of `embedder.embed_query`, and query the `scikit_docs_st` collection directly (`store.get_collection("scikit_docs_st").query(...)`), converting distances to similarity yourself the same way the public `store.query` does.
 
-6. Compare. A representative side-by-side on the twelve-question subset:
+6. Compare. The reference run's side-by-side on the twelve-question subset:
 
-   | Embedder | dim | recall@5 | corpus-build cost | query latency (median) |
-   |---|---|---|---|---|
-   | `text-embedding-3-small` | 1536 | 12/12 = 1.00 | ~$0.10 (cold) / $0 (warm cache) | ~1.5s (network) |
-   | `all-MiniLM-L6-v2` | 384 | 10/12 = 0.83 | $0 (local) | ~0.05s (in-process) |
+   | Embedder | dim | recall@5 | strict hit@1 | corpus-build cost | query latency (median) |
+   |---|---|---|---|---|---|
+   | `text-embedding-3-small` | 1536 | 12/12 = 1.00 | 9/12 = 0.75 | ~$0.10 (cold) / $0 (warm cache) | ~1.5s (network) |
+   | `all-MiniLM-L6-v2` | 384 | 12/12 = 1.00 | 6/12 = 0.50 | $0 (local) | ~0.05s (in-process) |
 
-   Two questions that hit under OpenAI but missed under MiniLM are typically the ones whose expected sections are short and lexically distant from the question wording — MiniLM's 384-dim space packs less surface-form variation into the same neighborhood, so paraphrase recall drops noticeably even when the topic is correct. The flip side is that query latency drops by an order of magnitude and the cost goes to zero.
+   Both embedders go 12/12 at recall@5 — on a corpus this small, top-5 hit-any saturates and cannot separate them. The separation shows one level down, in the `hit@1` line: the extra questions MiniLM gets wrong at top-1 still have the right section at rank 2, so the topic neighborhood is correct but the precise section is displaced — MiniLM's 384-dim space packs less fine distinction into the same neighborhood than the 1536-dim OpenAI space. Top-1 is the rank that matters operationally: it is the chunk the generator leans on first, which is exactly the displacement mechanism the seeded chunks demonstrated in Exercise 2. The flip side is that query latency drops by an order of magnitude and the cost goes to zero.
 
 ### Acceptance criterion
 
-You can produce a side-by-side comparison table like the one above, with your own numbers, for both embedders on the twelve-question subset. You can explain, in two sentences, the reason the dimensions do not match across collections and why the rebuild is unavoidable.
+You can produce a side-by-side comparison table like the one above, with your own numbers for both recall@5 and strict hit@1, for both embedders on the twelve-question subset — expect recall@5 to tie at 1.00 and MiniLM to trail at top-1 (the reference run measured 9/12 versus 6/12). You can explain, in two sentences, the reason the dimensions do not match across collections and why the rebuild is unavoidable.
 
 ### Why the dimensionalities cannot be reconciled in place
 
@@ -295,6 +310,6 @@ Two pieces of the vector-DB stack survive the embedder swap untouched: `src/chun
 
 ### When the trade is worth it
 
-For the ScikitDocs corpus, the OpenAI embedder is the right default — 1.00 versus 0.83 on twelve questions is a meaningful gap and the cost is rounding-error per build because the embedding cache makes warm rebuilds free. The MiniLM swap matters when you have a much larger corpus where the per-rebuild cost is no longer rounding-error, when you cannot send the corpus to a hosted API (regulated industries, air-gapped deployments), or when query latency under 50 milliseconds is a hard product constraint. Pick the embedder against the constraint that is binding for the workload — measure on your own queries the way the MTEB paper recommends, do not pick from a public leaderboard.
+For the ScikitDocs corpus, the OpenAI embedder is the right default — 9/12 versus 6/12 at top-1 is a meaningful quality gap and the cost is rounding-error per build because the embedding cache makes warm rebuilds free. At this corpus size the gap never reaches recall@5; in production conditions it does. At tens of thousands of chunks and beyond, top-5 stops being a generous slice of the corpus — public retrieval benchmarks (BEIR, MTEB) show roughly ten-point gaps between these two models on corpora of 100k+ documents. And genuinely out-of-domain query phrasing — error messages, symptom descriptions, anything not written in the documentation's own vocabulary — degrades a small symmetric-similarity model like MiniLM faster than a retrieval-trained hosted model. The MiniLM swap matters when you have a much larger corpus where the per-rebuild cost is no longer rounding-error, when you cannot send the corpus to a hosted API (regulated industries, air-gapped deployments), or when query latency under 50 milliseconds is a hard product constraint. Pick the embedder against the constraint that is binding for the workload — measure on your own queries the way the MTEB paper recommends, do not pick from a public leaderboard.
 
 A second axis to plan for, even if you stay on OpenAI: model upgrades. OpenAI shipped `text-embedding-3-large` and the Matryoshka-truncatable `text-embedding-3-small` together; the latter is what we use. The two are not interchangeable in an existing collection (different dim, different geometry), so a model upgrade follows the same blue/green rebuild pattern as an embedder swap. Plan for it now by keeping the embedder configuration in `src/config.py` and the rebuild script generic, both of which Exercise 3 already exercises.

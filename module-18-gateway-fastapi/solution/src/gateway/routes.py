@@ -83,7 +83,7 @@ def query_endpoint(
     4. **PII redaction** — does not block, returns redacted text. The
        cleaned text flows into ``route_query``; the raw PII never
        reaches the retriever, the cache, or the LLM.
-    5. **Dispatch** — :func:`route_query` handles classify → cache →
+    5. **Dispatch** — :func:`route_query` handles cache lookup → classify →
        traced pipeline → cost log.
     6. **Hallucination check** — LLM-judge runs on the answer + the
        retrieved sources. NOT_SUPPORTED triggers a SAFE_FILTERED_MESSAGE

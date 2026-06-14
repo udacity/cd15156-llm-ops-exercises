@@ -19,6 +19,11 @@ import threading
 import time
 from pathlib import Path
 
+# Make the project root importable when run directly (e.g.
+# `uv run python scripts/start_watcher.py`). The make targets get this from the
+# Makefile's `export PYTHONPATH := .`; a direct script invocation does not.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from src.ingestion import (
     ACTIVE_COLLECTION_PATH,
     read_active_collection,

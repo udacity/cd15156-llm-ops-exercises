@@ -3,27 +3,35 @@
 # delta, latency delta, and the next step (quality read + secondary tiebreaker).
 """A/B decision (illustrative): Variant A retained.
 
-Chi-squared on success rate at 50 unique clients typically returns
-p ~ 0.85 (not significant; effective N is sticky-correlated so this
-is even more underpowered than the raw call count suggests). Variant
-B was ~50% more expensive per call and ~56% slower in mean latency
-with no detectable quality improvement on a typical run. Next step:
-rerun at 500 unique clients to confirm the quality-parity read holds
-at higher power, then sunset variant B unless a quality signal
-emerges.
+Chi-squared on the LLM-judge faithfulness label at ~50 unique clients
+typically returns p ~ 0.8 (not significant; effective N is sticky-
+correlated so this is even more underpowered than the raw call count
+suggests). Variant B's "be expansive" instruction produced noticeably
+longer answers — on a typical run ~40% more completion tokens, which
+tracks into ~35% higher mean latency and a modestly higher per-call
+cost — with no detectable quality improvement on the judge label.
+Next step: rerun at 500 unique clients to confirm the quality-parity
+read holds at higher power, then sunset variant B unless a quality
+signal emerges.
 
 This script is the 200-call sticky-by-user A/B harness for the
-ScikitDocs assistant. It builds a 50-client_id pool, picks each
-call's client_id at random from the pool, calls pick_variant with a
-stable salt so assignments are sticky across calls, calls OpenAI
-through call_with_variant, and appends one JSONL row per call to
-data/ab_log.jsonl. The analyzer at scripts/ab_analyze.py reads that
-file.
+ScikitDocs assistant. It builds a 50-client_id pool, picks each call's
+client_id at random from the pool, calls pick_variant with a stable
+salt so assignments are sticky across calls, calls OpenAI through
+call_with_variant, scores each answer with an LLM-as-judge faithfulness
+check, and appends one JSONL row per call to data/ab_log.jsonl. The
+analyzer at scripts/ab_analyze.py reads that file.
 """
-# Imports: stdlib randomness + path, the three A/B primitives, and run_pipeline.
+# Imports: stdlib json/randomness/path, Jinja + OpenAI for the judge, the
+# three A/B primitives, config settings, and run_pipeline.
+import json
 import random
 from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
+from openai import OpenAI
+
+from src.config import settings
 from src.models import Source  # noqa: F401  (re-exported for downstream use)
 from src.optimization import call_with_variant, log_assignment, pick_variant
 from src.pipeline import run_pipeline  # for real retrieval
@@ -51,6 +59,48 @@ QUESTIONS = [
     "How does GridSearchCV decide which combination is best?",
 ]
 
+# LLM-as-judge faithfulness scorer. The naive citation check
+# `any(s.doc_id in answer ...)` never fires on this corpus — the doc_ids
+# are RST section anchors like `modules.svm.kernel-functions`, which the
+# model never reproduces verbatim, so every call would score False and the
+# chi-squared table would be degenerate. Reading the answer against the
+# retrieved chunks gives a graded, honest success signal.
+_judge_env = Environment(
+    loader=FileSystemLoader("prompts"),
+    keep_trailing_newline=True,
+    autoescape=False,
+)
+_judge_client = OpenAI(base_url=settings.openai_base_url or None)
+
+
+def judge_supported(answer: str, sources: list) -> bool:
+    """Return True when the judge rules the answer SUPPORTED by sources.
+
+    Renders prompts/judge.j2 and asks gpt-4o-mini for a JSON verdict.
+    Fails open (returns True) on an empty answer or any judge error so a
+    transient proxy hiccup doesn't depress the measured success rate.
+    """
+    if not answer.strip() or not sources:
+        return False
+    context = "\n\n".join(f"[{s.doc_id}]\n{s.chunk_text}" for s in sources)
+    prompt = _judge_env.get_template("judge.j2").render(
+        answer=answer, source=context
+    )
+    try:
+        resp = _judge_client.chat.completions.create(
+            model=settings.model_simple,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        verdict = (
+            json.loads(resp.choices[0].message.content or "{}").get("verdict")
+            or ""
+        ).upper()
+    except Exception:
+        return True  # fail open — don't let a judge blip skew the metric
+    return verdict == "SUPPORTED"
+
 
 # Reuses the pipeline retrieval seam so the harness sees the same contexts that
 # the production route_query path would feed the generator.
@@ -67,7 +117,7 @@ def retrieve(question: str) -> list:
 
 
 # For each call: pick a random client_id, retrieve sources, assign + invoke the
-# variant, score success via citation check, and append one JSONL row.
+# variant, score success with the LLM judge, and append one JSONL row.
 def main() -> None:
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     clients = [f"user-{i:03d}" for i in range(N_CLIENTS)]
@@ -79,8 +129,7 @@ def main() -> None:
         answer, usage, cost, latency_ms = call_with_variant(
             question, sources, variant
         )
-        source_ids = {s.doc_id for s in sources}
-        success = any(sid in answer for sid in source_ids)
+        success = judge_supported(answer, sources)
         log_assignment(
             LOG_PATH,
             client_id=client_id,

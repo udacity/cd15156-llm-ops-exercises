@@ -2,7 +2,7 @@
 
 ## Setup
 
-This starter is the ScikitDocs RAG app — a Q&A assistant for the scikit-learn library — with the full instrumentation stack already wired: prompt loader and Jinja templates, Chroma vector store, RAG pipeline (`run_pipeline`), Phoenix tracing (`init_tracing` + `traced_pipeline`), RAGAS evaluation harness, cost monitoring (`src/pricing.py` + `src/cost/`), semantic answer cache (`src/cache/semantic.py`), FastAPI gateway with tier classifier (`src/gateway/`), guardrails seam (`_pre_stream_guards` shim + blocking-path hooks), A/B testing (`scripts/ab_analyze.py` + `prompts/docbot_system_A.j2`/`_B.j2`), RAGOps watcher (`scripts/start_watcher.py`), and a streaming SSE endpoint (`src/streaming.py`). This is the last implementation module — every prior module's wiring is in place. In this module you will not add new components; you will profile what is already running. The three exercises produce a cold-versus-cached latency table from Phoenix spans, a time-to-first-token comparison between the blocking and streaming endpoints, and an `ef_search` sweep that confirms in your own numbers how the vector-search recall-versus-latency curve behaves at the starter's three-to-four-thousand-chunk scale.
+This starter is the ScikitDocs RAG app — a Q&A assistant for the scikit-learn library — with the full instrumentation stack already wired: prompt loader and Jinja templates, Chroma vector store, RAG pipeline (`run_pipeline`), Phoenix tracing (`init_tracing` + `traced_pipeline`), RAGAS evaluation harness, cost monitoring (`src/pricing.py` + `src/cost/`), semantic answer cache (`src/cache/semantic.py`), FastAPI gateway with tier classifier (`src/gateway/`), guardrails seam (`_pre_stream_guards` shim + blocking-path hooks), A/B testing (`scripts/ab_analyze.py` + `prompts/docbot_system_A.j2`/`_B.j2`), RAGOps watcher (`scripts/start_watcher.py`), and a streaming SSE endpoint (`src/streaming.py`). This is the last implementation module — every prior module's wiring is in place. In this module you will not add new components; you will profile what is already running. The three exercises produce a cold-versus-cached latency table from Phoenix spans, a time-to-first-token comparison between the blocking and streaming endpoints, and an `ef_search` sweep that confirms in your own numbers how the vector-search recall-versus-latency curve behaves at the starter's ~750-chunk scale.
 
 Bring up the corpus before you start:
 
@@ -26,7 +26,7 @@ If that returns a grounded answer about `rbf`, you are ready. Follow the demo wa
 
 # Exercise — Profile a Trace, Stream a Token, Sweep `ef_search`
 
-Three exercises. The first reads one Phoenix trace and turns the spans into a latency budget — cold path versus cache hit, side by side. The second measures TTFT on the streaming endpoint against total latency on the blocking endpoint, both on a fresh question with the cache empty, and walks the output-guards-deferred trade-off from the previous concept module. The third runs a small `ef_search` sweep against the `scikit_docs` collection and confirms in your own measurements that at a few thousand chunks the curve is measurable, not dramatic — the discipline lesson is that profiling is what tells you whether tuning matters, not faith in defaults. Plan twenty minutes total, weighted toward Exercises 1 and 2 because they exercise the production path the rubric grades.
+Three exercises. The first reads one Phoenix trace and turns the spans into a latency budget — cold path versus cache hit, side by side. The second measures TTFT on the streaming endpoint against total latency on the blocking endpoint, both on a fresh question with the cache empty, and walks the output-guards-deferred trade-off from the previous concept module. The third runs a small `ef_search` sweep against the `scikit_docs` collection and confirms in your own measurements that at ~750 chunks the curve is barely measurable, not dramatic — the discipline lesson is that profiling is what tells you whether tuning matters, not faith in defaults. Plan twenty minutes total, weighted toward Exercises 1 and 2 because they exercise the production path the rubric grades.
 
 ## Setup
 
@@ -71,25 +71,25 @@ The rubric §7 evidence target is a per-span latency breakdown that names where 
 
 3. Open `http://localhost:6006` in your browser, navigate to the `scikitdocs` project, and find the five traces from this run. If port 6006 is not reachable in your workspace, use `make show-traces` from a third terminal — that command prints the same per-trace summary as a markdown table. The cold trace will be the one with the long generator span; the cached traces will be much shorter.
 
-4. Click the cold trace. Record the duration of each named span — the classifier call, the cache lookup, the retrieval (embed plus search), and the generator. Then click any cached trace and record the same span list. Some spans will be missing on the cache hit path because the cache short-circuits before the LLM call.
+4. Find the cold query's traces. The `rag_query` trace holds the retrieval (embed plus search) and the generator spans. The cache lookup and, on a miss, the classifier each run before the pipeline opens its span, so Phoenix records them as their own short top-level traces next to `rag_query` rather than as children of it. Read all of them together and record four durations: the cache lookup, the classifier, the retrieval, and the generator. Then look at the cached query. A hit returns at the cache lookup, so it produces only the cache-lookup trace; the classifier, retrieval, and generator never run, and that absence is exactly the latency the cache buys back.
 
 5. Build a two-column table. Magnitudes will vary by region and load; the structure is what you keep:
 
    ```
    | Span                | Cold (ms)  | Cached (ms) |
    |---------------------|------------|-------------|
-   | classifier (LLM)    |    ~XXX    |    ~XXX     |
-   | cache lookup        |    ~XX     |    ~XX      |
-   | retrieve (embed+search) | ~XX    |    n/a      |
-   | generator (LLM)     |   ~XXXX    |    n/a      |
-   | TOTAL               |   ~XXXX    |    ~XX      |
+   | classifier (LLM)        |    ~XXX    |    n/a      |
+   | cache lookup            |    ~XX     |    ~XX      |
+   | retrieve (embed+search) |    ~XX     |    n/a      |
+   | generator (LLM)         |   ~XXXX    |    n/a      |
+   | TOTAL                   |   ~XXXX    |    ~XX      |
    ```
 
-   Compute the speedup as `cold_total / cached_total`. On a paraphrase-heavy workload at the starter's defaults, a cache hit lands roughly an order of magnitude faster than the cold path. Hedge the exact ratio — it depends on how fast the hosted endpoint is on your run and whether the classifier call gets short-circuited by the cache on hits.
+   Compute the speedup as `cold_total / cached_total`. A cache hit short-circuits before the classifier, the retrieval, and the generator, so it returns several-fold faster than the cold path. It is not free: the cache lookup still makes one embedding API call, so on a hosted endpoint the cached total lands in the hundreds-of-milliseconds-to-low-seconds range, not near zero. Hedge the exact ratio. On a fast direct endpoint the gap approaches an order of magnitude; on the Vocareum proxy, where the embedding round-trip dominates the hit path, it is closer to a few-fold.
 
 ### Success criteria
 
-A two-column markdown table with cold and cached per-span latencies for one identical query, plus the speedup ratio. A one-paragraph note naming which span dominates the cold total (typically the generator) and which spans the cache hit eliminates entirely. The interpretation is what makes this exercise more than data-entry. The pattern to articulate is the one the previous concept module framed: cache hits eliminate the LLM call, which is the dominant span, so the speedup compresses the budget from seconds to tens of milliseconds. A miss-rate-versus-hit-rate workload mix is the lever that turns that compression into measured production savings, which is what the cost-monitoring module's cost report and the semantic-caching module's cache exercises already covered.
+A two-column markdown table with cold and cached per-span latencies for one identical query, plus the speedup ratio. A one-paragraph note naming which span dominates the cold total (typically the generator) and which spans the cache hit eliminates entirely. The interpretation is what makes this exercise more than data-entry. The pattern to articulate is the one the previous concept module framed: cache hits eliminate the generator call, which is the dominant span, so the budget compresses from seconds down to the cost of a single embedding lookup. A miss-rate-versus-hit-rate workload mix is the lever that turns that compression into measured production savings, which is what the cost-monitoring module's cost report and the semantic-caching module's cache exercises already covered.
 
 ### Stretch
 
@@ -189,17 +189,24 @@ A second stretch: fire the same question twice through `/query` (the blocking en
 
 ## Exercise 3 — Sweep `ef_search` against the `scikit_docs` collection
 
-The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for the three tunable HNSW knobs — `M = 16`, `ef_construction = 100`, `ef_search = 100`. Only `hnsw:space` is set explicitly, because OpenAI embeddings are normalized and L2 silently corrupts ranking against them. The corpus is roughly three to four thousand scikit-learn doc chunks — more than enough for the recall-versus-latency curve to show measurable variance, unlike a few-dozen-row workload where the curve is flat below the noise floor.
+The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for the three tunable HNSW knobs — `M = 16`, `ef_construction = 100`, `ef_search = 100`. Only `hnsw:space` is set explicitly, because OpenAI embeddings are normalized and L2 silently corrupts ranking against them. The corpus is roughly 750 scikit-learn doc chunks. That is enough for the recall-versus-latency curve to surface its ordering, but the spread stays small; at this scale the curve sits close to the noise floor, and only at tens of thousands of rows and up does it open into a real engineering trade.
 
 ### What to do
 
 1. Do not edit `src/store.py`. Instead, build separate sandbox collections in a scratch script so the starter's index stays intact. Save this as `scripts/ef_search_sweep.py` in your scratch space:
 
    ```python
+   import sys
    import time
+   from pathlib import Path
 
    import chromadb
    from chromadb.config import Settings as CS
+
+   # Make the project root importable when run directly. The make targets get
+   # this from the Makefile's `export PYTHONPATH := .`; a direct
+   # `uv run python scripts/ef_search_sweep.py` does not.
+   sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
    from src.config import settings
    from src.embedder import embed_query
@@ -256,17 +263,17 @@ The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for 
    uv run python scripts/ef_search_sweep.py
    ```
 
-   Expected shape — every row's `mean_ms` should land in the single-digit-to-low-tens-of-milliseconds range, with the three values measurably spread because the corpus is large enough to surface the curve:
+   Expected shape — every row's `mean_ms` lands in the single-digit-millisecond range, and at this corpus size the three values sit within a fraction of a millisecond of each other:
 
    ```
-   {'ef_search': 10,  'mean_ms': ~3.2}
-   {'ef_search': 50,  'mean_ms': ~5.1}
-   {'ef_search': 200, 'mean_ms': ~9.4}
+   {'ef_search': 10,  'mean_ms': ~5.7}
+   {'ef_search': 50,  'mean_ms': ~6.1}
+   {'ef_search': 200, 'mean_ms': ~6.4}
    ```
 
-   Your absolute numbers will differ; the ordering — `ef=200` slower than `ef=10` — is what should be reproducible.
+   Your absolute numbers will differ, and the spread is small enough that the gaps may even reorder on a noisy run. The point is the opposite of a dramatic curve: at ~750 chunks the knob barely moves the needle, which is the signal that tuning it here would not pay off.
 
-3. Build a recall metric. Hand-pick five queries with a known correct top-1 chunk — pick chunks you have inspected from the live collection (their `doc_id` strings are visible in any `make show-traces` output):
+3. Build a recall metric. Hand-pick five queries with a known correct top-1 chunk — pick chunks you have inspected from the live collection (their `doc_id` strings are visible in the `sources` array of any `/query` JSON response; `make show-traces` summarizes traces but does not list `doc_id`s):
 
    ```python
    GOLDEN = [
@@ -307,7 +314,7 @@ The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for 
 
 ### Success criteria
 
-A three-row table — `ef_search` versus mean latency versus recall@5. A one-paragraph interpretation. The expected interpretation: at a few thousand chunks the curve has measurable variance; latency rises with `ef_search` and recall tends to saturate by `ef_search = 50` or so. The right operational read is that the LLM call still dominates the wall-clock budget on this workload, so tuning effort would still be better spent on the cache hit rate (the semantic-caching module) or the model choice (the cost-monitoring module's cost report). The same script and the same discipline apply at ten-thousand and ten-million chunk scale, where the curve sharpens and the tuning earns its keep.
+A three-row table — `ef_search` versus mean latency versus recall@5. A one-paragraph interpretation. The expected interpretation: at ~750 chunks the curve barely moves; latency rises slightly with `ef_search` but the spread is a fraction of a millisecond, and recall saturates almost immediately. The right operational read is that the LLM call still dominates the wall-clock budget on this workload, so tuning effort would still be better spent on the cache hit rate (the semantic-caching module) or the model choice (the cost-monitoring module's cost report). The same script and the same discipline apply at ten-thousand and ten-million chunk scale, where the curve sharpens and the tuning earns its keep.
 
 A second paragraph: name which knob you would tune first on a hypothetical ten-million-row workload, given the cost structure you already measured in Exercise 1. The right answer is rarely vector search — even at large scale the LLM call usually still dominates, and the cache and the model-choice levers compound multiplicatively against it. Pinecone's HNSW article walks the recall-versus-latency curve on the Sift1M benchmark; that is the shape you would replicate against your own workload before committing to an `ef_search` value in production.
 
@@ -322,7 +329,7 @@ A second paragraph: name which knob you would tune first on a hypothetical ten-m
 - **Measuring TTFT with curl's default buffering.** Without `-N`, curl buffers the entire response body before printing, which means the wall-clock time you see is total, not TTFT. The Python client in Exercise 2 uses `urllib.request.urlopen` which is line-buffered by default; the per-iteration `for line in resp` loop is what makes the TTFT measurement meaningful. If you adapt this to a different HTTP library, confirm that it does not buffer the response body before yielding the first chunk.
 - **Expecting `/query/stream` to hit the cache on a paraphrase.** The streaming route bypasses the cache by design — the recorded demo covers why. If your streaming TTFT numbers look implausibly identical run-over-run on the same question, that is the expected behavior. Cache wins are measured on `/query`, not on `/query/stream`.
 
-What you have at the end. A Phoenix-rendered latency breakdown for one query, cold versus cached. A TTFT-versus-total comparison between the streaming and blocking endpoints with hedged magnitudes. An `ef_search` sweep that demonstrates in your own numbers how the curve behaves at a few thousand chunks and where it would start to matter at production scale. Three artifacts that together cover the profile-streaming-tune triangle the previous concept module framed, on the exact code paths the starter ships.
+What you have at the end. A Phoenix-rendered latency breakdown for one query, cold versus cached. A TTFT-versus-total comparison between the streaming and blocking endpoints with hedged magnitudes. An `ef_search` sweep that demonstrates in your own numbers how flat the curve is at ~750 chunks and where it would start to matter at production scale. Three artifacts that together cover the profile-streaming-tune triangle the previous concept module framed, on the exact code paths the starter ships.
 
 One more lever to name. The self-hosted inference path is the other latency option — when the API-hosted model is the bottleneck and the volume justifies the operational overhead, batching and KV-cache tuning open up inference-side levers that hosted endpoints do not expose. Most teams do not reach that point; knowing it exists is the takeaway.
 

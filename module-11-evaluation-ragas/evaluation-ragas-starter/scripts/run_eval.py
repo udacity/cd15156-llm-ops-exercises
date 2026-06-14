@@ -68,6 +68,19 @@ def main(argv: list[str] | None = None) -> int:
     aggregate = summarize(result)
 
     rows = result.to_pandas().to_dict("records")
+    # RAGAS 0.4.x renames the dataset columns to its SingleTurnSample schema
+    # (user_input/response/retrieved_contexts/reference) inside evaluate();
+    # restore the documented names this module's prose and per-row JSON use.
+    _RAGAS_TO_DOCUMENTED = {
+        "user_input": "question",
+        "response": "answer",
+        "retrieved_contexts": "contexts",
+        "reference": "ground_truth",
+    }
+    for row in rows:
+        for canonical, documented in _RAGAS_TO_DOCUMENTED.items():
+            if canonical in row:
+                row[documented] = row.pop(canonical)
     deprecated_rows = score_deprecated_apis_per_row([r["answer"] for r in rows])
     aggregate["deprecated_apis"] = aggregate_deprecated(
         r["score"] for r in deprecated_rows

@@ -79,9 +79,9 @@ The generator's answer cited a symbol on the `DEPRECATED_APIS` allow-list. Open 
    make eval-topk-sweep
    ```
 
-   Wall-clock is roughly ten to fifteen minutes against the 30-row golden set at `--max-workers=1` on Vocareum. Cost is about $0.08 — the suite fires the full four-metric stack at each of the three `top_k` values. The deprecated-API sub-metric runs in-process per row at no API cost.
+   Wall-clock is roughly 45 minutes against the 30-row golden set at the default 8 workers on Vocareum, so start it and step away. Cost is about $0.08, since the suite fires the full four-metric stack at each of the three `top_k` values. The deprecated-API sub-metric runs in-process per row at no API cost.
 
-   `EVAL_MAX_WORKERS` defaults to 1 for the same reason `make eval` does — parallel judge calls through Vocareum throttle. Override on uncontended endpoints: `make eval-topk-sweep EVAL_MAX_WORKERS=8`.
+   `EVAL_MAX_WORKERS` defaults to 8, which parallelizes the judge calls through Vocareum for roughly a 2x speedup. RAGAS's own default of 16 over-saturates the proxy into NaN cells, so don't raise it that far. If a contended endpoint returns NaN, drop to `make eval-topk-sweep EVAL_MAX_WORKERS=1`.
 
 2. The script prints a markdown table to stdout, one row per `top_k`. Sample output shape (numbers will drift):
 
@@ -118,9 +118,9 @@ Expected shape for a doc corpus with structured RST sections — the retriever p
 </details>
 
 <details>
-<summary>If your sweep takes more than 20 minutes and you want to short-circuit it</summary>
+<summary>If you want to iterate faster than the full ~45-minute sweep</summary>
 
-`PYTHONPATH=. uv run python scripts/eval_topk_sweep.py --limit=10 --max-workers=1` runs only the first ten rows per `top_k`. Cuts wall clock by two-thirds at the cost of a wider Wilson CI (±0.25 at N=10). Useful for confirming the harness works before the full run.
+`PYTHONPATH=. uv run python scripts/eval_topk_sweep.py --limit=10` runs only the first ten rows per `top_k` at the default 8 workers. Cuts the wall clock to about a third at the cost of a wider Wilson CI (±0.25 at N=10). Useful for confirming the harness works before the full run.
 </details>
 
 ## Exercise 3 — Diagnose two failures and recommend concrete fixes
@@ -203,7 +203,7 @@ Print parsed args at the top of `main()` to confirm `args.faithfulness_min` carr
 
 - **Golden set too easy.** If every row scores above 0.9, the suite is reporting "everything is fine" with no signal. Author compositional or version-sensitive rows until the distribution shows real variance.
 - **LLM-judge cost runaway.** Each metric is one or more LLM calls per row. Use the smallest judge model that scores consistently (the starter pins `gpt-4o-mini`) and keep the golden set tight; running `make eval-topk-sweep` hourly in CI adds up.
-- **`EVAL_MAX_WORKERS` contention.** Default 1 because Vocareum throttles parallel judges into NaN-producing TimeoutErrors. Raise on direct endpoints; leave at 1 on Vocareum — the wall-clock penalty buys correctness.
+- **`EVAL_MAX_WORKERS` contention.** Default 8, which the Vocareum proxy handles cleanly at roughly a 2x speedup. RAGAS's default of 16 over-saturates it into NaN-producing TimeoutErrors, so don't raise it that far. If a contended endpoint still returns NaN, drop to 1.
 - **Ground truth phrasing affects faithfulness.** If your reference answer phrases a fact differently than the retrieved chunk (reference "100 estimators" vs chunk "n_estimators=100"), the judge sometimes splits hairs. Keep reference phrasing close to retrieved-chunk phrasing for rows you most want to score consistently.
 - **Non-determinism across runs.** ±0.02 to ±0.05 drift per metric even at `temperature=0.0`. Run three times and report the mean for CI gating; one run is enough for diagnostic work.
 - **Deprecated-API allow-list staleness.** `DEPRECATED_APIS` is pinned against scikit-learn 1.5. Re-derive from the release notes when the corpus is re-ingested at a newer version.

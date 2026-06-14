@@ -49,7 +49,7 @@ The first exercise is the classification one. You will fire ten questions at `ru
        print(f"  top={r.sources[0].doc_id} sim={r.sources[0].similarity_score:.3f}  conf={r.confidence:.3f}")
    ```
 
-   Run it from the starter directory: `uv run python /tmp/grounding_battery.py | tee /tmp/answers.txt`. The five in-domain questions are drawn from the factual bucket of `golden_set.csv` (where ground-truth answers are catalogued and `expected_doc_ids` map to scikit-learn doc sections). The five off-topic questions are drawn from `negative_set.csv` — three `benign_off_topic` (weather, kitchen sink, sports trivia) and two `adjacent_out_of_scope` (PyTorch, NumPy — sibling libraries the model has strong parametric memory for).
+   Run it from the starter directory: `PYTHONPATH=. uv run python /tmp/grounding_battery.py | tee /tmp/answers.txt` (the `PYTHONPATH=.` prefix puts the starter root on the import path so `from src ...` resolves — the `make` targets export it for you, but a bare `uv run python /tmp/...` leaves only `/tmp` on the path and the import fails). The five in-domain questions are drawn from the factual bucket of `golden_set.csv` (where ground-truth answers are catalogued and `expected_doc_ids` map to scikit-learn doc sections). The five off-topic questions are drawn from `negative_set.csv` — three `benign_off_topic` (weather, kitchen sink, sports trivia) and two `adjacent_out_of_scope` (PyTorch, NumPy — sibling libraries the model has strong parametric memory for).
 
 2. For each of the ten answers, write a one-line classification. Use this scheme — three categories, picked to be coarse enough to apply consistently:
 
@@ -113,7 +113,7 @@ The demo named the prompt instruction that controls refusal. This exercise quant
        print(f"\nQ: {q}\nA: {r.answer[:300]}")
    ```
 
-   Run baseline: `uv run python /tmp/refusal_rate.py | tee /tmp/baseline-refusal.txt`. Score each answer as **refused** (the model declined to engage on the merits, redirecting to a relevant resource) or **not-refused** (the model attempted an answer even though the docs cannot support it). Write the count: `baseline_refusal_rate = X / 5`. A common outcome is `5 / 5` because instruction 6 is doing its job.
+   Run baseline: `PYTHONPATH=. uv run python /tmp/refusal_rate.py | tee /tmp/baseline-refusal.txt`. Score each answer as **refused** (the model declined to engage on the merits, redirecting to a relevant resource) or **not-refused** (the model attempted an answer even though the docs cannot support it). Write the count: `baseline_refusal_rate = X / 5`. A common outcome is `5 / 5` because instruction 6 is doing its job.
 
 3. Edit `prompts/docbot_system.j2`. Replace instruction 6 with a permissive directive. The recommended edit:
 
@@ -126,7 +126,7 @@ The demo named the prompt instruction that controls refusal. This exercise quant
 
    Save the file. No restart needed — Jinja's loader reads from disk on each call. Verify with one quick run on an in-domain question (`uv run python -c "from src.pipeline import run_pipeline; print(run_pipeline('What does StandardScaler do?').answer[:200])"`) to confirm the on-topic path still works; you should still see a normal grounded answer.
 
-4. Re-run the same five-question loop with the permissive prompt: `uv run python /tmp/refusal_rate.py | tee /tmp/permissive-refusal.txt`. Score again. Write the second count: `permissive_refusal_rate = Y / 5`. A common outcome is `2 / 5` or `3 / 5` — the weather and World Cup questions usually still get refused because the model has no real-time information to draw on, but the kitchen-sink and numpy-broadcasting questions often get fully answered, and the PyTorch transformer question often gets a partial how-to.
+4. Re-run the same five-question loop with the permissive prompt: `PYTHONPATH=. uv run python /tmp/refusal_rate.py | tee /tmp/permissive-refusal.txt`. Score again. Write the second count: `permissive_refusal_rate = Y / 5`. A common outcome is `2 / 5` or `3 / 5` — the weather and World Cup questions usually still get refused because the model has no real-time information to draw on, but the kitchen-sink and numpy-broadcasting questions often get fully answered, and the PyTorch transformer question often gets a partial how-to.
 
 5. Pick two example outputs that flipped between runs — one that was refused under baseline and was not-refused under the permissive prompt is the most illustrative. Quote them in your write-up.
 
@@ -192,7 +192,7 @@ The demo showed one naked call; this exercise turns that into a real comparison.
        print(f"  NAKED: {naked[:200]}")
    ```
 
-   Run it: `uv run python /tmp/rag_vs_naked.py | tee /tmp/comparison.txt`. The questions are picked across a deliberate axis: a version-sensitive factual (LogReg solver in 1.5), a non-version-sensitive factual (SVC default kernel), a recent-ish addition (`HistGradientBoostingClassifier`), a general ML concept (supervised vs unsupervised), and a fully off-topic question (Tokyo population).
+   Run it: `PYTHONPATH=. uv run python /tmp/rag_vs_naked.py | tee /tmp/comparison.txt`. The questions are picked across a deliberate axis: a version-sensitive factual (LogReg solver in 1.5), a non-version-sensitive factual (SVC default kernel), a recent-ish addition (`HistGradientBoostingClassifier`), a general ML concept (supervised vs unsupervised), and a fully off-topic question (Tokyo population).
 
 2. For each of the five questions, label the pair as:
 

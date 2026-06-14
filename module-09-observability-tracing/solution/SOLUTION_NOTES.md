@@ -75,11 +75,27 @@ orientation — the added lines are the four-line block):
                  retrieve_span.set_attribute("rag.sources.count", len(sources))
 ```
 
-Verify the attribute lands in Phoenix by re-firing one query in a fresh
-`uv run python -c "..."` invocation and checking either the UI (`localhost:6006`,
-click the `retrieve` span, scroll the attributes panel) or the JSON export
-(`uv run python scripts/show_traces.py --json | head -50`, look for
-`rag.retrieve.top_score` on the `retrieve` span entries).
+Verify the attribute lands in Phoenix by re-firing one query and checking
+either the UI (`localhost:6006`, click the `retrieve` span, scroll the
+attributes panel) or the raw-span export. Phoenix's embedded store is
+per-process, so fire and dump the spans in the **same** invocation:
+
+```
+uv run python -c "
+from src.tracing import init_tracing, traced_pipeline, flush, render_spans_json
+from scripts.show_traces import _fetch_spans
+init_tracing()
+traced_pipeline('What does StandardScaler do?')
+flush()
+import time; time.sleep(3)
+print(render_spans_json(_fetch_spans(), last_n=1))
+"
+```
+
+Look for `rag.retrieve.top_score` on the `retrieve` span entry. (`make
+show-traces` / `show_traces.py --json` render the per-trace *summary* table,
+which omits custom child-span attributes by design — `render_spans_json` is
+the raw-span view that surfaces them.)
 
 The full test suite (`uv run pytest tests/`) should still pass — the new
 attribute is additive and the existing tests do not pin the retrieve-span

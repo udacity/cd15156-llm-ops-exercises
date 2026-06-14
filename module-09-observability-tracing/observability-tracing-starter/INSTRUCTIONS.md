@@ -153,13 +153,27 @@ The tracing layer is editable. The attributes you can read in the Phoenix UI are
 3. Verify the new attribute landed. Two paths:
 
    - **UI path** — open `localhost:6006/`, find the new trace, click the `retrieve` span, scroll the attributes panel until you see `rag.retrieve.top_score`. Confirm the value is in `[0, 1]`. For a well-retrieved scikit-learn API question, expect something between 0.5 and 0.75.
-   - **Export path** — run `make seed-traces` (which fires five fresh queries plus this attribute) and open `data/trace_evidence.md`. The summary table does not surface custom retrieve-span attributes by default — that is a render choice in `summarize_traces`, not a data loss — but the JSON export does: `uv run python scripts/show_traces.py --json | head -50` shows the raw span tree. Confirm `rag.retrieve.top_score` appears on the `retrieve` span entries.
+   - **Export path** — the rubric §7 evidence file is still `data/trace_evidence.md` from `make seed-traces`; its summary table does not surface custom retrieve-span attributes by default — that is a render choice in `summarize_traces`, not a data loss. To confirm the new attribute from the export path, dump the raw spans in the **same process** that fired the query. Phoenix's embedded store is per-process, so a fresh `show_traces.py` call after `make seed-traces` has exited would find no server — fire and dump together:
+
+     ```
+     uv run python -c "
+     from src.tracing import init_tracing, traced_pipeline, flush, render_spans_json
+     from scripts.show_traces import _fetch_spans
+     init_tracing()
+     traced_pipeline('What does StandardScaler do?')
+     flush()
+     import time; time.sleep(3)
+     print(render_spans_json(_fetch_spans(), last_n=1))
+     "
+     ```
+
+     Confirm `rag.retrieve.top_score` appears under the `retrieve` span entry — the `rag` object reads `{"retrieve": {"top_score": 0.57...}, "sources": {"count": 5}, "top_k": 5}`. (`make show-traces` / `show_traces.py --json` render the per-trace *summary* table, which omits custom child-span attributes by design — `render_spans_json` is the raw-span view that surfaces them.)
 
 4. Write a four-line diff snippet of the change for your writeup. (The line you added is the entire diff — the surrounding context is just for orientation.) Below it, paste the JSON snippet or screenshot that proves the attribute landed in Phoenix.
 
 ### Acceptance criterion
 
-A four-line diff snippet showing the `set_attribute("rag.retrieve.top_score", ...)` call you added, plus evidence (a JSON excerpt from `--json` output, a UI screenshot, or both) that the attribute is now visible on every new traced query. The new attribute should not break any existing test — `uv run pytest tests/` should still pass.
+A four-line diff snippet showing the `set_attribute("rag.retrieve.top_score", ...)` call you added, plus evidence (the raw-span JSON excerpt from the export-path command above, a UI screenshot, or both) that the attribute is now visible on every new traced query. The new attribute should not break any existing test — `uv run pytest tests/` should still pass.
 
 ### Hints
 

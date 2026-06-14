@@ -19,6 +19,11 @@ import logging
 import sys
 from pathlib import Path
 
+# Make the project root importable when run directly (e.g.
+# `uv run python scripts/migrate_blue_green.py`). The make targets get this from
+# the Makefile's `export PYTHONPATH := .`; a direct script invocation does not.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from src.ingestion.migrate import (
     DEFAULT_EVAL_SAMPLE_SIZE,
     DEFAULT_RECALL_THRESHOLD,

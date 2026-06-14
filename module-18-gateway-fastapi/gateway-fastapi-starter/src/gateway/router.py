@@ -3,10 +3,11 @@
 The route handler in :mod:`src.gateway.routes` calls :func:`route_query`,
 which is where every capability the starter provides converges:
 
-1. **Classify** the question (:func:`src.gateway.classifier.classify`).
-2. **Select** the model from the tier (:func:`select_model`, this file).
-3. **Look up** the cache (:func:`src.cache.semantic.lookup`).
-4. **On miss**, run the traced pipeline (:func:`src.tracing.traced_pipeline`)
+1. **Look up** the cache (:func:`src.cache.semantic.lookup`).
+   A hit returns immediately, before any LLM call is made.
+2. **On miss, classify** the question (:func:`src.gateway.classifier.classify`).
+3. **Select** the model from the tier (:func:`select_model`, this file).
+4. **Run** the traced pipeline (:func:`src.tracing.traced_pipeline`)
    so Phoenix gets one span per stage and the OpenAI auto-instrumentor
    gets to attach token/cost attributes to the ``generate`` span.
 5. **Store** the response in the cache so future paraphrases hit.
@@ -61,16 +62,16 @@ def route_query(
         :func:`traced_pipeline` (on miss). The ``cached`` flag
         distinguishes the two paths so the caller can introspect.
     """
-    # The classifier runs first so we always have a ``query_type`` to
-    # log even when the cache absorbs the question. Cheap call (one
-    # gpt-4o-mini round-trip with a tiny prompt) and the classification
-    # is the evidence handle for tier dispatch.
-    query_type = classify(question)
-    chosen_model = model or select_model(query_type)
-
+    # Cache lookup runs first so a hit short-circuits before any LLM
+    # call. The classifier (one gpt-4o-mini round-trip) only runs on a
+    # miss, when we actually need the tier to pick a model and log the
+    # cost row. A hit returns the stored response without paying it.
     hit = lookup(question)
     if hit is not None:
         return hit
+
+    query_type = classify(question)
+    chosen_model = model or select_model(query_type)
 
     response = traced_pipeline(question, top_k=top_k, model=chosen_model)
     store(question, response)

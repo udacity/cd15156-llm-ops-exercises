@@ -15,6 +15,12 @@ def main():
     start = time.monotonic()
     chunks = [c for sec in load_corpus(Path("data/scikit-learn-cache"), "manual")
               for c in chunk_doc(sec)]
+    # First-wins dedup by chunk_id, mirroring scripts/load_data.py — the RST tree
+    # yields repeated section ids and Chroma rejects duplicate ids in one upsert
+    unique: dict[str, dict] = {}
+    for c in chunks:
+        unique.setdefault(c["chunk_id"], c)
+    chunks = list(unique.values())
     # Batch-encode with MiniLM, normalizing for cosine similarity
     texts = [c["text"] for c in chunks]
     embeddings = _model.encode(
