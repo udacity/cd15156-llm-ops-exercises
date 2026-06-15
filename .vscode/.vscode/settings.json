@@ -1,0 +1,34 @@
+{
+    "workbench.colorTheme": "Default High Contrast",
+    "workbench.activityBar.visible": false,
+    "workbench.sideBar.location": "right",
+    "workbench.statusBar.visible": false,
+
+    "editor.fontSize": 18,
+    "editor.lineHeight": 1.6,
+    "editor.letterSpacing": 0.5,
+    "notebook.markup.fontSize": 18,
+    "notebook.output.fontSize": 16,
+    "notebook.cellEditorFontSize": 18,
+    "terminal.integrated.fontSize": 18,
+
+    "editor.minimap.enabled": false,
+    "editor.renderLineHighlight": "all",
+    "editor.cursorBlinking": "solid",
+    "editor.renderWhitespace": "none",
+    "breadcrumbs.enabled": false,
+
+    "editor.smoothScrolling": true,
+    "workbench.list.smoothScrolling": true,
+    "terminal.integrated.smoothScrolling": true,
+
+    "notebook.showCellStatusBar": "hidden",
+    "notebook.compactView": false,
+    "notebook.output.scrolling": true,
+
+    "window.zoomLevel": 1,
+
+    "editor.lineNumbers": "on",
+    "editor.folding": false,
+    "editor.glyphMargin": false
+}
