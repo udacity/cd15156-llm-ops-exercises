@@ -13,11 +13,16 @@ word_count: 695
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/03-prompt-versioning/prompt-versioning-starter/DEMO.md exercises/03-prompt-versioning/prompt-versioning-starter/INSTRUCTIONS.md exercises/03-prompt-versioning/prompt-versioning-starter/INTERFACES.md exercises/03-prompt-versioning/prompt-versioning-starter/prompts/docbot_system.j2 exercises/03-prompt-versioning/prompt-versioning-starter/src/generator.py exercises/03-prompt-versioning/prompt-versioning-starter/src/models.py exercises/03-prompt-versioning/prompt-versioning-starter/src/prompts/loader.py exercises/03-prompt-versioning/prompt-versioning-starter/scripts/ab_refusal.py
-```
+- `../prompt-versioning-starter/DEMO.md`
+- `../prompt-versioning-starter/INSTRUCTIONS.md`
+- `../prompt-versioning-starter/INTERFACES.md`
+- `../prompt-versioning-starter/prompts/docbot_system.j2`
+- `../prompt-versioning-starter/src/generator.py`
+- `../prompt-versioning-starter/src/models.py`
+- `../prompt-versioning-starter/src/prompts/loader.py`
+- `../prompt-versioning-starter/scripts/ab_refusal.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you will reference; it builds the loader from a stub and runs a tiny version switch end to end.
@@ -57,7 +62,7 @@ Now the part that surprises people. Switching prompt versions is a Git operation
 
 The first exercise adds one new variable to the template: a tier flag that injects an extra line for premium users. Simple as it sounds, it forces you to touch the three places a prompt change really lives: the template file, the code that renders it, and a test.
 
-Here's what to watch out for. The most common silent failure in prompt work is wiring a new variable in one place and forgetting the others. The template renders, the test passes, and the variable is just always its default because nothing ever set it. The discipline is to add it at every layer in one commit. You're done when the test passes for both the premium and the standard tier.
+Here's what to watch out for. The most common silent failure in prompt work is wiring a new variable in one place and forgetting the others. The template renders, the test passes, and the variable is just always its default because nothing ever set it. The discipline is to add it at every layer in one commit. To complete this exercise, add the variable at every layer — template, render code, and test — and confirm it passes for both the premium and the standard tier.
 
 ### Exercise 2: Environment-aware prompt loader
 
@@ -65,7 +70,7 @@ Here's what to watch out for. The most common silent failure in prompt work is w
 
 The second exercise builds the runtime half of versioning: a loader that reads an environment variable and picks a development or a production copy of the prompt. One application, two configurations, no conditionals scattered through your code.
 
-Here's the watch-out. The default has to be production, on purpose. Accidentally promoting development behavior into production is exactly the bug this guards against. So an unset variable must land on prod, an explicit choice must win over the environment, and a bad value must raise an error rather than guess. You're done when all four cases pass.
+Here's the watch-out. The default has to be production, on purpose. Accidentally promoting development behavior into production is exactly the bug this guards against. So an unset variable must land on prod, an explicit choice must win over the environment, and a bad value must raise an error rather than guess. To complete this exercise, make all four cases pass: unset lands on prod, an explicit choice wins, and a bad value raises an error rather than guessing.
 
 ### Exercise 3: A/B test with a real metric and a significance check
 
@@ -73,7 +78,7 @@ Here's the watch-out. The default has to be production, on purpose. Accidentally
 
 The third exercise is the real one. An A/B test means running two versions side by side and comparing them on a number, here the rate at which the bot refuses to answer. You'll run ten questions through each version and check whether the gap is statistically significant, which just means: is this difference real, or could it be chance?
 
-Here's the lesson, and it's the most important thing to say. At ten questions per version, the test almost certainly will not reach significance. That is the expected result, not a failure. The honest read is "not enough data to call it," and writing that down is the skill. You're done when the harness runs clean and reports its result truthfully, even when that result is uncertain.
+Here's the lesson, and it's the most important thing to say. At ten questions per version, the test almost certainly will not reach significance. That is the expected result, not a failure. The honest read is "not enough data to call it," and writing that down is the skill. To complete this exercise, get the harness running and have it report its result honestly — even when that result is "not enough data to call it."
 
 ## 4. Key insights  (~30-45s)
 

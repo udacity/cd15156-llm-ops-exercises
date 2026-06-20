@@ -13,11 +13,14 @@ word_count: 685
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/26-latency-optimization/latency-optimization-starter/DEMO.md exercises/26-latency-optimization/latency-optimization-starter/INSTRUCTIONS.md exercises/26-latency-optimization/latency-optimization-starter/INTERFACES.md exercises/26-latency-optimization/latency-optimization-starter/src/tracing.py exercises/26-latency-optimization/latency-optimization-starter/src/streaming.py exercises/26-latency-optimization/latency-optimization-starter/src/store.py
-```
+- `../latency-optimization-starter/DEMO.md`
+- `../latency-optimization-starter/INSTRUCTIONS.md`
+- `../latency-optimization-starter/INTERFACES.md`
+- `../latency-optimization-starter/src/tracing.py`
+- `../latency-optimization-starter/src/streaming.py`
+- `../latency-optimization-starter/src/store.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you reference; it traces the pipeline, the streaming route, and the HNSW knob location end to end.
@@ -53,7 +56,7 @@ Here's the one idea to hold onto, and it's the misconception that trips up every
 
 The first exercise fires the same question five times. The first call misses the cache and walks the full pipeline. The next four hit. You read the Phoenix traces and record four span durations: the cache lookup, the classifier, retrieval, and the generator.
 
-Here's what to watch out for. A cache hit feels nearly free, but it isn't. The lookup still makes one embedding round-trip to the hosted endpoint before it can match anything. So the speedup is roughly an order of magnitude on a fast endpoint, not a hundred times, and not down to a few milliseconds. On the Vocareum proxy, where that round-trip dominates, the gap is only a few-fold. You're done with a two-column table, cold beside cached, and the speedup ratio.
+Here's what to watch out for. A cache hit feels nearly free, but it isn't. The lookup still makes one embedding round-trip to the hosted endpoint before it can match anything. So the speedup is roughly an order of magnitude on a fast endpoint, not a hundred times, and not down to a few milliseconds. On the Vocareum proxy, where that round-trip dominates, the gap is only a few-fold. To complete this exercise, produce a two-column table, cold beside cached, and the speedup ratio.
 
 ### Exercise 2: Measure time-to-first-token on the streaming endpoint
 
@@ -61,7 +64,7 @@ Here's what to watch out for. A cache hit feels nearly free, but it isn't. The l
 
 The second exercise times both routes on the same fresh question. You'll measure TTFT and total for the blocking route and for the streaming route, then build a two-by-two table.
 
-Here's the heart of it, and the watch-out. Streaming improves time-to-first-token, not total time. The model still has to finish generating, so the totals come out comparable. Do not write "streaming is several times faster," because that mixes two metrics. The honest framing is that streaming kills the spinner: the user sees words within a few hundred milliseconds even when the full answer takes a few seconds. You're done when your table shows streaming TTFT far below blocking total, with the two totals close together.
+Here's the heart of it, and the watch-out. Streaming improves time-to-first-token, not total time. The model still has to finish generating, so the totals come out comparable. Do not write "streaming is several times faster," because that mixes two metrics. The honest framing is that streaming kills the spinner: the user sees words within a few hundred milliseconds even when the full answer takes a few seconds. To complete this exercise, fill in the two-by-two table so that streaming TTFT lands well below the blocking total — and both totals sit close to each other, confirming that streaming buys perceived speed, not throughput.
 
 ### Exercise 3: Sweep ef_search against the scikit_docs collection
 
@@ -69,7 +72,7 @@ Here's the heart of it, and the watch-out. Streaming improves time-to-first-toke
 
 The third exercise builds three sandbox collections with different `ef_search` values and times the vector search alone. This is the query-time knob that trades latency for recall.
 
-Here's what to watch out for, and it's the whole lesson. At the starter's roughly 750 chunks, the differences are tiny, down near the noise floor. The ordering reproduces, so higher `ef_search` is slower, but the magnitude is a fraction of a millisecond and runs can even reorder. That flatness isn't a defect. It's the signal that tuning this knob here wouldn't pay off. At a few million rows the curve sharpens and the trade becomes real. You're done with a table of `ef_search` against latency and recall, plus a note on when this knob earns its keep.
+Here's what to watch out for, and it's the whole lesson. At the starter's roughly 750 chunks, the differences are tiny, down near the noise floor. The ordering reproduces, so higher `ef_search` is slower, but the magnitude is a fraction of a millisecond and runs can even reorder. That flatness isn't a defect. It's the signal that tuning this knob here wouldn't pay off. At a few million rows the curve sharpens and the trade becomes real. To complete this exercise, build a table of `ef_search` against latency and recall, plus a note on when this knob earns its keep.
 
 ## 4. Key insights  (~30-45s)
 

@@ -13,11 +13,19 @@ word_count: 720
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/24-ragops-pipeline/ragops-pipeline-starter/DEMO.md exercises/24-ragops-pipeline/ragops-pipeline-starter/INSTRUCTIONS.md exercises/24-ragops-pipeline/ragops-pipeline-starter/INTERFACES.md exercises/24-ragops-pipeline/ragops-pipeline-starter/src/ingestion/watcher.py exercises/24-ragops-pipeline/ragops-pipeline-starter/src/ingestion/alias.py exercises/24-ragops-pipeline/ragops-pipeline-starter/src/ingestion/migrate.py exercises/24-ragops-pipeline/ragops-pipeline-starter/src/store.py exercises/24-ragops-pipeline/ragops-pipeline-starter/scripts/start_watcher.py exercises/24-ragops-pipeline/ragops-pipeline-starter/scripts/migrate_blue_green.py exercises/24-ragops-pipeline/ragops-pipeline-starter/data/docs_inbox-templates/good.json exercises/24-ragops-pipeline/ragops-pipeline-starter/data/golden_set.csv
-```
+- `../ragops-pipeline-starter/DEMO.md`
+- `../ragops-pipeline-starter/INSTRUCTIONS.md`
+- `../ragops-pipeline-starter/INTERFACES.md`
+- `../ragops-pipeline-starter/src/ingestion/watcher.py`
+- `../ragops-pipeline-starter/src/ingestion/alias.py`
+- `../ragops-pipeline-starter/src/ingestion/migrate.py`
+- `../ragops-pipeline-starter/src/store.py`
+- `../ragops-pipeline-starter/scripts/start_watcher.py`
+- `../ragops-pipeline-starter/scripts/migrate_blue_green.py`
+- `../ragops-pipeline-starter/data/docs_inbox-templates/good.json`
+- `../ragops-pipeline-starter/data/golden_set.csv`
 
 Files and why each is on screen:
 - `DEMO.md`: the codebase walkthrough; covers the watcher, the blue/green swap, and the AWS sidebar.
@@ -64,7 +72,7 @@ The warm-up here is the round trip. You start the watcher in one terminal, the g
 
 Here's what to watch out for. The dropped file stays in the inbox after a successful ingest. That's on purpose: the inbox is your audit trail, not a delete-after-processing queue. In the stretch task, drop the same file twice under different names. You'll see two ingest lines but only one row, because the content hash made both drops resolve to the same id. That's idempotency at the code seam.
 
-You're done when the query names the inbox watcher in its answer and the file is still in the inbox, not in the failed folder.
+To complete this exercise, confirm the gateway answers the query by citing the inbox watcher — and check that the dropped file is still sitting in the inbox, not moved to the failed folder.
 
 ### Exercise 2: Trigger quarantine on bad input
 
@@ -74,7 +82,7 @@ This exercise is about failure handling. You drop two broken files. One is inval
 
 Here's the watch-out, and it's the whole point. Bad input is never silently discarded. Each broken file moves to a quarantine folder with a sibling error file naming the reason. The two stages matter because the fix differs. A parse error is an authoring bug upstream. A missing field means the producer changed shape and broke the contract.
 
-You're done when both bad files land in the failed folder with error notes, and the inbox stays clean.
+To complete this exercise, get both broken files into the failed folder — each with its own error note — while the inbox itself stays untouched.
 
 ### Exercise 3: Run a blue/green migration and verify the alias swap
 
@@ -84,7 +92,7 @@ This is the heart of the module. You rebuild the corpus into an inactive color, 
 
 One watch-out on the eval gate. It's about the mechanism, not the number. Recall on this small golden set is essentially perfect, so the stretch sets the threshold above what's achievable. That forces a no-swap decision, so you watch the gate refuse a release.
 
-You're done when the alias file appears and names a color, a second migration rolls forward to the other color, and a failed gate leaves the alias untouched.
+To complete this exercise, verify the alias file exists and names a color after the first migration, watch the second migration roll forward to the other color, and confirm that a gate failure leaves the alias exactly where it was.
 
 ## 4. Key insights  (~30-45s)
 

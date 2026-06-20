@@ -13,11 +13,20 @@ word_count: 683
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/07-rag-pipeline/rag-pipeline-starter/DEMO.md exercises/07-rag-pipeline/rag-pipeline-starter/INSTRUCTIONS.md exercises/07-rag-pipeline/rag-pipeline-starter/INTERFACES.md exercises/07-rag-pipeline/rag-pipeline-starter/src/pipeline.py exercises/07-rag-pipeline/rag-pipeline-starter/src/generator.py exercises/07-rag-pipeline/rag-pipeline-starter/prompts/docbot_system.j2 exercises/07-rag-pipeline/rag-pipeline-starter/src/embedder.py exercises/07-rag-pipeline/rag-pipeline-starter/src/store.py exercises/07-rag-pipeline/rag-pipeline-starter/src/models.py exercises/07-rag-pipeline/rag-pipeline-starter/src/config.py exercises/07-rag-pipeline/rag-pipeline-starter/data/golden_set.csv exercises/07-rag-pipeline/rag-pipeline-starter/data/negative_set.csv
-```
+- `../rag-pipeline-starter/DEMO.md`
+- `../rag-pipeline-starter/INSTRUCTIONS.md`
+- `../rag-pipeline-starter/INTERFACES.md`
+- `../rag-pipeline-starter/src/pipeline.py`
+- `../rag-pipeline-starter/src/generator.py`
+- `../rag-pipeline-starter/prompts/docbot_system.j2`
+- `../rag-pipeline-starter/src/embedder.py`
+- `../rag-pipeline-starter/src/store.py`
+- `../rag-pipeline-starter/src/models.py`
+- `../rag-pipeline-starter/src/config.py`
+- `../rag-pipeline-starter/data/golden_set.csv`
+- `../rag-pipeline-starter/data/negative_set.csv`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you will reference; it composes the four callables into `run_pipeline` and fires a query end to end.
@@ -60,7 +69,7 @@ Now the misconception to clear up. RAG reduces hallucination, but it does not el
 
 The first exercise builds your eye. You fire ten questions through the pipeline, five in-domain and five off-topic, then read each answer and label it grounded, partial, or hallucinated. Reading the source chunk yourself is the whole skill, because a model asked to grade its own answer almost always says it's fine.
 
-Here's what to watch for. The interesting answer is usually the one that refuses when you didn't expect it. When the retrieved chunk doesn't contain the literal default value, a well-behaved model declines to commit, and that honest refusal is the lesson, not a miss. One practical note: run the script with the `PYTHONPATH=.` prefix, or the imports fail. You're done with a ten-row table and two tally counts.
+Here's what to watch for. The interesting answer is usually the one that refuses when you didn't expect it. When the retrieved chunk doesn't contain the literal default value, a well-behaved model declines to commit, and that honest refusal is the lesson, not a miss. One practical note: run the script with the `PYTHONPATH=.` prefix, or the imports fail. To complete this exercise, build a ten-row table and two tally counts.
 
 ### Exercise 2: Measure refusal rate before and after a prompt edit
 
@@ -68,7 +77,7 @@ Here's what to watch for. The interesting answer is usually the one that refuses
 
 The second exercise quantifies the refusal lever. You run five off-topic questions against the baseline prompt, count the clean refusals, then soften instruction six to be permissive, re-run, and count again. Two numbers, before and after.
 
-Here's the watch-out. Some refusals survive the edit no matter what you write, because the model self-censors on questions it has no live data for, like today's weather. That's a different failure mode from the prompt, and naming it correctly is the point. One discipline that matters: revert the prompt with `git checkout` before you move on, or the edit leaks into every later module. You're done with two refusal rates and two example answers that flipped.
+Here's the watch-out. Some refusals survive the edit no matter what you write, because the model self-censors on questions it has no live data for, like today's weather. That's a different failure mode from the prompt, and naming it correctly is the point. One discipline that matters: revert the prompt with `git checkout` before you move on, or the edit leaks into every later module. To complete this exercise, report two refusal rates and two example answers that flipped.
 
 ### Exercise 3: With versus without retrieval, side by side
 
@@ -76,7 +85,7 @@ Here's the watch-out. Some refusals survive the edit no matter what you write, b
 
 The third exercise is the case for the whole architecture. You fire five questions twice: once through `run_pipeline` with retrieval on, once through a naked model call with no context. Comparing the grounded answer against the naked one on the same question is how you actually feel the difference retrieval makes.
 
-Here's the honest part. You'll label each pair materially similar or materially different, and that's a judgment call, so your exact numbers may differ from the reference run. On a couple of questions retrieval clearly wins, like a version-specific fact the model couldn't have memorized. On others the model's own knowledge is good enough and retrieval changes nothing. You're done with a tally and one sentence on when retrieval matters most.
+Here's the honest part. You'll label each pair materially similar or materially different, and that's a judgment call, so your exact numbers may differ from the reference run. On a couple of questions retrieval clearly wins, like a version-specific fact the model couldn't have memorized. On others the model's own knowledge is good enough and retrieval changes nothing. To complete this exercise, end with a tally and one sentence on when retrieval matters most.
 
 ## 4. Key insights  (~30-45s)
 
