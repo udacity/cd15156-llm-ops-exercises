@@ -13,11 +13,16 @@ word_count: 642
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/15-semantic-caching/semantic-caching-starter/DEMO.md exercises/15-semantic-caching/semantic-caching-starter/INSTRUCTIONS.md exercises/15-semantic-caching/semantic-caching-starter/INTERFACES.md exercises/15-semantic-caching/semantic-caching-starter/src/cache/semantic.py exercises/15-semantic-caching/semantic-caching-starter/src/cache/wrapper.py exercises/15-semantic-caching/semantic-caching-starter/src/embedder.py exercises/15-semantic-caching/semantic-caching-starter/src/cost/tracker.py exercises/15-semantic-caching/semantic-caching-starter/src/pricing.py
-```
+- `../semantic-caching-starter/DEMO.md`
+- `../semantic-caching-starter/INSTRUCTIONS.md`
+- `../semantic-caching-starter/INTERFACES.md`
+- `../semantic-caching-starter/src/cache/semantic.py`
+- `../semantic-caching-starter/src/cache/wrapper.py`
+- `../semantic-caching-starter/src/embedder.py`
+- `../semantic-caching-starter/src/cost/tracker.py`
+- `../semantic-caching-starter/src/pricing.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough that warms the cache, fires a paraphrase, and sweeps the threshold; reference it as you talk.
@@ -57,7 +62,7 @@ One setup note that's easy to miss. After `make setup` and `make load-data`, run
 
 The first exercise fires fifteen queries through `cached_route_query`: five base questions, each with two paraphrases. The first time each base question arrives, the cache is empty for it, so it misses and calls the model. The two paraphrases that follow should hit that write.
 
-Here's what to watch for. The expected pattern is five misses and ten hits, about sixty-seven percent. If a paraphrase is reworded too hard, its score can slip under zero point eight five and miss. That's normal. You're done with a fifteen-row hit-or-miss table and a cache showing exactly five stored originals.
+Here's what to watch for. The expected pattern is five misses and ten hits, about sixty-seven percent. If a paraphrase is reworded too hard, its score can slip under zero point eight five and miss. That's normal. To complete this exercise, produce a fifteen-row hit-or-miss table and a cache showing exactly five stored originals.
 
 ### Exercise 2: The near-miss case
 
@@ -65,7 +70,7 @@ Here's what to watch for. The expected pattern is five misses and ten hits, abou
 
 This is the heart of the module. You ask about a different estimator, the classifier instead of the regressor, one word away from a cached question. You'd expect the threshold to reject it. It doesn't.
 
-Here's the watch-out. That near-miss scores about zero point nine six, higher than several of your genuine paraphrases. So it hits at every threshold you try, and serves the regressor's answer to a classifier question. No threshold both keeps your paraphrases and blocks it. The fix isn't tuning the number. It's a layer up: a re-ranker, a metadata filter on the estimator, or a meaning-aware cache key. You're done when you've named that fix in your own words.
+Here's the watch-out. That near-miss scores about zero point nine six, higher than several of your genuine paraphrases. So it hits at every threshold you try, and serves the regressor's answer to a classifier question. No threshold both keeps your paraphrases and blocks it. The fix isn't tuning the number. It's a layer up: a re-ranker, a metadata filter on the estimator, or a meaning-aware cache key. To complete this exercise, name the architectural fix in your own words — what layer catches the problem that a bare similarity threshold cannot.
 
 ### Exercise 3: Cost delta against the cost log
 
@@ -73,7 +78,7 @@ Here's the watch-out. That near-miss scores about zero point nine six, higher th
 
 The third exercise puts dollars on the hits. Hits skip the model, so they never write a cost row. You rerun the fifteen queries, tee each miss into the cost log, and you'll get exactly five rows.
 
-Here's the framing to hold. Sum those five, then project what fifteen calls would have cost. At a ten-of-fifteen hit rate, savings land near sixty-seven percent: the hit rate is the dollars saved. Then scale it to ten thousand queries a day. You're done with three numbers and a note on which inputs are workload-dependent, like hit rate, and which are stable.
+Here's the framing to hold. Sum those five, then project what fifteen calls would have cost. At a ten-of-fifteen hit rate, savings land near sixty-seven percent: the hit rate is the dollars saved. Then scale it to ten thousand queries a day. To complete this exercise, report three numbers and a note on which inputs are workload-dependent, like hit rate, and which are stable.
 
 ## 4. Key insights  (~30-45s)
 

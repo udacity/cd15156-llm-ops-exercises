@@ -13,11 +13,19 @@ word_count: 719
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/18-gateway-fastapi/gateway-fastapi-starter/DEMO.md exercises/18-gateway-fastapi/gateway-fastapi-starter/INSTRUCTIONS.md exercises/18-gateway-fastapi/gateway-fastapi-starter/INTERFACES.md exercises/18-gateway-fastapi/gateway-fastapi-starter/src/config.py exercises/18-gateway-fastapi/gateway-fastapi-starter/src/gateway/classifier.py exercises/18-gateway-fastapi/gateway-fastapi-starter/prompts/classifier.j2 exercises/18-gateway-fastapi/gateway-fastapi-starter/src/gateway/router.py exercises/18-gateway-fastapi/gateway-fastapi-starter/src/generator.py exercises/18-gateway-fastapi/gateway-fastapi-starter/src/gateway/routes.py exercises/18-gateway-fastapi/gateway-fastapi-starter/src/gateway/providers/anthropic.py exercises/18-gateway-fastapi/gateway-fastapi-starter/src/pricing.py
-```
+- `../gateway-fastapi-starter/DEMO.md`
+- `../gateway-fastapi-starter/INSTRUCTIONS.md`
+- `../gateway-fastapi-starter/INTERFACES.md`
+- `../gateway-fastapi-starter/src/config.py`
+- `../gateway-fastapi-starter/src/gateway/classifier.py`
+- `../gateway-fastapi-starter/prompts/classifier.j2`
+- `../gateway-fastapi-starter/src/gateway/router.py`
+- `../gateway-fastapi-starter/src/generator.py`
+- `../gateway-fastapi-starter/src/gateway/routes.py`
+- `../gateway-fastapi-starter/src/gateway/providers/anthropic.py`
+- `../gateway-fastapi-starter/src/pricing.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you will reference; reads the gateway top to bottom and fires a request through it.
@@ -60,7 +68,7 @@ The first exercise adds a premium tier for long-context or high-stakes queries. 
 
 Here's what to watch out for. The classifier is a small model reading your query and labeling it. So the prompt does the real work. If you teach the rubric the new label but leave the output-format line saying only two values are allowed, the model is told premium is off-limits and almost never picks it. Edit every place the prompt counts the tiers.
 
-You're done when a five-query run shows a mix of tiers. Since premium shares a model with complex for now, read the tier from the cost log's `query_type` field, not the model name.
+To complete this exercise, run five queries and confirm you see a mix of tiers in the output. Since premium shares a model with complex for now, read the tier from the cost log's `query_type` field, not the model name.
 
 ### Exercise 2: Wrap the OpenAI client call with tenacity retries
 
@@ -70,7 +78,7 @@ The second exercise adds retries with the tenacity library. The pattern has thre
 
 Here's the watch-out, and it's the whole lesson. Retry the transient server errors, the five-hundred family, because those usually clear on a second try. But fail fast on client errors, the four-hundred family. A four-hundred means your request was wrong, so retrying just re-sends the same wrong request. Catch-everything retry is what teams ship by accident, and a retry storm teaches them to stop.
 
-You're done when two tests pass: one where two server errors resolve on the third try, one where a four-hundred fails immediately with no retry.
+To complete this exercise, get both tests green — the one where two consecutive server errors clear on the third attempt, and the one where a client error fails immediately without a single retry.
 
 ### Exercise 3: Add a thin Anthropic adapter for multi-provider routing
 
@@ -80,7 +88,7 @@ The third exercise wires a second provider behind the same response shape. You w
 
 Here's what to watch out for. The semantic cache key is the question text alone, and it's provider-agnostic. So if you ask the same question through OpenAI, then through Anthropic, the second call just returns the first one's cached answer. Clear the cache between the two calls or the comparison is meaningless.
 
-You're done when two side-by-side requests return the identical shape, with the model field reflecting each provider's choice.
+To complete this exercise, fire the same question through both providers and confirm the responses land in the identical shape — different model fields, same structure everywhere else.
 
 ## 4. Key insights  (~30-45s)
 

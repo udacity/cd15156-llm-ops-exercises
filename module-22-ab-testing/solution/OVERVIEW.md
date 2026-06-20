@@ -13,11 +13,16 @@ word_count: 719
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/22-ab-testing/ab-testing-starter/DEMO.md exercises/22-ab-testing/ab-testing-starter/INSTRUCTIONS.md exercises/22-ab-testing/ab-testing-starter/INTERFACES.md exercises/22-ab-testing/ab-testing-starter/src/optimization/ab.py exercises/22-ab-testing/ab-testing-starter/prompts/docbot_system_A.j2 exercises/22-ab-testing/ab-testing-starter/prompts/docbot_system_B.j2 exercises/22-ab-testing/ab-testing-starter/prompts/judge.j2 exercises/22-ab-testing/ab-testing-starter/scripts/ab_analyze.py
-```
+- `../ab-testing-starter/DEMO.md`
+- `../ab-testing-starter/INSTRUCTIONS.md`
+- `../ab-testing-starter/INTERFACES.md`
+- `../ab-testing-starter/src/optimization/ab.py`
+- `../ab-testing-starter/prompts/docbot_system_A.j2`
+- `../ab-testing-starter/prompts/docbot_system_B.j2`
+- `../ab-testing-starter/prompts/judge.j2`
+- `../ab-testing-starter/scripts/ab_analyze.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you will reference; shows the three A/B primitives end to end.
@@ -57,7 +62,7 @@ The first exercise wires the three primitives into one script. It fires two hund
 
 Start with the concept. You might reach for a simple check: did the answer cite a source id? On this corpus that check always fails. The ids are section anchors the model never repeats word for word. So every call would score false and the test would collapse. That's why the exercise scores success with an LLM-as-judge instead: it reads the answer against the retrieved text and gives an honest verdict.
 
-Watch out for one thing above all. Keep the model on the cheap one, and always pass a client id. Drop the client id and the picker falls back to random, stickiness breaks, and your numbers are compromised. You're done when the stickiness check reports zero multi-variant clients.
+Watch out for one thing above all. Keep the model on the cheap one, and always pass a client id. Drop the client id and the picker falls back to random, stickiness breaks, and your numbers are compromised. To complete this exercise, get the stickiness check to report zero multi-variant clients — every client ID should land on exactly one variant, every time.
 
 ### Exercise 2: Analyze with `make ab-analyze` and read the result honestly
 
@@ -67,7 +72,7 @@ The second exercise runs the analyzer. It builds a two-by-two table of variant a
 
 Here's the heart of the module. At this sample size the two variants will almost certainly come out tied, with a high p-value. A high p-value means the gap you see could easily be random noise. The honest read is "we can't tell these apart yet," not "they're the same." Those are different claims, and tied is the correct result here, not something to fix.
 
-There's a sticky wrinkle too. The analyzer prints unique clients, around fifty, next to the two hundred calls. The fifty is what really powers the test. You're done when your written read names both the p-value and that effective sample size.
+There's a sticky wrinkle too. The analyzer prints unique clients, around fifty, next to the two hundred calls. The fifty is what really powers the test. To complete this exercise, write up your read of the results — name the p-value, cite the effective sample size (unique clients, not call count), and say what the combination actually tells you.
 
 ### Exercise 3: Cost and latency comparison, plus a written decision
 
@@ -77,7 +82,7 @@ The third exercise looks past quality. Two variants can tie on quality and still
 
 Here's why. Variant B asks for longer answers. Output tokens cost several times what input tokens do, so a wordier prompt quietly doubles the per-call bill, and it's slower too. At a tie on quality, the cheaper, faster variant wins.
 
-So the watch-out is simple: don't stop at the p-value. Read the cost and latency rows too. You're done when you've written a short decision that names the winner, the metric it rests on, and how confident you are. "We need more data" is a valid decision, as long as you say so.
+So the watch-out is simple: don't stop at the p-value. Read the cost and latency rows too. To complete this exercise, write a short decision that names the winner, the metric it rests on, and how confident you are — "we need more data" counts as a decision, as long as you own it rather than dodge it.
 
 ## 4. Key insights  (~30-45s)
 

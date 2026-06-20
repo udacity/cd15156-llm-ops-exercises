@@ -13,11 +13,17 @@ word_count: 706
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/13-cost-monitoring/cost-monitoring-starter/DEMO.md exercises/13-cost-monitoring/cost-monitoring-starter/INSTRUCTIONS.md exercises/13-cost-monitoring/cost-monitoring-starter/INTERFACES.md exercises/13-cost-monitoring/cost-monitoring-starter/src/pricing.py exercises/13-cost-monitoring/cost-monitoring-starter/src/generator.py exercises/13-cost-monitoring/cost-monitoring-starter/src/cost/tracker.py exercises/13-cost-monitoring/cost-monitoring-starter/src/cost/dashboard.py exercises/13-cost-monitoring/cost-monitoring-starter/src/models.py exercises/13-cost-monitoring/cost-monitoring-starter/scripts/seed_cost_log.py
-```
+- `../cost-monitoring-starter/DEMO.md`
+- `../cost-monitoring-starter/INSTRUCTIONS.md`
+- `../cost-monitoring-starter/INTERFACES.md`
+- `../cost-monitoring-starter/src/pricing.py`
+- `../cost-monitoring-starter/src/generator.py`
+- `../cost-monitoring-starter/src/cost/tracker.py`
+- `../cost-monitoring-starter/src/cost/dashboard.py`
+- `../cost-monitoring-starter/src/models.py`
+- `../cost-monitoring-starter/scripts/seed_cost_log.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you reference; wires `compute_cost`, logs a row, renders the dashboard.
@@ -59,7 +65,7 @@ The first exercise seeds fifty synthetic rows so the rollups have something to c
 
 Here's what to watch out for. The complex tier is only twenty percent of the requests but close to ninety percent of the dollars. That's the asymmetry made concrete. So rank by cost, not by count, or you'll chase the wrong thing.
 
-You're done when you've pasted three breakdowns into your writeup and named the costliest query type, with every number traceable to a row in the log.
+To complete this exercise, paste three breakdowns into your writeup — by model, by day, and by query type — name the costliest query type, and make sure every number you cite traces back to a row in the log.
 
 ### Exercise 2: Instrument twenty real queries and watch the log grow
 
@@ -69,7 +75,7 @@ The second exercise fires twenty real queries through the pipeline and confirms 
 
 Here's the watch-out. The `query_type` you pass is just a label on the log row. It does not pick the model. The router decides that on its own. So if you tag something "simple" but the router sends it to the complex tier, the cost will surprise you. Read the model field, not your label, to know what you actually paid for.
 
-You're done when the log grew by exactly twenty rows and your new summary is captured.
+To complete this exercise, confirm the log grew by exactly twenty rows and capture the updated summary — that's the proof the instrumentation is wired end to end.
 
 ### Exercise 3: Build an alert and a pre-call budget gate
 
@@ -81,7 +87,7 @@ Then a pre-call gate. It uses tiktoken to estimate a request's cost before sendi
 
 Here's the watch-out. That estimate lands within roughly ten to thirty percent of the real cost, never exact, because you can't know the answer's length until the model writes it. That's fine. The gate is about the mechanism, refusing pathological calls, not billing to the cent.
 
-You're done with a working alert, a working gate, and one reconciliation showing the percentage gap.
+To complete this exercise, deliver a working alert, a working gate, and one reconciliation showing the percentage gap.
 
 ## 4. Key insights  (~30-45s)
 

@@ -13,11 +13,15 @@ word_count: 689
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/09-observability-tracing/observability-tracing-starter/DEMO.md exercises/09-observability-tracing/observability-tracing-starter/INSTRUCTIONS.md exercises/09-observability-tracing/observability-tracing-starter/INTERFACES.md exercises/09-observability-tracing/observability-tracing-starter/src/tracing.py exercises/09-observability-tracing/observability-tracing-starter/src/pipeline.py exercises/09-observability-tracing/observability-tracing-starter/scripts/seed_traces.py exercises/09-observability-tracing/observability-tracing-starter/scripts/show_traces.py
-```
+- `../observability-tracing-starter/DEMO.md`
+- `../observability-tracing-starter/INSTRUCTIONS.md`
+- `../observability-tracing-starter/INTERFACES.md`
+- `../observability-tracing-starter/src/tracing.py`
+- `../observability-tracing-starter/src/pipeline.py`
+- `../observability-tracing-starter/scripts/seed_traces.py`
+- `../observability-tracing-starter/scripts/show_traces.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you will reference; wires Phoenix in and reads one six-span trace end to end.
@@ -60,7 +64,7 @@ The first exercise builds one habit: look at a trace before you trust any dashbo
 
 Here's what to watch out for. Phoenix only lives while the Python process that started it is alive. Fire your queries and let the process exit, and the user interface is gone with it. Start the session with `python -i` so it stays up while you click around.
 
-One more. Phoenix logs every OpenAI call as its own trace, so the embedding calls clutter the list. Filter on the name `rag_query` to see only the full request. You're done with three trace IDs printed, plus a paragraph naming which span dominated the time.
+One more. Phoenix logs every OpenAI call as its own trace, so the embedding calls clutter the list. Filter on the name `rag_query` to see only the full request. To complete this exercise, print three trace IDs, plus a paragraph naming which span dominated the time.
 
 ### Exercise 2: Export the rubric section 7 evidence file
 
@@ -70,7 +74,7 @@ The second exercise is the one to weight your time toward. Verification here is 
 
 You run `make seed-traces`. It fires a five-question pack, waits for the exporter to flush, and writes a table to `data/trace_evidence.md`. Each row names the slowest child span for that request.
 
-Watch the slowest-child column, because it carries the lesson. The slowest step is almost always generation. The trace is how you prove that rather than guess it. When something other than generate tops the column, retrieval got slow or the prompt grew. You're done with the five-row table and two paragraphs reading specific rows.
+Watch the slowest-child column, because it carries the lesson. The slowest step is almost always generation. The trace is how you prove that rather than guess it. When something other than generate tops the column, retrieval got slow or the prompt grew. To complete this exercise, hand in the five-row table and two paragraphs reading specific rows.
 
 ### Exercise 3: Add a custom span attribute
 
@@ -80,7 +84,7 @@ The third exercise grows the schema. You add one attribute, the top retrieval sc
 
 Here's the watch-out, and it's the whole module in one trap. A span closes when its `with` block ends. Set your attribute after the block and it goes nowhere. So the new line has to sit inside the retrieve block, not after it.
 
-To check your work, fire the query and dump the spans in the same process, because Phoenix's store is per-process and vanishes when the process exits. You're done with a four-line diff and proof the attribute landed, with the test suite still passing.
+To check your work, fire the query and dump the spans in the same process, because Phoenix's store is per-process and vanishes when the process exits. To complete this exercise, produce a four-line diff and prove the attribute landed, with the test suite still passing.
 
 ## 4. Key insights  (~30-45s)
 

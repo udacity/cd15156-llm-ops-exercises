@@ -13,11 +13,19 @@ word_count: 718
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/20-guardrails-impl/guardrails-impl-starter/DEMO.md exercises/20-guardrails-impl/guardrails-impl-starter/INSTRUCTIONS.md exercises/20-guardrails-impl/guardrails-impl-starter/INTERFACES.md exercises/20-guardrails-impl/guardrails-impl-starter/src/guardrails/input_guards.py exercises/20-guardrails-impl/guardrails-impl-starter/src/guardrails/llm_guard/input_guards.py exercises/20-guardrails-impl/guardrails-impl-starter/src/guardrails/llm_judge/output_guards.py exercises/20-guardrails-impl/guardrails-impl-starter/src/guardrails/rate_limit.py exercises/20-guardrails-impl/guardrails-impl-starter/src/gateway/routes.py exercises/20-guardrails-impl/guardrails-impl-starter/src/generator.py exercises/20-guardrails-impl/guardrails-impl-starter/src/models.py exercises/20-guardrails-impl/guardrails-impl-starter/prompts/judge.j2
-```
+- `../guardrails-impl-starter/DEMO.md`
+- `../guardrails-impl-starter/INSTRUCTIONS.md`
+- `../guardrails-impl-starter/INTERFACES.md`
+- `../guardrails-impl-starter/src/guardrails/input_guards.py`
+- `../guardrails-impl-starter/src/guardrails/llm_guard/input_guards.py`
+- `../guardrails-impl-starter/src/guardrails/llm_judge/output_guards.py`
+- `../guardrails-impl-starter/src/guardrails/rate_limit.py`
+- `../guardrails-impl-starter/src/gateway/routes.py`
+- `../guardrails-impl-starter/src/generator.py`
+- `../guardrails-impl-starter/src/models.py`
+- `../guardrails-impl-starter/prompts/judge.j2`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you'll reference; reads the four guard slots and fires three live blocks.
@@ -62,7 +70,7 @@ The first exercise adds one new guard to the live input stack. You'll pick from 
 
 The concept to hold first is where your guard plugs in. The input stack is ordered, so cheaper checks go earlier. An invisible-character scan is cheaper than the regex injection sweep, so it slots in ahead of it.
 
-Here's the watch-out. None of these options is a complete defense, and the docs say so plainly. The value isn't comprehensiveness; it's wiring a guard into the chain and proving it fires. You're done when a test passes and a live request returns the reason string you expect.
+Here's the watch-out. None of these options is a complete defense, and the docs say so plainly. The value isn't comprehensiveness; it's wiring a guard into the chain and proving it fires. To complete this exercise, wire your guard into the chain, write a test that proves it fires, and send a live request that comes back with the reason string you expect.
 
 ### Exercise 2: Calibrate the LLM-judge
 
@@ -72,7 +80,7 @@ The second exercise calibrates the output judge. You'll build ten queries: five 
 
 Here's the crucial watch-out. The judge is probabilistic. It only flags an answer when the model actually hallucinates. So a grounded answer that correctly refuses will pass the judge, every time, on purpose. Don't expect the judge to fire on every row; a clean pass is a correct result, not a miss.
 
-You're done with a one-page report holding two confusion matrices and a recommendation, honest about the small sample.
+To complete this exercise, hand in a one-page report holding two confusion matrices and a recommendation, honest about the small sample.
 
 ### Exercise 3: Wire the LLM10 consumption cap
 
@@ -82,7 +90,7 @@ The third exercise caps unbounded consumption. You'll measure cost amplification
 
 Here's the watch-out that trips everyone. The rate limiter blocks on concurrent load, not on a slow sequential loop. Each request makes two model calls, so a sequential loop drains time and the sixty-second window rolls forward before it ever fills. Fire your requests in a tight burst to see the twenty-first one block.
 
-You're done with a cost table, the patched generator, and a burst log.
+To complete this exercise, deliver a cost table, the patched generator, and a burst log.
 
 ### Exercise 4: Wire a Pydantic output validator
 
@@ -92,7 +100,7 @@ The fourth exercise enforces the response shape at the gateway boundary. You'll 
 
 The concept here is the contract. The service promises a shape, and you validate it on the way out. A broken contract is your fault, not the caller's, so the failure returns a five-oh-two, not a client error.
 
-The watch-out is small but real: reset the rate-limit bucket at the top of each test, since the limiter runs before the validator and shared state leaks between tests. You're done when both tests pass and the markers are in place.
+The watch-out is small but real: reset the rate-limit bucket at the top of each test, since the limiter runs before the validator and shared state leaks between tests. To complete this exercise, get both tests passing with the markers in place — and remember to reset the rate-limit bucket at the top of each one.
 
 ## 4. Key insights  (~30-45s)
 

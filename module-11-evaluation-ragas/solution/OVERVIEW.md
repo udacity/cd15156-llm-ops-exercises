@@ -13,11 +13,16 @@ word_count: 713
 
 ## 0. VS Code setup (before you hit record)
 
-Open the files you will show on camera (run from the repo root):
+Open the files you will show on camera:
 
-```bash
-code exercises/11-evaluation-ragas/evaluation-ragas-starter/DEMO.md exercises/11-evaluation-ragas/evaluation-ragas-starter/INSTRUCTIONS.md exercises/11-evaluation-ragas/evaluation-ragas-starter/INTERFACES.md exercises/11-evaluation-ragas/evaluation-ragas-starter/data/golden_set.csv exercises/11-evaluation-ragas/evaluation-ragas-starter/scripts/run_eval.py exercises/11-evaluation-ragas/evaluation-ragas-starter/scripts/eval_topk_sweep.py exercises/11-evaluation-ragas/evaluation-ragas-starter/src/evaluation/run_eval.py exercises/11-evaluation-ragas/evaluation-ragas-starter/src/evaluation/deprecated_apis.py
-```
+- `../evaluation-ragas-starter/DEMO.md`
+- `../evaluation-ragas-starter/INSTRUCTIONS.md`
+- `../evaluation-ragas-starter/INTERFACES.md`
+- `../evaluation-ragas-starter/data/golden_set.csv`
+- `../evaluation-ragas-starter/scripts/run_eval.py`
+- `../evaluation-ragas-starter/scripts/eval_topk_sweep.py`
+- `../evaluation-ragas-starter/src/evaluation/run_eval.py`
+- `../evaluation-ragas-starter/src/evaluation/deprecated_apis.py`
 
 Files and why each is on screen:
 - `DEMO.md`: the walkthrough you will reference; shows `make eval` running and how to read the five numbers.
@@ -57,7 +62,7 @@ This starter adds a fifth, library-specific check: did the answer recommend a sc
 
 The golden set is your answer key: thirty questions with expected answers. The first exercise adds five of your own. The concept to grasp first is variance. You want a deliberate mix: a couple of easy lookups, a couple of compositional questions, and one hard one.
 
-Here's what to watch out for. If every row you write scores above zero point nine, you've learned nothing. The whole point is spread. You want at least one row that drops below zero point six on some metric. That low score is the signal you'll diagnose later. You're done when the scores show a real spread, not a flat wall of nines.
+Here's what to watch out for. If every row you write scores above zero point nine, you've learned nothing. The whole point is spread. You want at least one row that drops below zero point six on some metric. That low score is the signal you'll diagnose later. To complete this exercise, make sure the scores show real spread — at least one row that dips below zero point six on some metric — not a flat wall of nines.
 
 ### Exercise 2: Sweep top-k at 3, 5, and 10
 
@@ -65,7 +70,7 @@ Here's what to watch out for. If every row you write scores above zero point nin
 
 Top-k is how many chunks you retrieve per question. This exercise runs the eval at three, five, and ten, then picks one. The concept is a tradeoff: more chunks raise recall but lower precision, because noise rides along.
 
-Now the big watch-out, and it's about your time. This sweep is slow. It fires the full judge stack three times over, so plan for tens of minutes, not a couple, and watch your interface quota. Start it and step away. You're done with a small table and one sentence recommending a value, usually five.
+Now the big watch-out, and it's about your time. This sweep is slow. It fires the full judge stack three times over, so plan for tens of minutes, not a couple, and watch your interface quota. Start it and step away. To complete this exercise, deliver a small table and one sentence recommending a value, usually five.
 
 ### Exercise 3: Diagnose two failures
 
@@ -73,7 +78,7 @@ Now the big watch-out, and it's about your time. This sweep is slow. It fires th
 
 This is the exercise that matters most. You pick your two lowest-scoring rows and name why each failed. Low recall with low precision means retrieval failed. High recall but low faithfulness means the generator failed. Off-topic everything-else-fine means routing failed.
 
-Here's the watch-out that protects you from chasing ghosts. These scores are judged by a language model, so they jitter run to run. Read the shape, not the third decimal. With only thirty rows, one low score is a hint, not a verdict. You're done when each fix you propose is concrete and traces straight back to a number.
+Here's the watch-out that protects you from chasing ghosts. These scores are judged by a language model, so they jitter run to run. Read the shape, not the third decimal. With only thirty rows, one low score is a hint, not a verdict. To complete this exercise, name exactly what broke for each of your two lowest rows and propose a fix that traces straight back to the metric — not a guess, a diagnosis.
 
 ### Exercise 4: Configure a threshold gate for CI
 
@@ -81,7 +86,7 @@ Here's the watch-out that protects you from chasing ghosts. These scores are jud
 
 The last exercise turns the suite into an alarm. You add two flags that set a floor on faithfulness and on recall. If the scores drop below the floor, the script exits with an error code so a continuous-integration build fails.
 
-The thing to watch out for is the exit code. Use exit code two, not one, so it doesn't collide with a normal build error. You're done when you've saved two transcripts: one healthy run that passes, and one degraded run that names the failed metric and fails.
+The thing to watch out for is the exit code. Use exit code two, not one, so it doesn't collide with a normal build error. To complete this exercise, save two transcripts side by side: a healthy run that passes clean, and a degraded run that names the failing metric and exits with an error code.
 
 ## 4. Key insights  (~30-45s)
 
