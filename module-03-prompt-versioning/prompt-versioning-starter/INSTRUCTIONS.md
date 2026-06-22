@@ -10,47 +10,7 @@ Run `make setup` to install dependencies, then `make load-data` once to populate
 
 ---
 
-
 > The recorded demo walks through this codebase; the exercises below build on it.
-
-# same loop, redirect to /tmp/words-tighter.txt
-```
-
-Compare:
-
-```
-echo "main:    $(awk '{s+=$1} END {print s/NR}' /tmp/words-main.txt) avg words"
-echo "tighter: $(awk '{s+=$1} END {print s/NR}' /tmp/words-tighter.txt) avg words"
-```
-
-Representative output:
-
-```
-main:    52.4 avg words
-tighter: 19.8 avg words
-```
-
-The tighter prompt cuts response length roughly sixty percent on this five-question sample. That is a real effect on the metric, and it is a real cost reduction at output-token prices — completion tokens are typically two to four times more expensive than prompt tokens on `gpt-4o`-class models, so a sixty-percent drop in output length translates roughly to a sixty-percent drop in completion cost per request.
-
-What you cannot conclude from five questions is whether the tighter prompt also changed answer quality. The candidate might be cutting padding, or it might be cutting the qualified-name citations that make the answer auditable. To distinguish those cases you would run RAGAS faithfulness + context precision on both variants and need many more samples — a five-percent shift in a binary quality metric at ninety-five percent confidence needs on the order of ten thousand requests per variant. Five questions is enough to feel the workflow, not enough to ship a decision.
-
-Clean up before moving on:
-
-```
-git checkout main
-git branch -D prompt-prod-tighter
-```
-
-Or keep it around for the exercises, which will revisit the same A/B pattern with a real success metric.
-
-## Wrap-up
-
-That is the full Git + Jinja2 prompt versioning loop, end to end. A template on disk under `prompts/`. A loader in `src/generator.py` that you just built from a stub. Git branches or tags to switch versions. A tiny A/B that surfaces a measurable difference. The pieces are small and the indirection is shallow, which is the strength of this pattern — there is nothing magic between the template file and the model call.
-
-The exercises take this further: extending the template with new variables, building an environment-based loader that selects dev or prod at runtime via a `PROMPT_ENV` setting, and running an A/B with a real success metric (refusal rate) and a chi-squared significance test from `scipy.stats`. Each exercise pins to a concrete acceptance criterion you can self-verify before moving on.
-
----
-
 
 # Module 03 — Exercise: Build the Prompt Versioning Workflow
 
