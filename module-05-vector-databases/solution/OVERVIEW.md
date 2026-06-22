@@ -28,7 +28,7 @@ Files and why each is on screen:
 - `INSTRUCTIONS.md`: the three exercises; keep it open to point at each acceptance criterion.
 - `INTERFACES.md`: the frozen signatures for `chunk_doc`, `embed`/`embed_query`, and the store functions. This is what "do not change the signature" means.
 - `src/chunker.py`: the section-header chunker; the two-tier size decision and the `chunk_id` postfix live here.
-- `src/embedder.py`: the batched embedder; the model name you will swap in Exercise 3 is here.
+- `src/embedder.py`: the batched embedder (OpenAI wrapper) you walk through in the demo.
 - `src/store.py`: the Chroma wrapper; the one cosine line is the most important line in the module.
 - `src/models.py`: the `Source` model (`doc_id`, `chunk_text`, `similarity_score`) so the query return type is concrete.
 - Optional, if asked: `src/corpus.py` (the document parser feeding the chunker), `src/config.py` and `src/constants.py` (model name, dimensions, Vocareum bridge).
@@ -73,7 +73,7 @@ One practical note: run the script with the `PYTHONPATH=.` prefix, or the import
 
 ### Exercise 3: Swap to a local sentence-transformers embedder
 
-*[Stage: open src/embedder.py and point to the model name; this is the one line you change.]*
+*[Stage: open src/constants.py and point to EMBEDDING_MODEL; this is the one line you'd change.]*
 
 The third exercise swaps the hosted embedder for a local model called MiniLM, and asks if the trade is worth it. First, the key concept: a store locks its vector dimension at the first insert. The hosted model makes a 1536-dimensional vector; the local one makes 384. You can't query one with the other.
 
