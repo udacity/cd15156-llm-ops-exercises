@@ -12,6 +12,10 @@ dependencies = [
     "python-dotenv>=1.0,<2",
     # Vector store — Module 05 fills src/store.py
     "chromadb>=0.5,<1",
+    # Pin chromadb's telemetry dep: chromadb 0.6.x calls posthog.capture()
+    # positionally, but posthog>=6 made those args keyword-only, so every
+    # telemetry send raises TypeError. posthog<6 keeps the call valid.
+    "posthog>=2.4.0,<6",
     # OpenAI client + token accounting — Module 03 + Module 13
     "openai>=1.30,<3",
     "tiktoken>=0.7,<1",

@@ -131,7 +131,7 @@ You now have two prompt versions, one per branch. `main` is the baseline; `promp
 ```
 curl -s -X POST http://localhost:8080/query \
   -H 'Content-Type: application/json' \
-  -d '{"question": "What is the default penalty for sklearn.linear_model.LogisticRegression?"}' | jq -r .answer
+  -d '{"question": "What is the default penalty for sklearn.linear_model.LogisticRegression?"}' | uv run python -c "import sys, json; print(json.load(sys.stdin)['answer'])"
 ```
 
 Expected response under `prompt-prod-tighter` is a one-to-two-sentence answer that names `l2` and stops. Switch back and re-query:
@@ -140,7 +140,7 @@ Expected response under `prompt-prod-tighter` is a one-to-two-sentence answer th
 git checkout main
 curl -s -X POST http://localhost:8080/query \
   -H 'Content-Type: application/json' \
-  -d '{"question": "What is the default penalty for sklearn.linear_model.LogisticRegression?"}' | jq -r .answer
+  -d '{"question": "What is the default penalty for sklearn.linear_model.LogisticRegression?"}' | uv run python -c "import sys, json; print(json.load(sys.stdin)['answer'])"
 ```
 
 The `main` answer is typically longer — a sentence with the default, plus a note about the `C` regularization strength or the `solver` interaction. Same question, same retrieval, two prompt versions, two answers. The version control system is doing the work; nothing changed in the application code.
@@ -164,7 +164,7 @@ for q in "What is the default penalty in sklearn.linear_model.LogisticRegression
          "How do you set class weights in sklearn.svm.SVC?"; do
   curl -s -X POST http://localhost:8080/query \
     -H 'Content-Type: application/json' \
-    -d "{\"question\": \"$q\"}" | jq -r '.answer' | wc -w
+    -d "{\"question\": \"$q\"}" | uv run python -c "import sys, json; print(len(json.load(sys.stdin)['answer'].split()))"
 done > /tmp/words-main.txt
 ```
 

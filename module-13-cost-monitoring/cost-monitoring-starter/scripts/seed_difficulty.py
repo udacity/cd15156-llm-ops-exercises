@@ -51,6 +51,8 @@ from scripts.load_data import (  # type: ignore[import-not-found]
 from src import constants  # noqa: F401  (imported for side-effect parity)
 from src.config import settings
 
+import posthog
+posthog.disabled = True  # hard-off: never construct/send chromadb product telemetry
 logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
 
 SEEDED_CHUNKS_PATH: Path = Path("data/seeded_chunks.jsonl")

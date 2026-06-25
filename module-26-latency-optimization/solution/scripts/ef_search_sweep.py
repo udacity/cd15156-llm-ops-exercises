@@ -22,6 +22,15 @@ import time
 from pathlib import Path
 
 import chromadb
+
+# chromadb 0.6.x calls posthog.capture() positionally, but posthog>=6 made
+# those args keyword-only, so every telemetry send raises and chromadb logs
+# "Failed to send telemetry event ...". anonymized_telemetry=False does not
+# suppress it (verified), so quiet the telemetry logger directly.
+import logging
+import posthog
+posthog.disabled = True  # hard-off: never construct/send chromadb product telemetry
+logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
 from chromadb.config import Settings as CS
 
 # Make the project root importable when run directly (e.g.

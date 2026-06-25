@@ -67,6 +67,8 @@ import logging
 
 from openai import OpenAI
 
+import posthog
+posthog.disabled = True  # hard-off: never construct/send chromadb product telemetry
 logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
 
 
