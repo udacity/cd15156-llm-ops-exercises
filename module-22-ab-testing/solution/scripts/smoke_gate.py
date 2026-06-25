@@ -46,6 +46,8 @@ from openai import OpenAI
 from scripts.load_data import COLLECTION_NAME, _make_openai_client  # type: ignore
 from src.config import settings
 
+import posthog
+posthog.disabled = True  # hard-off: never construct/send chromadb product telemetry
 logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
 
 GOLDEN_SET_PATH: Path = Path("data/golden_set.csv")
