@@ -36,7 +36,7 @@ _env = Environment(
 )
 
 
-# Renders the system prompt with retrieved chunks and user_tier
+# TODO(m03-ex1): thread user_tier through render_system_prompt
 def render_system_prompt(
     sources: list[Source], user_tier: str = "standard"
 ) -> str:

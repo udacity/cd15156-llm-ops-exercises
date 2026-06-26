@@ -6,13 +6,20 @@ Runs the same N questions against both branches by:
 between iterations. Writes the per-question label (refused vs answered)
 to a JSON report and prints a chi-squared p-value.
 """
-# Runs N questions against two git branches and reports a chi-squared p-value
+# TODO(m03-ex3): build A/B refusal-rate harness (whole file)
 import json
 import re
 import subprocess
 import sys
+from pathlib import Path
+
 import requests
 from scipy.stats import chi2_contingency
+
+# Make ``src`` importable when this script is run directly
+# (``uv run python scripts/ab_refusal.py``), not just through the Makefile.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.cache.semantic import clear  # noqa: E402 (needs the path insert above)
 
 QUESTIONS = [
     # Five answerable from the scikit-learn docs
@@ -37,6 +44,11 @@ REFUSAL_RE = re.compile(
 
 def run_variant(branch: str) -> list[int]:
     subprocess.run(["git", "checkout", branch], check=True)
+    # Clear the answer cache between variants. The gateway caches by
+    # question, so without this, variant B's identical questions hit
+    # variant A's cached answers and the A/B always shows no difference
+    # (the semantic-cache pitfall from the concept module).
+    clear()
     refusals = []
     for q in QUESTIONS:
         r = requests.post(

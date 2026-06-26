@@ -254,8 +254,14 @@ This exercise is the longest of the three because the real lesson is not the har
    import re
    import subprocess
    import sys
+   from pathlib import Path
+
    import requests
    from scipy.stats import chi2_contingency
+
+   # Make ``src`` importable when this script is run directly.
+   sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+   from src.cache.semantic import clear  # noqa: E402 (needs the path insert above)
 
    QUESTIONS = [
        # Five answerable from the scikit-learn docs
@@ -280,6 +286,10 @@ This exercise is the longest of the three because the real lesson is not the har
 
    def run_variant(branch: str) -> list[int]:
        subprocess.run(["git", "checkout", branch], check=True)
+       # Clear the answer cache between variants, or branch B's identical
+       # questions hit branch A's cached answers and the test shows no
+       # difference (the semantic-cache pitfall from the concept module).
+       clear()
        refusals = []
        for q in QUESTIONS:
            r = requests.post(

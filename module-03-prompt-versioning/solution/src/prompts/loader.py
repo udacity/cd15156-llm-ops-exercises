@@ -3,7 +3,7 @@
 Reads PROMPT_ENV from the environment (defaults to "prod") and
 returns a Jinja2 Environment rooted at prompts/<env>/.
 """
-# Returns a Jinja2 Environment rooted at prompts/<PROMPT_ENV>/
+# TODO(m03-ex2): build env-aware prompt loader (whole file)
 import os
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
