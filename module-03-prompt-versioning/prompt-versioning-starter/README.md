@@ -57,3 +57,17 @@ Target wall-clock on the Udacity Workspace (4 GB RAM / 2 vCPU):
   from `embedding_cache.jsonl`, Chroma idempotently upserts.
 
 Cost per cold build is ~$0.08–0.15 against `text-embedding-3-small`.
+
+### Resetting (`make clean`)
+
+`make clean` deletes the generated artefacts above — the venv plus every
+corpus cache (`data/chroma/`, `data/scikit-learn-cache/`,
+`data/embedding_cache.jsonl`, `data/CORPUS_VERSION`, `data/phoenix/`). Your
+source data (golden set, seeded chunks) is tracked in Git and left untouched.
+
+**Cost impact of a reset.** `make setup` after a clean is free — it only
+reinstalls Python packages, no API calls. The charge lands on the next
+`make load-data`: because clean removed `embedding_cache.jsonl`, that run is a
+**cold** rebuild that re-embeds the whole corpus (~$0.08–0.15, ~45–60 s)
+instead of a sub-five-second warm replay. So each full
+`clean` → `setup` → `load-data` cycle costs about one cold build.
