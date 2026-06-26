@@ -2,7 +2,7 @@
 
 ## Setup (read first)
 
-This starter is the ScikitDocs RAG application with every operational feature wired end-to-end: prompt rendering, vector retrieval, the RAG query pipeline, Phoenix tracing, RAGAS evaluation, cost monitoring, semantic caching, the FastAPI gateway, guardrails, A/B testing, RAGOps watcher, and latency optimizations. The codebase is the same one every later module builds on, so anything you do here can be exercised against a running system.
+This starter is the ScikitDocs RAG application with every operational feature wired end-to-end: prompt rendering, vector retrieval, the RAG query pipeline, Phoenix tracing, RAGAS evaluation, cost monitoring, semantic caching, the FastAPI gateway, guardrails, A/B testing, RAGOps watcher, and latency optimizations. The codebase is the same one every later module builds on, so anything you do here can be exercised against a running system. A few of those subsystems belong to later modules, so `.env` ships them switched off for now to keep the focus on prompt versioning. Those are semantic caching (Module 15), the output guardrail (Module 20), and Phoenix tracing (Module 09). You turn each on when you reach its module.
 
 In this module you will add three things on top of that codebase: a `user_tier` Jinja conditional in `prompts/docbot_system.j2` (Exercise 1), an environment-aware prompt loader at `src/prompts/loader.py` that switches between `prompts/dev/` and `prompts/prod/` via the `PROMPT_ENV` setting (Exercise 2), and a small A/B-test harness at `scripts/ab_refusal.py` that compares refusal rates between two prompt branches with a chi-squared significance check (Exercise 3).
 
@@ -254,6 +254,7 @@ This exercise is the longest of the three because the real lesson is not the har
    import re
    import subprocess
    import sys
+
    import requests
    from scipy.stats import chi2_contingency
 

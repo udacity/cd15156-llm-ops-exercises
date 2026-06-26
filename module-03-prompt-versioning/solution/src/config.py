@@ -49,7 +49,11 @@ class Settings(BaseSettings):
     confidence_threshold: float = constants.CONFIDENCE_THRESHOLD
     cost_log_path: str = constants.COST_LOG_PATH
 
-    # === Prompt environment (Exercise 2) ===
+    # === Feature flags (taught later; early modules ship these off via .env) ===
+    enable_semantic_cache: bool = True  # taught M15
+    enable_output_guard: bool = True  # taught M20
+
+    # TODO(m03-ex2): add prompt_env setting for env-aware loader
     # Selects ``prompts/<prompt_env>/`` for the env-aware loader.
     # Defaults to ``"prod"`` so accidental promotion of dev behavior to
     # production is a typed failure rather than a silent one.
