@@ -15,7 +15,7 @@
 
 **[SAY]** This module is about treating a prompt like versioned code. In the exercises you'll build three things: prompt templates kept in Git, a loader that picks the right version per environment, and a small A/B test to compare two versions. This demo shows the tools you will be using for these exercises.
 
-> **Production note:** environment setup (install, `.env` key, `make load-data`) is covered in the Environment Setup doc, so it is not repeated here. Record from inside `prompt-versioning-starter/` with that setup already done, and with the folder initialized as a Git repo with a configured identity (the demo and exercises use Git branches and commits). The `/query` calls below need a live `OPENAI_API_KEY`.
+> **Production note:** environment setup (install, `.env` key, `make load-data`) is covered in the Environment Setup doc, so it is not repeated here. Record from inside `prompt-versioning-starter/` with that setup already done, and with the folder initialized as a Git repo with a configured identity (the demo and exercises use Git branches and commits). The `/query` calls below need a live `OPENAI_API_KEY`. Before recording, confirm this starter's `.env` carries the three feature-flag lines from `.env.example`: `ENABLE_SEMANTIC_CACHE=false`, `ENABLE_OUTPUT_GUARD=false`, `TRACING_BACKEND=none`. A live `.env` is gitignored and is not updated by changes to `.env.example`, so a stale one leaves the cache, output guard, and tracing on, which masks this lesson (the output guard will refuse the `/query` answers). Restart the server after editing `.env`, since settings load once at startup.
 
 ### 1. A prompt is a file under version control
 
@@ -34,32 +34,23 @@
 
 **[SHOW]** *(real output)*
 ```
-uv run python -c "from src.generator import render_system_prompt; from src.models import Source; print(render_system_prompt([Source(doc_id='x', chunk_text='LogisticRegression default penalty is l2.', similarity_score=0.9)])[:500])"
+uv run python -c "from src.generator import render_system_prompt; from src.models import Source; print(render_system_prompt([Source(doc_id='x', chunk_text='LogisticRegression default penalty is l2.', similarity_score=0.9)])[:1000])"
 ```
 It prints the rendered prompt, with the chunk sitting inside the context block.
 
-**[SAY]** Now let's serve the gateway and hit the live API two ways: the interactive docs in the browser, then the same call from the terminal.
+**[SAY]** Now let's serve the gateway and hit the live API from the terminal.
 
 **[SHOW]** Start the server:
 ```
-make serve-proxy
+make serve
 ```
 
-**[SHOW]** *(illustrative, needs a key)* Open the interactive docs in a browser panel and run a query without leaving the editor:
-- Simple Browser (`Ctrl+Shift+P` → `Simple Browser: Show`) → `https://<your-workspace>/proxy/8080/docs`
-- Expand **POST `/query`** → **Try it out** → enter the body → **Execute**:
-```
-{"question": "What is the default penalty for sklearn.linear_model.LogisticRegression?"}
-```
-The response body shows a grounded answer that cites the API.
-
-**[SHOW]** *(illustrative, needs a key)* The same call from the terminal, which uses `localhost`, not the proxy URL:
+**[SHOW]** *(illustrative, needs a key)* Send the query from the terminal:
 ```
 curl -s -X POST http://localhost:8080/query -H 'Content-Type: application/json' \
   -d '{"question": "What is the default penalty for sklearn.linear_model.LogisticRegression?"}' | uv run python -c "import sys, json; print(json.load(sys.stdin)['answer'])"
 ```
-
-> **Production note (Vocareum Workspace):** two doors to the same server. The **browser** is remote, so it reaches the app through Cloudflare at `/proxy/8080/...` and needs `make serve-proxy` (it adds `--root-path /proxy/8080` so Swagger can load `/proxy/8080/openapi.json`). The **terminal** is on the same machine, so curl hits `http://localhost:8080` directly. Curling the workspace URL from the terminal bounces through Cloudflare and returns a 400. Outside Vocareum, plain `make serve` plus `localhost:8080/docs` covers both.
+It prints a grounded answer that cites the API.
 
 ### 3. Switching versions changes the answer
 
@@ -114,7 +105,7 @@ git checkout main
 git log --oneline -- prompts/
 ```
 
-> **Production note:** if an answer does not change after a `git checkout`, restart `make serve-proxy` so it re-reads the prompt from disk (its `--reload` watches `src/`, not `prompts/`).
+> **Production note:** if an answer does not change after a `git checkout`, restart `make serve` so it re-reads the prompt from disk (its `--reload` watches `src/`, not `prompts/`).
 
 ### Recap and what's next
 
