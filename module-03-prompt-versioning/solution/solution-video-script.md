@@ -12,18 +12,20 @@
 
 ### Intro
 
-**[SAY]** This is one way to build the three pieces: the tiered template, the dev and prod loader, and the A/B test. Yours doesn't have to match mine. And if you get stuck, every block carries a TODO comment, so search the solution and jump to the code.
+**[SAY]** This is one way to build the three pieces. You'll write a tiered template, a dev and prod loader, and an A/B test. Yours doesn't have to match mine, and if you get stuck, every block carries a TODO comment, so search the solution and jump to the code.
 
-**[SAY]** Open a terminal and change into the starter directory.
+**[SAY]** Open a terminal and change into the solution directory.
 
 **[SHOW]** (`` Ctrl+` `` opens the terminal)
 ```
-cd prompt-versioning-starter
+cd solution
 ```
+
+> **Production note:** environment setup (`make setup`, `.env` key, `make load-data`) lives in the Environment Setup doc and is not repeated here. Record from inside `solution/` with setup already done and the folder initialized as a Git repo with a configured identity (Exercise 3 uses branches and commits). Run `make setup` then `make load-data` in `solution/` so dependencies and the retrieval index are in place, and confirm `solution/.env` carries the three feature-flag lines from `.env.example` (`ENABLE_SEMANTIC_CACHE=false`, `ENABLE_OUTPUT_GUARD=false`, `TRACING_BACKEND=none`); a stale `.env` leaves the cache, output guard, and tracing on. Exercise 3 also needs the `ex3-soft-refusal` branch committed and the server running with `make serve`.
 
 ### Exercise 1: a tiered template
 
-**[SAY]** Exercise 1 asks you to add a premium-tier note. The real work isn't the note, it's wiring one new variable, user_tier, through every layer in a single commit.
+**[SAY]** Exercise 1 asks you to add a premium-tier note. But the real work is wiring one new variable, user_tier, through every layer in a single commit.
 
 **[SHOW]** Open the template `prompts/docbot_system.j2` (`Ctrl+P` → `docbot_system`, then `Ctrl+G` → `26`), where an `if user_tier == "premium"` block adds instruction 8.
 ```jinja
@@ -32,7 +34,7 @@ cd prompt-versioning-starter
 {% endif %}
 ```
 
-**[SAY]** Next the renderer passes that variable in, and here's a decision you make: default it to "standard" so existing callers keep working.
+**[SAY]** Next the renderer passes that variable in. The decision worth calling out is to default it to "standard", so existing callers keep working.
 
 **[SHOW]** `src/generator.py` (`Ctrl+P` → `generator`):
 ```python
@@ -56,7 +58,7 @@ uv run pytest tests/test_prompt_tier.py -q        # 2 passed
 
 **[SHOW]** `prompts/dev/docbot_system.j2` next to `prompts/prod/docbot_system.j2` (`Ctrl+P` → `dev/docbot`, then `prod/docbot`). Only dev carries the `[DEV]` suffix.
 
-**[SAY]** Then you write the loader: it reads PROMPT_ENV and returns a Jinja environment pointed at that folder. The decision that matters: default to prod, not dev.
+**[SAY]** Then you write the loader. It reads PROMPT_ENV and returns a Jinja environment pointed at that folder, and it defaults to prod, not dev.
 
 **[SHOW]** `src/prompts/loader.py` (`Ctrl+P` → `loader`):
 ```python
@@ -65,22 +67,27 @@ def load_environment(env_name=None):
     ...
 ```
 
-**[SAY]** Defaulting to prod is deliberate: a dev prompt slipping into production is exactly the failure this guards against, so an unexpected value raises instead of guessing.
+**[SAY]** Defaulting to prod is deliberate. A dev prompt slipping into production is exactly the failure this guards against, so an unrecognized value raises a `ValueError` rather than guessing.
 
-**[SAY]** Two things trip people up: the path math has to climb from the loader file back to the project root, and the package needs an empty __init__.py or the import fails. Also, PROMPT_ENV has to be set in the same shell that runs your tests.
+**[SAY]** Two things trip people up: the loader has to walk up to the project root to find the prompts folders, and the package needs an empty __init__.py or the import fails. Also, PROMPT_ENV has to be set in the same shell that runs your tests.
 
 **[SHOW]** *(real output)*
 ```
 uv run pytest tests/test_prompt_loader.py -q      # 4 passed
 ```
 
-**[SAY]** Prod loads by default, dev injects the marker, an explicit argument wins over the variable, and a bad value raises.
+**[SAY]** Prod loads by default, dev injects the marker, an explicit argument wins over the variable, and an unknown value raises a `ValueError`.
 
 ### Exercise 3: an A/B test
 
-**[SAY]** Exercise 3 is where versioning meets measurement. You create a second prompt on its own branch, then compare the two with a real metric instead of a hunch.
+**[SAY]** Exercise 3 is where versioning starts to pay off. You create a second prompt on its own branch, then compare the two with a real metric instead of a hunch.
 
-**[SHOW]** Open `prompts/docbot_system.j2` on the `ex3-soft-refusal` branch (`Ctrl+P` → `docbot_system`), where instruction 3 is rewritten to lean toward answering.
+**[SHOW]** Switch to the variant branch you created in Exercise 3:
+```
+git checkout ex3-soft-refusal
+```
+
+**[SHOW]** Open `prompts/docbot_system.j2` (`Ctrl+P` → `docbot_system`, then `Ctrl+G` → `17`). On this branch, instruction 3 leans toward answering instead of being honest about uncertainty.
 
 **[SAY]** Then you build the harness: it asks the same ten questions to each branch, five answerable and five out of scope, labels each answer as a refusal or not, and runs a chi-squared test.
 
@@ -88,14 +95,44 @@ uv run pytest tests/test_prompt_loader.py -q      # 4 passed
 
 **[SAY]** One thing the harness assumes is a clean working tree at each checkout. If you've edited a prompt without committing, the `git checkout` fails, which is the harness reminding you that the variant you're testing has to be a real commit.
 
-**[SHOW][ACCELERATE]** *(illustrative, needs a key and a running server)*
+**[SHOW][ACCELERATE]** *(illustrative, needs a key and a running server)* Run the harness. It checks out each branch, asks all ten questions, and prints the report:
 ```
 make serve
-uv run python scripts/ab_refusal.py        # prints JSON with chi2 and p_value
+uv run python scripts/ab_refusal.py
+```
+A representative run, your exact numbers will vary:
+```json
+{
+  "variant_a_refusals": 3, "variant_a_n": 10,
+  "variant_b_refusals": 3, "variant_b_n": 10,
+  "chi2": 0.0, "p_value": 1.0, "significant_at_0.05": false
+}
 ```
 
-**[SAY]** With ten questions a side you'll usually see a gap but no statistically significant result, and that's the expected outcome. The exercise ends with two questions: how many requests per variant you'd really need to trust a shift this size, and how you'd confirm a real difference when the labels come from a rough regex.
+**[SAY]** Read the JSON, don't skim it. The two refusal counts are out of ten each, and the p-value with significant_at_0.05 tell you whether a difference is real or just noise. At ten per side the counts often come back equal or close, so the p-value sits high and there's no difference you can trust. That's a real result, not a failure, so write it down instead of fishing for a win.
+
+**[SAY]** But don't read that as the prompt doing nothing. The counts matched; the answers didn't. Look at the same question on each branch.
+
+**[SHOW]** *(illustrative, needs a key)* Same question on the variant branch:
+```
+git checkout ex3-soft-refusal
+curl -s -X POST http://localhost:8080/query -H 'Content-Type: application/json' \
+  -d '{"question": "Does scikit-learn ship a transformer-based deep learning module?"}' | uv run python -c "import sys, json; print(json.load(sys.stdin)['answer'])"
+```
+It answers directly: "No, scikit-learn does not ship a transformer-based deep learning module."
+
+**[SHOW]** *(illustrative, needs a key)* And on the baseline:
+```
+git checkout main
+curl -s -X POST http://localhost:8080/query -H 'Content-Type: application/json' \
+  -d '{"question": "Does scikit-learn ship a transformer-based deep learning module?"}' | uv run python -c "import sys, json; print(json.load(sys.stdin)['answer'])"
+```
+It hedges first: "Based on the documentation excerpts retrieved, scikit-learn does not offer..."
+
+**[SAY]** Same question, two different answers, and the refusal count couldn't tell them apart. The prompt change was real. Our metric was just too coarse to see it.
+
+**[SAY]** Two questions close the exercise: how many requests per variant you'd need to trust a shift this size, and how you'd confirm a real difference when the labels come from a rough regex.
 
 ### Close
 
-**[SAY]** That's one way through all three: a variable wired cleanly through every layer, a loader that defaults to the safe environment, and an A/B test you can read. If a piece tripped you up, search the solution for its TODO comment and you'll land on the answer.
+**[SAY]** That's one way through all three exercises. You wired a new variable through every layer, built a loader that's safe by default, and ran an A/B test with a real metric. If a piece tripped you up, search the solution for its TODO comment and you'll land right on the code.
