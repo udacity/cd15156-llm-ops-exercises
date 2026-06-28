@@ -290,9 +290,12 @@ def test_query_endpoint_blocks_prompt_injection_at_route_layer() -> None:
     assert called["route_query"] == 0, "dispatch should be short-circuited by the input guard"
 
 
-def test_query_endpoint_blocks_hallucination_at_output_layer() -> None:
+def test_query_endpoint_blocks_hallucination_at_output_layer(monkeypatch) -> None:
     """The route handler intercepts a NOT_SUPPORTED answer before returning it."""
     reset_rate_limit_state()
+    import src.config
+
+    monkeypatch.setattr(src.config.settings, "enable_output_guard", True)
     from src.gateway.app import app
 
     completion = _stub_completion("NOT_SUPPORTED", "answer cites function not in source")

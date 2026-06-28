@@ -50,5 +50,9 @@ class Settings(BaseSettings):
     confidence_threshold: float = constants.CONFIDENCE_THRESHOLD
     cost_log_path: str = constants.COST_LOG_PATH
 
+    # === Feature flags (taught later; early modules ship these off via .env) ===
+    enable_semantic_cache: bool = True  # taught M15
+    enable_output_guard: bool = True  # taught M20
+
 
 settings = Settings()
