@@ -64,15 +64,17 @@ def route_query(
     # call. The classifier (one gpt-4o-mini round-trip) only runs on a
     # miss, when we actually need the tier to pick a model and log the
     # cost row. A hit returns the stored response without paying it.
-    hit = lookup(question)
-    if hit is not None:
-        return hit
+    if settings.enable_semantic_cache:
+        hit = lookup(question)
+        if hit is not None:
+            return hit
 
     query_type = classify(question)
     chosen_model = model or select_model(query_type)
 
     response = traced_pipeline(question, top_k=top_k, model=chosen_model)
-    store(question, response)
+    if settings.enable_semantic_cache:
+        store(question, response)
     log_request(chosen_model, response.tokens, response.cost_usd, query_type)
     return response
 

@@ -18,6 +18,7 @@ The composition has three steps:
 
 from src import constants
 from src.cache.semantic import lookup, store
+from src.config import settings
 from src.models import QueryResponse
 from src.pipeline import run_pipeline
 
@@ -46,12 +47,14 @@ def cached_route_query(
         A ``QueryResponse``. ``response.cached`` is ``True`` on a hit and
         ``False`` on a miss (the freshly generated response).
     """
-    hit = lookup(question, threshold=threshold)
-    if hit is not None:
-        return hit
+    if settings.enable_semantic_cache:
+        hit = lookup(question, threshold=threshold)
+        if hit is not None:
+            return hit
 
     response = run_pipeline(question, top_k=top_k, model=model)
-    store(question, response, ttl_s=ttl_s)
+    if settings.enable_semantic_cache:
+        store(question, response, ttl_s=ttl_s)
     return response
 
 

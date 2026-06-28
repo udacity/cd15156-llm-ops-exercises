@@ -26,6 +26,7 @@ from fastapi import APIRouter, Header
 from pydantic import BaseModel, Field
 
 from src import constants
+from src.config import settings
 from src.gateway.router import route_query
 from src.guardrails.input_guards import (
     detect_pii,
@@ -117,9 +118,10 @@ def query_endpoint(
     )
 
     # 6. Hallucination check on the output.
-    passed, halluc_reason = check_hallucination(response.answer, response.citations)
-    if not passed:
-        return safe_response(SAFE_FILTERED_MESSAGE, blocked_by=halluc_reason or "hallucination: judge flagged")
+    if settings.enable_output_guard:
+        passed, halluc_reason = check_hallucination(response.answer, response.citations)
+        if not passed:
+            return safe_response(SAFE_FILTERED_MESSAGE, blocked_by=halluc_reason or "hallucination: judge flagged")
 
     # Stamp the PII reason (if any) onto the response so the operator
     # sees the redaction in the audit log even on the happy path.
