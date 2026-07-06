@@ -1,0 +1,7 @@
+{"timestamp": "2026-07-03T22:27:18.231280+00:00", "model": "gpt-4o", "prompt_tokens": 1920, "completion_tokens": 21, "cost_usd": 0.00501, "query_type": "complex"}
+{"timestamp": "2026-07-03T22:27:25.076583+00:00", "model": "gpt-4o", "prompt_tokens": 1570, "completion_tokens": 38, "cost_usd": 0.004305, "query_type": "complex"}
+{"timestamp": "2026-07-03T22:27:29.846275+00:00", "model": "gpt-4o", "prompt_tokens": 1983, "completion_tokens": 86, "cost_usd": 0.0058175, "query_type": "complex"}
+{"timestamp": "2026-07-03T22:27:38.628845+00:00", "model": "gpt-4o", "prompt_tokens": 2171, "completion_tokens": 72, "cost_usd": 0.0061475, "query_type": "complex"}
+{"timestamp": "2026-07-03T22:27:42.905364+00:00", "model": "gpt-4o", "prompt_tokens": 1949, "completion_tokens": 50, "cost_usd": 0.0053725, "query_type": "complex"}
+{"timestamp": "2026-07-03T22:27:48.556548+00:00", "model": "gpt-4o", "prompt_tokens": 2280, "completion_tokens": 76, "cost_usd": 0.00646, "query_type": "complex"}
+{"timestamp": "2026-07-03T22:27:54.386318+00:00", "model": "gpt-4o", "prompt_tokens": 2488, "completion_tokens": 64, "cost_usd": 0.00686, "query_type": "complex"}
