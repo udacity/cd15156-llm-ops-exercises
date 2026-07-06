@@ -630,7 +630,7 @@ pydantic-core==2.46.4
     # via
     #   instructor
     #   pydantic
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2
     # via
     #   -r requirements_in.txt
     #   langchain-community
