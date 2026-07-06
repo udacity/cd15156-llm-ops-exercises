@@ -4,10 +4,10 @@
 
 | # | Trace ID | Question | Model | Latency (ms) | Prompt tok | Compl. tok | Slowest child | Slowest (ms) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `8466b6cf` | Compare `RandomForestClassifier` and `GradientBoostingClassifier` for tabular da | gpt-4o | 6183.3 | 2437 | 543 | generate | 5018.9 |
-| 2 | `801b2a7c` | What is the weather in Paris today? | gpt-4o | 6549.1 | 1781 | 44 | generate | 5798.3 |
-| 3 | `1fd93f91` | Explain how `StandardScaler` works and when to use it. | gpt-4o | 5038.6 | 2198 | 453 | generate | 4299.2 |
-| 4 | `3628c256` | What solver does `LogisticRegression` use by default in scikit-learn 1.5? | gpt-4o | 2539.4 | 2554 | 47 | generate | 1683.7 |
-| 5 | `540af475` | What is the default value of `n_estimators` in `RandomForestClassifier`? | gpt-4o | 4998.4 | 2194 | 61 | generate | 2687.8 |
+| 1 | `89009b11` | Compare `RandomForestClassifier` and `GradientBoostingClassifier` for tabular da | gpt-4o | 11316.0 | 2283 | 502 | generate | 10467.7 |
+| 2 | `8de8fb45` | What is the weather in Paris today? | gpt-4o | 3442.2 | 1781 | 44 | generate | 2578.5 |
+| 3 | `0d7e10cd` | Explain how `StandardScaler` works and when to use it. | gpt-4o | 14983.6 | 1965 | 395 | generate | 14246.4 |
+| 4 | `c56f18ca` | What solver does `LogisticRegression` use by default in scikit-learn 1.5? | gpt-4o | 3755.0 | 2139 | 87 | generate | 3005.4 |
+| 5 | `875871fb` | What is the default value of `n_estimators` in `RandomForestClassifier`? | gpt-4o | 4833.0 | 1478 | 47 | generate | 2649.3 |
 
-**Slowest step across 5 traces:** `generate` (5798.3 ms) in trace `801b2a7c` ("What is the weather in Paris today?").
+**Slowest step across 5 traces:** `generate` (14246.4 ms) in trace `0d7e10cd` ("Explain how `StandardScaler` works and when to use it.").
