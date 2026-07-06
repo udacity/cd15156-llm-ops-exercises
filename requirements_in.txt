@@ -41,6 +41,11 @@ python-dotenv>=1.0,<2
 
 # --- Vector store (M05) ---
 chromadb>=0.5,<1
+# chromadb pulls onnxruntime (its default embedder). onnxruntime<1.19 was built
+# against NumPy 1.x; the numpy 2.x we resolve makes it dump a
+# "numpy.core.multiarray failed to import" wall of red on every `import chromadb`.
+# 1.19 added NumPy-2 support -> floor it so the resolved image imports cleanly.
+onnxruntime>=1.19
 
 # --- Telemetry pin (all modules) ---
 # chromadb 0.6.x calls posthog.capture() positionally; posthog>=6 made those
@@ -65,6 +70,11 @@ docutils>=0.21,<1
 # --- Evaluation (M11) ---
 ragas==0.4.3
 langchain-openai>=1.0,<2
+# ragas 0.4.3 does an unconditional `from langchain_community.chat_models.vertexai
+# import ChatVertexAI`. langchain-community 0.4.2 removed that module, so the
+# unpinned transitive floats to 0.4.2 and `import src.evaluation` hard-fails with
+# ModuleNotFoundError in every module. Pin to 0.4.1 (still ships vertexai).
+langchain-community<0.4.2
 
 # --- Tracing (M09) ---
 arize-phoenix>=13.21,<14
