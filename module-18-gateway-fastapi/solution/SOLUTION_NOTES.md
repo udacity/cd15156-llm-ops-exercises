@@ -49,7 +49,7 @@ gpt-4o | What changed in StandardScaler between scikit-learn 0.24 and 1.4,...
 gpt-4o | Explain every parameter of GridSearchCV's __init__ and how scorin...
 ```
 
-Because the placeholder `model_premium` is also `gpt-4o`, the dispatch observability comes from the cost log's `query_type` column rather than the model name. `tail -5 data/cost_log.jsonl | python -c "import json, sys; [print(json.loads(l)['query_type']) for l in sys.stdin]"` should show a mix of `simple`, `complex`, and `premium`. The exact split is not deterministic — gpt-4o-mini self-classification oscillates on borderline queries.
+Because the placeholder `model_premium` is also `gpt-4o`, the dispatch observability comes from the cost log's `query_type` column rather than the model name. `tail -5 data/cost_log.jsonl | uv run python -c "import json, sys; [print(json.loads(l)['query_type']) for l in sys.stdin]"` should show a mix of `simple`, `complex`, and `premium`. The exact split is not deterministic — gpt-4o-mini self-classification oscillates on borderline queries.
 
 Acceptance paragraph: pay for the premium tier when long-context queries strain the cheaper model's window (a multi-thousand-token requirements brief that gets truncated at the input boundary loses material the answer needs), or when the use case cannot tolerate the mid-tier model's hallucination rate on a particular query class (deprecated-API checks against scikit-learn where wrong answers ship bugs). A RAGAS evaluation loop is where you settle the latter argument — the dollar premium pays for itself only if the better-model hallucination rate is materially lower on the queries that actually route to the tier.
 

@@ -93,6 +93,8 @@ def query_endpoint(
     if rl_reason is not None:
         return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=rl_reason)
 
+    # TODO(m20-exercise-1): Option A wiring — call your detect_invisible_unicode here, between the rate-limit and injection checks (cheaper checks run earlier); return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=reason) on a hit
+
     # 2. Prompt injection (anchored OWASP LLM01:2025).
     pi_reason = detect_prompt_injection(request.question)
     if pi_reason is not None:

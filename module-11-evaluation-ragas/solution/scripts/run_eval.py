@@ -54,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
             "to avoid parallel-load timeouts that produce NaN cells."
         ),
     )
-    # CI regression-gate thresholds: floors for faithfulness and context_recall
+    # TODO(m11-exercise-4): add --faithfulness-min and --context-recall-min flags
     parser.add_argument(
         "--faithfulness-min",
         type=float,
@@ -119,7 +119,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"\nWrote per-row results to {args.output}")
 
-    # Enforce CI floors — exit 2 when any aggregate metric falls below its threshold
+    # TODO(m11-exercise-4): compare each set threshold flag against its aggregate
+    # key, print a stderr line naming the metric, and sys.exit(2) on a miss
     thresholds = {
         "faithfulness": args.faithfulness_min,
         "context_recall": args.context_recall_min,

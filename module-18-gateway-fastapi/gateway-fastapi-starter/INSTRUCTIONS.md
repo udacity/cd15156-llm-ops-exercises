@@ -11,6 +11,7 @@ uv sync
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key);
                               # set OPENAI_BASE_URL=https://openai.vocareum.com/v1 on Vocareum
 make load-data                # ~45–60s cold, ~5s warm; ~$0.10 in embeddings
+make seed-difficulty          # 8 confusion chunks; grounds the RandomForestRegressor-criterion example
 ```
 
 Smoke-check the pipeline before any gateway work:
@@ -92,29 +93,25 @@ The starter's classifier returns `simple` or `complex`; the gateway routes to `g
 
    Order matters here — `premium` checks first because it is the most specific case. The existing trace, cache, and cost-log code already takes the model name as a string, so no change is needed downstream.
 
-5. Run the gateway with `make serve` and fire five queries through `/query` chosen to exercise the three tiers. Pick one straightforward factual lookup, two comparison queries, and two long-context or deprecated-API queries:
+5. Verify the routing with the shipped probe. `scripts/probe_tiers.py` runs five sample questions (a factual lookup, two comparisons, and two long-context or deprecated-API queries) through `classify` and `select_model`, and prints the tier each landed on next to its model:
 
    ```
-   queries=(
-     "What is the default criterion for RandomForestRegressor?"
-     "Compare GradientBoostingClassifier and RandomForestClassifier for imbalanced binary classification."
-     "Walk me through choosing between l1 and l2 penalty on LogisticRegression for a sparse-feature problem."
-     "What changed in StandardScaler between scikit-learn 0.24 and 1.4, and which arguments were deprecated?"
-     "Explain every parameter of GridSearchCV's __init__ and how scoring interacts with refit when multiple scorers are passed."
-   )
-   for q in "${queries[@]}"; do
-     curl -s -X POST http://localhost:8080/query \
-       -H 'content-type: application/json' \
-       -d "{\"question\": \"$q\", \"top_k\": 5}" \
-       | python -c "import sys,json; r=json.load(sys.stdin); print(r['model'], '|', '$q'[:60])"
-   done
+   make probe-tiers
    ```
 
-   Expect a mix — the factual lookup goes to `gpt-4o-mini`, the comparison and recommendation queries to `gpt-4o`, and at least one of the long-context or deprecated-API queries to your `model_premium` (which is also `gpt-4o` in the placeholder, so observability comes from the cost log's `query_type` column rather than the model name in this case). The exact split depends on how the classifier reads each query — gpt-4o-mini self-classification is not deterministic across runs and a borderline query may oscillate.
+   ```
+   tier     | model        | question
+   ------------------------------------------------------------------------------
+   simple   | gpt-4o-mini  | What is the default criterion for RandomForestRegressor?
+   complex  | gpt-4o       | Compare GradientBoostingClassifier and RandomForestClas...
+   premium  | gpt-4o       | Explain every parameter of GridSearchCV's __init__ and ...
+   ```
+
+   The `premium` placeholder is also `gpt-4o`, so the tier column is where `premium` shows even though its model matches `complex`. The exact split depends on how the classifier reads each query. gpt-4o-mini self-classification is not deterministic across runs, so a borderline query may land on a different tier. The probe needs a live `OPENAI_API_KEY` and runs the classifier directly, no server required.
 
 ### Acceptance criterion
 
-Two artifacts. First, the diff against the four files you edited (`src/config.py`, `src/gateway/classifier.py`, `prompts/classifier.j2`, `src/gateway/router.py`). Second, the five-query run with each query's classifier-assigned tier visible — either by reading the `model` field directly when the three tiers point to distinct models, or by tailing the cost log (`tail -5 data/cost_log.jsonl`) and reading the `query_type` field. The cost log's `query_type` is set from the classifier's return value, so it reflects what the classifier decided regardless of whether two tiers happen to share a model.
+Two artifacts. First, the diff against the four files you edited (`src/config.py`, `src/gateway/classifier.py`, `prompts/classifier.j2`, `src/gateway/router.py`). Second, the `make probe-tiers` output showing all three tiers reachable, with `premium` visible in the tier column even though its placeholder model matches `complex`. The tier comes straight from the classifier's return value, so it reflects what the classifier decided regardless of whether two tiers share a model.
 
 A one-paragraph note explaining when you would actually pay for the premium tier in production. Long-context queries that strain the cheaper model's window are the cleanest justification; high-stakes queries where the mid-tier model's hallucination rate is unacceptable for the use case are the harder argument and the one the evaluation module's eval loop has to settle.
 
@@ -393,7 +390,7 @@ The two provider APIs are close enough that one adapter is small, and different 
    curl -s -X POST http://localhost:8080/query \
      -H 'content-type: application/json' \
      -d '{"question": "Default criterion for RandomForestRegressor?", "provider": "openai"}' \
-     | python -m json.tool | grep -E 'model|answer'
+     | uv run python -m json.tool | grep -E 'model|answer'
 
    # Clear the answer cache before the Anthropic curl. The cache key is the
    # question text, not the provider, so without this the second request hits
@@ -404,7 +401,7 @@ The two provider APIs are close enough that one adapter is small, and different 
    curl -s -X POST http://localhost:8080/query \
      -H 'content-type: application/json' \
      -d '{"question": "Default criterion for RandomForestRegressor?", "provider": "anthropic"}' \
-     | python -m json.tool | grep -E 'model|answer'
+     | uv run python -m json.tool | grep -E 'model|answer'
    ```
 
    The first returns the real `gpt-4o-mini` answer with the real token counts. The second returns the stub answer with stubbed token counts. The `QueryResponse` shape is identical across both — same fields, same types, same semantics. That is the abstraction's deliverable.

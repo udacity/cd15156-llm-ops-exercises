@@ -181,6 +181,9 @@ def detect_pii(text: str) -> tuple[str, list[str]]:
     return redacted, kinds
 
 
+# TODO(m20-exercise-1): add your new input guard here (Option A: detect_invisible_unicode(text) -> str | None returning "invisible_unicode: matched <name>"; Options B/C instead extend PII_PATTERNS / SYSTEM_PROMPT_LEAK_PATTERNS above — see INSTRUCTIONS.md Exercise 1)
+
+
 __all__ = [
     "INJECTION_PATTERNS",
     "SYSTEM_PROMPT_LEAK_PATTERNS",

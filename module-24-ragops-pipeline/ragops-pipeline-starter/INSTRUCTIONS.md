@@ -146,7 +146,7 @@ The `bad_invalid_json.json` template has a trailing comma that makes it syntacti
    ingestion.watcher: Quarantined bad_parse.json: invalid JSON: Expecting property name enclosed in double quotes at line N col M
    ```
 
-   The exact line and column depend on the editor's line-ending convention, but the failure reason is the trailing comma. The watcher caught the parse failure before it ever got to schema validation — `json.loads` raised, the exception handler at `src/ingestion/watcher.py:175-179` formatted the reason, and `_quarantine` moved the file.
+   The exact line and column depend on the editor's line-ending convention, but the failure reason is the trailing comma. The watcher caught the parse failure before it ever got to schema validation — `json.loads` raised, the exception handler at `src/ingestion/watcher.py:198-202` formatted the reason, and `_quarantine` moved the file.
 
 3. Confirm the quarantine moved the file and recorded the reason. In terminal two:
 
@@ -163,7 +163,7 @@ The `bad_invalid_json.json` template has a trailing comma that makes it syntacti
    ls data/docs_inbox/*.json
    ```
 
-   `bad_parse.json` should not be in the list — it was moved (not copied) into `failed/`, so the inbox is clean and the watcher does not retry the same failure on every restart. `recursive=False` on the observer (see `start_observer` at `src/ingestion/watcher.py:235-244`) means subdirectories of the inbox are not watched, so files in `failed/` are not re-ingested.
+   `bad_parse.json` should not be in the list — it was moved (not copied) into `failed/`, so the inbox is clean and the watcher does not retry the same failure on every restart. `recursive=False` on the observer (see `start_observer` at `src/ingestion/watcher.py:270-285`) means subdirectories of the inbox are not watched, so files in `failed/` are not re-ingested.
 
 5. Walk the second failure mode. Drop the missing-field template:
 
@@ -178,7 +178,7 @@ The `bad_invalid_json.json` template has a trailing comma that makes it syntacti
    ingestion.watcher: Quarantined bad_schema.json: missing required fields: ['metadata']
    ```
 
-   `validate_section` at `src/ingestion/watcher.py:78-103` produced the message, and the failure mode is now visible at a different layer than the JSON parse failure. Two-stage validation matters because the right fix differs — a JSON parse error is a producer-side authoring bug, a missing-field error is a schema-contract mismatch that probably means the upstream pipeline was rebuilt without honoring the watcher's `REQUIRED_METADATA_FIELDS` contract.
+   `validate_section` at `src/ingestion/watcher.py:85-113` produced the message, and the failure mode is now visible at a different layer than the JSON parse failure. Two-stage validation matters because the right fix differs — a JSON parse error is a producer-side authoring bug, a missing-field error is a schema-contract mismatch that probably means the upstream pipeline was rebuilt without honoring the watcher's `REQUIRED_METADATA_FIELDS` contract.
 
 ### Success Criteria
 

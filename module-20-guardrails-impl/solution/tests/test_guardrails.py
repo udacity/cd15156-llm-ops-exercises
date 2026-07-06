@@ -36,6 +36,7 @@ from src.guardrails import (
     detect_system_prompt_leak,
     reset_rate_limit_state,
 )
+from src.guardrails.input_guards import detect_invisible_unicode
 from src.guardrails.llm_judge.output_guards import check_hallucination
 from src.guardrails.wrapper import (
     SAFE_BLOCKED_MESSAGE,
@@ -318,3 +319,21 @@ def test_query_endpoint_blocks_hallucination_at_output_layer(monkeypatch) -> Non
     body = response.json()
     assert body["answer"] == SAFE_FILTERED_MESSAGE
     assert body["blocked_by"].startswith("hallucination:")
+
+
+# TODO(m20-exercise-1): parametrised test for your new guard — one input that triggers it, one clean input, one edge case that must NOT trigger (Option A: an emoji is visible Unicode and must pass)
+@pytest.mark.parametrize(
+    ("text", "should_block"),
+    [
+        ("What is StandardScaler\u200b?", True),  # zero-width space, escaped because it is invisible
+        ("What does StandardScaler.fit do?", False),
+        ("How do I plot a confusion matrix? 🙂", False),  # emoji is visible Unicode, must pass
+    ],
+)
+def test_detect_invisible_unicode(text: str, should_block: bool) -> None:
+    reason = detect_invisible_unicode(text)
+    if should_block:
+        assert reason is not None
+        assert reason.startswith("invisible_unicode:")
+    else:
+        assert reason is None

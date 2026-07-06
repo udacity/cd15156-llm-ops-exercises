@@ -127,7 +127,7 @@ The starter runs both `/query` (blocking) and `/query/stream` (SSE). The previou
        start = time.perf_counter()
        with urllib.request.urlopen(req) as resp:
            resp.read()
-       total_ms = (time.perf_counter() - start) * 1000
+       total_ms = round((time.perf_counter() - start) * 1000)
        return {"ttft_ms": total_ms, "total_ms": total_ms}
 
    def time_streaming() -> dict:
@@ -141,15 +141,15 @@ The starter runs both `/query` (blocking) and `/query/stream` (SSE). The previou
        with urllib.request.urlopen(req) as resp:
            for line in resp:
                if ttft_ms is None:
-                   ttft_ms = (time.perf_counter() - start) * 1000
-       total_ms = (time.perf_counter() - start) * 1000
+                   ttft_ms = round((time.perf_counter() - start) * 1000)
+       total_ms = round((time.perf_counter() - start) * 1000)
        return {"ttft_ms": ttft_ms or total_ms, "total_ms": total_ms}
 
    print("blocking :", time_blocking())
    print("streaming:", time_streaming())
    ```
 
-3. Run it. Clear the cache between runs so both calls miss:
+3. Run it. Clear the cache before the run you measure so the blocking call is a cold miss (streaming ignores the cache either way):
 
    ```
    uv run python scripts/ttft_compare.py
@@ -160,11 +160,11 @@ The starter runs both `/query` (blocking) and `/query/stream` (SSE). The previou
    Expected shape, hedged on magnitudes:
 
    ```
-   blocking : {'ttft_ms': ~2500, 'total_ms': ~2500}
-   streaming: {'ttft_ms': ~500,  'total_ms': ~2500}
+   blocking : {'ttft_ms': ~5000, 'total_ms': ~5000}
+   streaming: {'ttft_ms': ~3000, 'total_ms': ~5000}
    ```
 
-   Blocking TTFT equals blocking total — the client cannot do anything until the whole body lands. Streaming TTFT lands in the few-hundred-millisecond range because the first token arrives as soon as the model starts generating. Total streaming time is comparable to blocking total — the model still has to finish generating, and the network still has to deliver every byte. The streaming route bypasses the cache, so even on a paraphrase-repeat it always pays the full generator cost.
+   Blocking TTFT equals blocking total — the client cannot do anything until the whole body lands. Streaming TTFT lands much lower because the first token arrives as soon as the model starts generating. The two totals land close together, because the model does the same work either way: streaming does not make generation faster, it just surfaces the first token sooner. (This module ships with the Module 20 output guard off. Turn it on and blocking picks up an extra hallucination-judge call after the last token that streaming defers, which pushes blocking's total up — that is the Exercise 2 stretch.) The streaming route bypasses the cache, so even on a paraphrase-repeat it always pays the full generator cost.
 
 4. Build a two-by-two table:
 
@@ -179,7 +179,7 @@ The starter runs both `/query` (blocking) and `/query/stream` (SSE). The previou
 
 ### Success criteria
 
-A two-by-two TTFT-vs-total table with hedged measurements for both routes, on the same question with the same cache state. A one-paragraph interpretation naming the user-perceived difference (the spinner that did not appear) and the engineering cost (the deferred output guards). Honest framing matters here — do not write "streaming is N times faster" because total is comparable. The right framing is "streaming respects the one-second flow-of-thought threshold from Nielsen's 1993 NN/g piece even when total time exceeds it." A second paragraph: name which route you would default your hypothetical docs-FAQ workload to, and why. The starter defaults its primary `/query` route to blocking because the output guards (once the guardrails module lands) need the whole answer to fire; the `/query/stream` route exists as the perceived-latency path for the cases where a single second of spinner is the wrong UX. Most teams pick one as the default and reach for the other when product surface area justifies the operational cost of running both.
+A two-by-two TTFT-vs-total table with hedged measurements for both routes, on the same question with the same cache state. A one-paragraph interpretation naming the user-perceived difference (the spinner that did not appear) and the engineering cost (the deferred output guards). Honest framing matters here — do not write "streaming is N times faster," because total time is comparable: the model does the same work on both routes. The right framing is "streaming respects the one-second flow-of-thought threshold from Nielsen's 1993 NN/g piece even when total time exceeds it," and the headline win is TTFT, not the total clock. A second paragraph: name which route you would default your hypothetical docs-FAQ workload to, and why. The starter defaults its primary `/query` route to blocking because the output guards (once the guardrails module lands) need the whole answer to fire; the `/query/stream` route exists as the perceived-latency path for the cases where a single second of spinner is the wrong UX. Most teams pick one as the default and reach for the other when product surface area justifies the operational cost of running both.
 
 ### Stretch
 
@@ -187,9 +187,11 @@ Modify your Python client to `print(token, end="", flush=True)` on each `content
 
 A second stretch: fire the same question twice through `/query` (the blocking endpoint) without clearing the cache between calls. The second call returns the cached answer immediately. Now fire the same question twice through `/query/stream`. Both streaming calls always pay the full generator cost because the streaming route bypasses the cache by design. The cache wins on the blocking-route hit path; streaming wins on perceived-latency on the cache-miss path. Each lever solves a different problem.
 
+A third stretch: measure what the output guard costs. This module ships with `ENABLE_OUTPUT_GUARD=false`, so the blocking and streaming totals come in close. Set `ENABLE_OUTPUT_GUARD=true` in `.env`, restart `make serve`, and re-run `scripts/ttft_compare.py`. Blocking's total jumps by the hallucination judge, a second LLM call it runs on the whole answer after the last token, while streaming's total barely moves because the streaming route defers that guard. The gap you open up is the guard's price, not slower streaming generation. The trace-based view needs no config change: read the generator span from each route in Phoenix and compare those directly, the same span-isolation move as Exercise 1.
+
 ## Exercise 3 — Sweep `ef_search` against the `scikit_docs` collection
 
-The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for the three tunable HNSW knobs — `M = 16`, `ef_construction = 100`, `ef_search = 100`. Only `hnsw:space` is set explicitly, because OpenAI embeddings are normalized and L2 silently corrupts ranking against them. The corpus is roughly 750 scikit-learn doc chunks. That is enough for the recall-versus-latency curve to surface its ordering, but the spread stays small; at this scale the curve sits close to the noise floor, and only at tens of thousands of rows and up does it open into a real engineering trade.
+The `scikit_docs` collection at `src/store.py:75-93` uses Chroma's defaults for the three tunable HNSW knobs — `M = 16`, `ef_construction = 100`, `ef_search = 100`. Only `hnsw:space` is set explicitly, because the confidence score and the semantic cache's hit threshold are calibrated on cosine distances and Chroma's default is L2. On normalized embeddings L2 preserves the ranking but changes the score scale, which silently breaks both calibrations. The corpus is roughly 750 scikit-learn doc chunks. That is enough for the recall-versus-latency curve to surface its ordering, but the spread stays small; at this scale the curve sits close to the noise floor, and only at a few million rows and up does it open into a real engineering trade.
 
 ### What to do
 
@@ -321,7 +323,7 @@ A second paragraph: name which knob you would tune first on a hypothetical ten-m
 ## Common Pitfalls
 
 - **Forgetting `stream_options={"include_usage": True}`.** Without that flag in `src/streaming.py`, the streaming response carries no token counts and the cost computation silently reports zero. The cost-monitoring module's dashboard will under-report streaming traffic. If you copy this pattern outside the starter, the option is the line you must not drop.
-- **Comparing TTFT-stream to Total-blocking and claiming "streaming is N times faster."** That comparison mixes two different metrics. Total time is comparable across both endpoints; streaming wins on TTFT and on the user-perceived experience. The previous concept module framed this as the correct mental model and the wrong mental model side by side.
+- **Comparing TTFT-stream to Total-blocking and claiming "streaming is N times faster."** That mixes two metrics. Total time is comparable across both routes because the model does the same work; streaming wins on TTFT and on the user-perceived experience, not on the total clock. (Turn the Module 20 output guard on and blocking's total does grow, by the hallucination judge it runs after the last token and streaming defers — but that is the guard's cost, not faster streaming generation.) The previous concept module framed this as the correct mental model and the wrong mental model side by side.
 - **Cache contamination in the sweep.** The blocking route uses the cache; the streaming route does not. Between sweep iterations on the blocking endpoint, clear the cache or you will measure cache-hit latency instead of vector search latency. Exercise 1 demonstrates the cache-hit path on purpose; Exercise 3 wants the opposite — the vector search measured in isolation, with the cache out of the loop entirely. The sandbox-collection approach in Exercise 3 sidesteps the cache because it calls Chroma directly without going through the gateway.
 - **Editing `src/store.py` to change HNSW params, then re-running `make load-data`.** Chroma builds the HNSW graph once at insert time. Changing `M` or `ef_construction` on an already-built collection has no effect — you have to drop the collection first (`rm -rf data/chroma/`) and rebuild. The sandbox-collection pattern in Exercise 3 avoids the trap by creating fresh parallel collections with the parameters baked in at creation.
 - **Phoenix not running when you expect spans.** If you set `TRACING_BACKEND=none` in `.env` or if Phoenix failed to launch (check `make serve` startup logs for the tracing-init line), the `/query` response will still carry `trace_id=""` and the UI at port 6006 will be empty. `make show-traces` will print "no traces found." Restart with the default backend and the spans return.

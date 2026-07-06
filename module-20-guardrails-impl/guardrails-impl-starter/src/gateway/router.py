@@ -72,6 +72,7 @@ def route_query(
     query_type = classify(question)
     chosen_model = model or select_model(query_type)
 
+    # TODO(m20-exercise-3): forward MAX_OUTPUT_TOKENS from src.guardrails.rate_limit into the traced_pipeline call so every gateway request carries the output cap
     response = traced_pipeline(question, top_k=top_k, model=chosen_model)
     if settings.enable_semantic_cache:
         store(question, response)

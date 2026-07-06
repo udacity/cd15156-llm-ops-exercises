@@ -4,11 +4,11 @@
 
 There are four LLM-specific A/B pitfalls — cost asymmetry, sticky-versus-per-request assignment, judge variance, and distribution drift — plus three vendor axes for feature-flagging products. This demo brings two of those pitfalls down to code in the starter. You will read three primitives the starter ships under `src/optimization/ab.py`: a deterministic SHA-256 hash-mod `pick_variant(client_id, traffic_split, salt)` that buckets the same user onto the same variant every call, a `call_with_variant` that renders one of two Jinja prompt templates and calls OpenAI through the same Vocareum-or-direct bridge `src/generator.py` uses, and a `log_assignment` helper that writes one JSONL row per call for Exercise 2's chi-squared analyzer. Production teams use OpenFeature-backed flags through LaunchDarkly, Statsig, or Flipt — the in-process flag here is good enough for this exercise, and the seams it leaves match what production systems expose.
 
-The starter is structured so the gateway already carries the contract this demo consumes. The gateway provides an `X-Client-Id` header on `POST /query` that threads through `src/gateway/routes.py:48-62` into `src/gateway/router.py:38-76` as the `client_id` keyword — that header is exactly what `pick_variant` needs to hash. A workload with no user identifier can instead use per-request weighted sampling; both choices appear here, both are named as production tradeoffs.
+The starter is structured so the gateway already carries the contract this demo consumes. The gateway provides an `X-Client-Id` header on `POST /query` that threads through `src/gateway/routes.py:64-70` into `src/gateway/router.py:39-79` as the `client_id` keyword — that header is exactly what `pick_variant` needs to hash. A workload with no user identifier can instead use per-request weighted sampling; both choices appear here, both are named as production tradeoffs.
 
 ## Part 1 — Sticky-by-user `pick_variant` via SHA-256
 
-Open `src/optimization/ab.py` and read `pick_variant` at lines 53-113. The shape is small:
+Open `src/optimization/ab.py` and read `pick_variant` at lines 59-127. The shape is small:
 
 ```python
 def pick_variant(client_id, traffic_split, *, salt=""):
@@ -36,7 +36,7 @@ The `client_id=None` fallback is honest, not lazy. A workload with no user ident
 
 ## Part 2 — `call_with_variant` and the two templates
 
-The router is `call_with_variant` at `src/optimization/ab.py:116-159`. It picks the template name from the variant key, renders it with the retrieved chunks using the same Jinja `Environment(loader=FileSystemLoader(...), keep_trailing_newline=True, autoescape=False)` idiom from `src/generator.py:34-38`, and calls OpenAI through the Vocareum-or-direct bridge:
+The router is `call_with_variant` at `src/optimization/ab.py:130-179`. It picks the template name from the variant key, renders it with the retrieved chunks using the same Jinja `Environment(loader=FileSystemLoader(...), keep_trailing_newline=True, autoescape=False)` idiom from `src/generator.py:34-38`, and calls OpenAI through the Vocareum-or-direct bridge:
 
 ```python
 template = _env.get_template(f"docbot_system_{variant}.j2")
@@ -61,11 +61,11 @@ Two design choices worth naming. The `base_url=settings.openai_base_url or None`
 
 The two templates live next to the base prompt at `prompts/`. `docbot_system_A.j2` is a verbatim copy of `docbot_system.j2`. `docbot_system_B.j2` differs in exactly one instruction — number 4 changes from "Be concise and direct" to "Be expansive" with a request to add a sentence or two of related context from the documentation. Multi-variable variant drift is a source of "the two variants are different in seven ways and you cannot attribute the metric shift to any one of them"; constraining the diff to one instruction is the experimental-design discipline. The `tests/test_ab.py::test_call_with_variant_renders_correct_template` test pins this by checking that "Be expansive" appears in variant B's system prompt and not in variant A's.
 
-`log_assignment` at `src/optimization/ab.py:162-211` writes one JSONL row per call to a path the analyzer reads. The schema is small and stable: `client_id`, `variant`, `question` (truncated to 500 chars), `answer` (truncated to 2000), `latency_ms`, `prompt_tokens`, `completion_tokens`, `cost_usd`, and `success`. The `client_id` field is preserved as null when the per-request fallback ran, so the analyzer can distinguish sticky rows from fallback rows after the fact — useful when you want to compare the two assignment schemes on the same dataset.
+`log_assignment` at `src/optimization/ab.py:182-230` writes one JSONL row per call to a path the analyzer reads. The schema is small and stable: `client_id`, `variant`, `question` (truncated to 500 chars), `answer` (truncated to 2000), `latency_ms`, `prompt_tokens`, `completion_tokens`, `cost_usd`, and `success`. The `client_id` field is preserved as null when the per-request fallback ran, so the analyzer can distinguish sticky rows from fallback rows after the fact — useful when you want to compare the two assignment schemes on the same dataset.
 
 ## Part 3 — Wiring through the gateway and the honest seam
 
-The gateway provides the `X-Client-Id` header on its `POST /query` route. Read `src/gateway/routes.py:48-62`:
+The gateway provides the `X-Client-Id` header on its `POST /query` route. Read `src/gateway/routes.py:64-70`:
 
 ```python
 @router.post(constants.QUERY_ROUTE, response_model=QueryResponse)
@@ -82,7 +82,7 @@ def query_endpoint(
     )
 ```
 
-The header value flows to `route_query(..., client_id=client_id)` at `src/gateway/router.py:38-76`. Today `route_query` accepts the keyword and forwards it for downstream use without consuming it — that contract leaves a clean place to hook in A/B routing. To turn on A/B for the gateway, you wrap `route_query`:
+The header value flows to `route_query(..., client_id=client_id)` at `src/gateway/router.py:39-79`. Today `route_query` accepts the keyword and forwards it for downstream use without consuming it — that contract leaves a clean place to hook in A/B routing. To turn on A/B for the gateway, you wrap `route_query`:
 
 ```python
 def ab_route_query(question, *, client_id, traffic_split, salt):

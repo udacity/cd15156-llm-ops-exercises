@@ -10,13 +10,13 @@ This starter is the ScikitDocs RAG app with the prompt loader, vector DB, RAG pi
 
 # Module 11 — Exercise: Extend the Golden Set, Sweep `top_k`, Diagnose Two Failures, Wire a CI Gate
 
-The recorded demo showed `make eval` running over the 30-row ScikitDocs golden set and how to read the four-metric output plus the deprecated-API sub-metric. These exercises make the workflow producible end-to-end. Four exercises, each ending in a small artifact: five golden-set rows that pull difficulty up, a `top_k` sweep table at 3-5-10, a two-question diagnostic report, and a CI threshold gate. Plan for twenty minutes, weighted toward the diagnostic exercise — that muscle memory is what production RAG eval pays for.
+The recorded demo ran `make eval` over the 30-row ScikitDocs golden set and showed how to read the four-metric output plus the deprecated-API sub-metric — in particular, why answer relevancy comes back low (the refusal signature: honest "not in context" refusals scored noncommittal=0) rather than off-topic answers. These exercises make the workflow producible end-to-end. Four exercises, each ending in a small artifact: five golden-set rows that pull difficulty up, a `top_k` sweep table at 3-5-10, a two-question diagnostic report, and a CI threshold gate. Plan for twenty minutes, weighted toward the diagnostic exercise — that muscle memory is what production RAG eval pays for.
 
 ## Setup
 
 Same as the demo. `make setup` passing, `make load-data` followed by `make seed-difficulty` reporting the corpus is in Chroma, and your `.env` carrying `OPENAI_API_KEY` plus `OPENAI_BASE_URL` if you are on Vocareum. You do not need `make serve` running for these exercises — RAGAS calls `run_pipeline` directly in-process, not through the HTTP gateway. The eval is a pure CLI workflow.
 
-Quick sanity check before you start: run `uv run python scripts/run_eval.py --limit=3 --max-workers=1` to confirm the suite runs end-to-end in under two minutes against the first three rows of the golden set. If that prints five numbers and exits cleanly, your environment is good. If it returns NaN cells, your judge calls are timing out — check that `OPENAI_BASE_URL` matches your key prefix, and confirm `--max-workers=1` is the cap.
+Quick sanity check before you start: run `uv run python scripts/run_eval.py --limit=3 --max-workers=1` to confirm the suite runs end-to-end in under two minutes against the first three rows of the golden set. If that prints five numbers and exits cleanly, your environment is good. If it returns NaN cells, your judge calls are timing out — check that `OPENAI_BASE_URL` matches your key prefix, and confirm `--max-workers=1` is the cap. If instead all four RAGAS metrics read 0.00 while `deprecated_apis` reads 1.00, your corpus is not loaded: retrieval returned no chunks, so there is no context to score. Run `make load-data` then `make seed-difficulty`, confirm each reports the chunks it wrote, then re-run.
 
 A budgeting note. One `make eval` against the 30-row set burns roughly 200-300 judge calls (four RAGAS metrics, each making one or more judge calls per row, plus the deprecated-API sub-metric runs in-process at $0 cost). At `gpt-4o-mini` pricing that is a few cents per run. `make eval-topk-sweep` triples that to about $0.08. Three full passes across the exercises adds up to under a dollar; on Vocareum the budget is the per-account cap, not direct spend. Keep your golden set small while you iterate.
 
@@ -37,21 +37,21 @@ The starter ships 30 rows at `data/golden_set.csv`. This exercise adds five rows
 
 3. Append the five rows to `data/golden_set.csv` with the same six-column shape. Mirror the CSV quoting conventions of the original — `expected_doc_ids` uses `|` as the inner separator inside a comma-separated cell. The simplest way is to copy two adjacent rows, then edit in place.
 
-4. Run the eval against the extended set:
+4. Run the eval against the extended set (four workers scores cleanly on this 30-to-35-row set; drop to `--max-workers=1` only if a cell returns NaN):
 
    ```
    PYTHONPATH=. uv run python scripts/run_eval.py \
-     --max-workers=1 \
-     --output=/tmp/learner-eval.json
+     --max-workers=4 \
+     --output=data/learner-eval.json
    ```
 
    The `--golden` flag is the override at `scripts/run_eval.py:25-30` if you want to keep your additions in a separate file; passing the default reads the in-place extension. The output JSON carries the aggregate plus per-row scores plus the deprecated-API citations for every row.
 
-5. Read the aggregate output and check the per-row scores in `/tmp/learner-eval.json`. Confirm two things. The easy rows score above 0.8 on faithfulness and answer relevancy; if they do not, your retrieval or generation has a baseline problem unrelated to your golden set. At least one hard row scores below 0.6 on at least one metric; if every row is above 0.8, your additions are too easy and the metric output has no signal. The variance is the value.
+5. Read the aggregate output, then look specifically at the per-row scores for your five new rows in `data/learner-eval.json`. The original rows already spread out from the seeded difficulty, so judge your additions on their own. The bar is spread: at least one of your five should dip below 0.6 on some metric, and if all five sit above 0.9 they are too easy and give nothing to diagnose. Do not over-read a single low row as a baseline problem, though — a row you tagged "easy" can dip because its answer is thinly covered in the corpus (a retrieval miss) or because the bot honestly refused, not because the row is wrong. Measured difficulty is not the same as the difficulty you assigned; the variance across your additions is the value.
 
 ### Acceptance criterion
 
-Five new rows appended to `data/golden_set.csv` with the same six-column schema. A JSON dump at `/tmp/learner-eval.json` with the aggregate metrics plus per-row scores. A one-paragraph note in your writeup naming the easy/medium/hard split, the aggregate scores, and confirming the spread (at least one row below 0.6 on at least one metric). If every score is above 0.9, rewrite at least one of your authored rows to be more ambiguous or to touch a version-sensitive topic until the spread appears.
+Five new rows appended to `data/golden_set.csv` with the same six-column schema. A JSON dump at `data/learner-eval.json` with the aggregate metrics plus per-row scores. A one-paragraph note in your writeup naming the easy/medium/hard split, the aggregate scores, and confirming the spread across your five new rows (at least one of them below 0.6 on at least one metric). If every score is above 0.9, rewrite at least one of your authored rows to be more ambiguous or to touch a version-sensitive topic until the spread appears.
 
 ### Hints
 
@@ -64,7 +64,7 @@ The smoke gate uses prefix matching, not exact equality, against `expected_doc_i
 <details>
 <summary>If the deprecated-API sub-metric drops below 1.0 on a row you authored</summary>
 
-The generator's answer cited a symbol on the `DEPRECATED_APIS` allow-list. Open `/tmp/learner-eval.json` and read `deprecated_apis_citations` on that row — the listed symbols name the trip. Carry the finding into Exercise 3 as a deprecated-API failure case.
+The generator's answer cited a symbol on the `DEPRECATED_APIS` allow-list. Open `data/learner-eval.json` and read `deprecated_apis_citations` on that row — the listed symbols name the trip. Carry the finding into Exercise 3 as a deprecated-API failure case.
 </details>
 
 ## Exercise 2 — Sweep `top_k` at 3, 5, and 10 and recommend a value
@@ -79,7 +79,7 @@ The generator's answer cited a symbol on the `DEPRECATED_APIS` allow-list. Open 
    make eval-topk-sweep
    ```
 
-   Wall-clock is roughly 45 minutes against the 30-row golden set at the default 8 workers on Vocareum, so start it and step away. Cost is about $0.08, since the suite fires the full four-metric stack at each of the three `top_k` values. The deprecated-API sub-metric runs in-process per row at no API cost.
+   Wall-clock is roughly 45 minutes against your extended golden set at the default 8 workers on Vocareum, so start it and step away. Cost is about $0.08, since the suite fires the full four-metric stack at each of the three `top_k` values. The deprecated-API sub-metric runs in-process per row at no API cost.
 
    `EVAL_MAX_WORKERS` defaults to 8, which parallelizes the judge calls through Vocareum for roughly a 2x speedup. RAGAS's own default of 16 over-saturates the proxy into NaN cells, so don't raise it that far. If a contended endpoint returns NaN, drop to `make eval-topk-sweep EVAL_MAX_WORKERS=1`.
 
@@ -88,19 +88,22 @@ The generator's answer cited a symbol on the `DEPRECATED_APIS` allow-list. Open 
    ```
    | top_k | faithfulness | answer_relevancy | context_recall | context_precision |
    |-------|--------------|------------------|----------------|-------------------|
-   | 3     | 0.83         | 0.92             | 0.71           | 0.78              |
-   | 5     | 0.86         | 0.92             | 0.79           | 0.71              |
-   | 10    | 0.87         | 0.91             | 0.86           | 0.60              |
+   | 3     | 0.723        | 0.618            | 0.629          | 0.790             |
+   | 5     | 0.763        | 0.656            | 0.781          | 0.770             |
+   | 10    | 0.751        | 0.694            | 0.783          | 0.709             |
    ```
 
-   *Caption: `top_k=5` is the standard pick — clears the recall@5 ≥ 0.70 floor at acceptable precision, keeps the prompt short, stays within the Wilson 95% CI band of `top_k=10` on recall.*
+   The recall-up / precision-down trend is clear across `top_k` 3→5→10. Your own numbers will drift, and a judge call that gets throttled mid-row can leave a cell reading `NaN`; re-run or drop to `EVAL_MAX_WORKERS=1` to fill it.
+
+
+   *Caption: the standard pick is `top_k=5` — short prompt, recall within the Wilson 95% CI band of `top_k=10`. Ground the recommendation in your own numbers rather than copying a value: if your RAGAS `context_recall` at `top_k=5` lands below 0.70, recommend the smallest `top_k` that clears it, or defend `top_k=5` on the binary smoke-gate recall@5 instead (the two recall measures do not have to agree).*
 
    The visible curve is the lesson. The eight seeded difficulty chunks — three near-duplicates, three version-conflicts, two embedding-confusion pairs — guarantee the sweep produces variance. Without those eight, the unusually-clean scikit-learn docs corpus would hit ~0.95 recall at every `top_k` and the table would be flat. The seeded chunks are 0.2% of the corpus and the smoke gate's recall@5 ≥ 0.7 floor still holds; their job is to surface signal in the sweep.
 
-   Save the table — pipe `make eval-topk-sweep > /tmp/topk-sweep.md` or copy the printed table into your writeup.
+   Save the table — pipe `make eval-topk-sweep > data/topk-sweep.md` or copy the printed table into your writeup.
 
 3. Read the table for the two-axis tradeoff:
-   - **Context recall climbs with `top_k`** — more chunks in the bag means a higher chance the relevant one is in there. A recall-at-5 ≥ 0.7 anchor maps to `context_recall ≥ 0.7` in the RAGAS column, which is the LLM-judged analogue of binary-relevance recall-at-k. Check that your `top_k=5` row clears that floor. If it does not, the retrieval pipeline is below the rubric bar and the fix is upstream — chunking, embedding, or the similarity threshold.
+   - **Context recall climbs with `top_k`** — more chunks in the bag means a higher chance the relevant one is in there. RAGAS `context_recall` is the LLM-judged analogue of binary-relevance recall-at-k, but it is not the same number as the smoke gate's binary recall@5 — on the seeded corpus it commonly reads lower, because honest refusals on rows where retrieval missed pull it down. So don't expect RAGAS `context_recall ≥ 0.70` just because the smoke gate clears 0.70. The rubric floor is the binary smoke-gate recall@5; treat RAGAS `context_recall` as a directional signal. If it stays low across `top_k` even as the smoke gate passes, the fix is still upstream — chunking, embedding, or the similarity threshold.
    - **Context precision drops with `top_k`** — more chunks means more noise. The rank-weighted precision metric falls because irrelevant chunks dilute the top-k.
    - **Faithfulness rises slightly with `top_k`** because the generator has more material to ground claims against. But it tops out — past `top_k=10`, the prompt gets long enough that the model starts ignoring the tail.
    - **Answer relevancy is mostly flat** across `top_k` because the question itself does not change.
@@ -129,14 +132,14 @@ Aggregate metrics tell you whether the system is healthy in the median. The diag
 
 ### What to do
 
-1. Open the `/tmp/learner-eval.json` from Exercise 1 (or run the eval again with `--output` if you skipped that step). For each row, the JSON carries the question, the four RAGAS metric scores, the retrieved contexts, the generated answer, the ground truth, the `deprecated_apis_score`, and `deprecated_apis_citations`.
+1. Open the `data/learner-eval.json` from Exercise 1 (or run the eval again with `--output` if you skipped that step). For each row, the JSON carries the question, the four RAGAS metric scores, the retrieved contexts, the generated answer, the ground truth, the `deprecated_apis_score`, and `deprecated_apis_citations`.
 
 2. Sort the rows by the lowest single metric score (across all five surfaces, including the deprecated-API sub-metric). Pick the two rows with the lowest scores. If both lowest are faithfulness drops, that is fine — pick them; the diagnostic loop works the same. If one of your two is a `deprecated_apis_score = 0.0`, prioritize that pick — library-API hallucinations are the easiest to demonstrate and the most actionable.
 
 3. For each picked row, apply the four-surface diagnostic from the demo:
    - **Retrieval failure.** `context_recall` low (below 0.5) and `context_precision` low. Fix lives upstream — chunking, embedding choice, similarity threshold.
    - **Generation failure.** `context_recall` and `context_precision` both high but `faithfulness` low. Fix lives in the prompt template, the model choice, or a downstream output guardrail.
-   - **Routing failure.** `answer_relevancy` low while everything else is high. The pipeline answered a different question. Fix at the routing layer.
+   - **Refusal (noncommittal).** `answer_relevancy` at 0.0 while the rest look fine. The bot declined to commit rather than answering a different question, and RAGAS scores a refusal as zero. Read `context_recall`: low means a real retrieval miss (fix upstream), high means a fine "it depends" answer, a correct out-of-scope refusal, or an over-cautious hedge (prompt or corpus work). Only a minority of zero-relevancy rows are retrieval misses, so diagnose before you fix.
    - **Deprecated-API failure.** `deprecated_apis_score = 0.0` with `deprecated_apis_citations` listing the offending symbol. Fix is a stricter prompt naming the corpus version, or an output guardrail that scans for removed symbols. The same guardrail catches both faithfulness drops and deprecated-API drops, which is why the sub-metric sits alongside the faithfulness check rather than separately.
 
 4. For each of the two picked rows, write two paragraphs.
@@ -150,7 +153,7 @@ Aggregate metrics tell you whether the system is healthy in the median. The diag
 
 ### Acceptance criterion
 
-A two-question diagnostic writeup in your project notes. For each question: the question text, the five metric scores, a one-paragraph surface-naming, and a one-paragraph concrete fix. A closing paragraph naming the downstream fixes (semantic caching, output guardrails, RAGOps regression gating and corpus-drift detection) by one sentence each. The writeup should be defensible — a teammate reading it in a code review should be able to trace every claim to a number in your `/tmp/learner-eval.json`. Acknowledge the ±0.14 confidence band somewhere in the writeup so the reader knows you treated the metrics as directional rather than statistically conclusive.
+A two-question diagnostic writeup in your project notes. For each question: the question text, the five metric scores, a one-paragraph surface-naming, and a one-paragraph concrete fix. A closing paragraph naming the downstream fixes (semantic caching, output guardrails, RAGOps regression gating and corpus-drift detection) by one sentence each. The writeup should be defensible — a teammate reading it in a code review should be able to trace every claim to a number in your `data/learner-eval.json`. Acknowledge the ±0.14 confidence band somewhere in the writeup so the reader knows you treated the metrics as directional rather than statistically conclusive.
 
 ### Hints
 
@@ -180,7 +183,7 @@ Diagnostic value lives in per-row scores; operational value in a build-failing a
 
    ```
    PYTHONPATH=. uv run python scripts/run_eval.py \
-     --limit=5 --max-workers=1 \
+     --limit=5 --max-workers=4 \
      --faithfulness-min=0.70 --context-recall-min=0.65
    echo "exit=$?"
    ```
@@ -201,6 +204,7 @@ Print parsed args at the top of `main()` to confirm `args.faithfulness_min` carr
 
 ## Common pitfalls
 
+- **Corpus not loaded = all-zero metrics.** If the four RAGAS metrics all read 0.00 while `deprecated_apis` reads 1.00, the `scikit_docs` Chroma collection is empty: retrieval returns no chunks, so every context-dependent metric collapses and the generator answers with no context. Run `make load-data` then `make seed-difficulty` before `make eval`. Re-running the eval will not move the zeros, since it is missing data, not judge noise.
 - **Golden set too easy.** If every row scores above 0.9, the suite is reporting "everything is fine" with no signal. Author compositional or version-sensitive rows until the distribution shows real variance.
 - **LLM-judge cost runaway.** Each metric is one or more LLM calls per row. Use the smallest judge model that scores consistently (the starter pins `gpt-4o-mini`) and keep the golden set tight; running `make eval-topk-sweep` hourly in CI adds up.
 - **`EVAL_MAX_WORKERS` contention.** Default 8, which the Vocareum proxy handles cleanly at roughly a 2x speedup. RAGAS's default of 16 over-saturates it into NaN-producing TimeoutErrors, so don't raise it that far. If a contended endpoint still returns NaN, drop to 1.

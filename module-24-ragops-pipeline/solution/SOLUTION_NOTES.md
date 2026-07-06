@@ -58,7 +58,7 @@ After `cp data/docs_inbox-templates/bad_missing_field.json data/docs_inbox/bad_s
 ingestion.watcher: Quarantined bad_schema.json: missing required fields: ['metadata']
 ```
 
-The `failed/` directory now contains four artifacts (two `.json` + two `.error.txt`). The main inbox contains only `my_first_section.json` from Exercise 1. The two quarantine messages came from different layers of the watcher — the first from the `json.JSONDecodeError` exception handler at `src/ingestion/watcher.py:175-179`, the second from `validate_section` at `src/ingestion/watcher.py:78-103`. Two-stage validation surfaces the right diagnostic at the right layer.
+The `failed/` directory now contains four artifacts (two `.json` + two `.error.txt`). The main inbox contains only `my_first_section.json` from Exercise 1. The two quarantine messages came from different layers of the watcher — the first from the `json.JSONDecodeError` exception handler at `src/ingestion/watcher.py:198-202`, the second from `validate_section` at `src/ingestion/watcher.py:85-113`. Two-stage validation surfaces the right diagnostic at the right layer.
 
 ### Exercise 2 stretch — failure summary one-liner
 
@@ -85,13 +85,13 @@ for p in sorted(Path('data/docs_inbox/failed').glob('*.json')):
 `make migrate-blue-green` summary block (representative):
 
 ```
-target_color=scikit_docs_blue
-previous_color=scikit_docs  (legacy bootstrap)
-recall@5=0.83
-threshold=0.70
-swapped=True
-active_collection_path=data/ACTIVE_COLLECTION
+[migrate] target=scikit_docs_blue
+[migrate] recall@5=0.830 vs threshold=0.700 on n=12
+[migrate] previous_active=scikit_docs
+[migrate] swapped=True
 ```
+
+`previous_active=scikit_docs` is the legacy bootstrap collection. On success the script also prints a `duration=` line, `[migrate] alias now points at scikit_docs_blue`, and the absolute `state file:` path for `data/ACTIVE_COLLECTION`.
 
 `cat data/ACTIVE_COLLECTION` prints `scikit_docs_blue` (one line, no newline guarantees but the resolver tolerates both). The Python sanity check reports:
 
@@ -116,11 +116,10 @@ scikit_docs_blue → ~750 rows  (new active color)
 Second `make migrate-blue-green` summary:
 
 ```
-target_color=scikit_docs_green
-previous_color=scikit_docs_blue
-recall@5=0.83  (same source tag, similar score)
-threshold=0.70
-swapped=True
+[migrate] target=scikit_docs_green
+[migrate] recall@5=0.830 vs threshold=0.700 on n=12
+[migrate] previous_active=scikit_docs_blue
+[migrate] swapped=True
 ```
 
 `cat data/ACTIVE_COLLECTION` now prints `scikit_docs_green`. `list_collections` now shows three: `scikit_docs`, `scikit_docs_blue`, `scikit_docs_green`. The previous color (blue) is the natural rollback target.
@@ -130,13 +129,14 @@ swapped=True
 `uv run python scripts/migrate_blue_green.py --threshold 1.01 --keep-failed` summary:
 
 ```
-target_color=scikit_docs_blue  (rebuilt; was the inactive color after Part B)
-previous_color=scikit_docs_green
-recall@5=1.000
-threshold=1.01
-swapped=False
-note: --keep-failed retained scikit_docs_blue for forensics
+[migrate] target=scikit_docs_blue
+[migrate] recall@5=1.000 vs threshold=1.010 on n=12
+[migrate] previous_active=scikit_docs_green
+[migrate] swapped=False
+[migrate] reason: recall@5=1.000 below threshold 1.010; alias unchanged
 ```
+
+The target is blue again: it was the inactive color after Part B, rebuilt for this run and retained by `--keep-failed`.
 
 The 12-row eval sample scores a perfect recall@5, so the gate can only be
 forced to fail with a floor above 1.0 — `--threshold 1.01` does that. The

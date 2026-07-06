@@ -16,6 +16,7 @@ from tenacity import wait_exponential_jitter
 
 from src.generator import _call_chat_completions
 
+# TODO(m18-ex2): author the two retry tests — 5xx-then-success retries and 4xx fails fast.
 # Speed up the suite — production policy uses initial=1, max=8 which would
 # block the test for several seconds across two retries.
 _call_chat_completions.retry.wait = wait_exponential_jitter(initial=0.01, max=0.05)

@@ -30,6 +30,7 @@ from src import constants
 from src.config import settings
 from src.gateway.router import route_query
 from src.guardrails.input_guards import (
+    detect_invisible_unicode,
     detect_pii,
     detect_prompt_injection,
     detect_system_prompt_leak,
@@ -94,6 +95,11 @@ def query_endpoint(
     if rl_reason is not None:
         return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=rl_reason)
 
+    # TODO(m20-exercise-1): Option A wiring — call your detect_invisible_unicode here, between the rate-limit and injection checks (cheaper checks run earlier); return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=reason) on a hit
+    iu_reason = detect_invisible_unicode(request.question)
+    if iu_reason is not None:
+        return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=iu_reason)
+
     # 2. Prompt injection (anchored OWASP LLM01:2025).
     pi_reason = detect_prompt_injection(request.question)
     if pi_reason is not None:
@@ -136,6 +142,7 @@ def query_endpoint(
     #    introduced upstream — a validation failure here is a server-
     #    side bug, not a user error, so we return 502 (Bad Gateway),
     #    not 4xx.
+    # TODO(m20-exercise-4): wrap response construction in try/except ValidationError; return 502 with detail="output_validation_failed" on failure
     try:
         QueryResponse.model_validate(response.model_dump())
     except ValidationError as exc:

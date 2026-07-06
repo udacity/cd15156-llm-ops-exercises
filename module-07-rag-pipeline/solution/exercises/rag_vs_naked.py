@@ -12,8 +12,9 @@ Run from the starter directory::
     uv run python exercises/rag_vs_naked.py | tee /tmp/comparison.txt
 """
 
-# RAG vs naked-call comparison — prints both answers side by side for tallying
-# materially-different vs materially-similar outcomes.
+# TODO(m07-ex3): fire the same five questions through run_pipeline (RAG on)
+# and a direct OpenAI ChatCompletions call (RAG off), print both answers side
+# by side so the learner can tally materially-different vs materially-similar.
 
 from openai import OpenAI
 

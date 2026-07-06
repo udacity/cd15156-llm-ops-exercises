@@ -99,15 +99,30 @@ def print_report(rows: list[dict]) -> None:
     print()
 
     table = contingency_table(rows, variants)
-    result = chi2_contingency(table)
     for variant, (succ, fail) in zip(variants, table):
         total = succ + fail
         rate = succ / total if total else 0.0
         print(f"Variant {variant}: {succ}/{total} success ({rate:.1%})")
-    print(f"chi2 statistic:                {result.statistic:.3f}")
-    print(f"p-value:                       {result.pvalue:.4f}")
-    print(f"degrees of freedom:            {result.dof}")
-    print(f"significant at alpha=0.05:     {result.pvalue < 0.05}")
+
+    # chi2_contingency raises when a table margin is zero (every call scored
+    # the same outcome). The usual cause is an unloaded corpus: retrieval
+    # returns nothing, every answer refuses, so success is uniformly False.
+    # Report that instead of crashing, and still print the cost/latency block.
+    success_total = sum(succ for succ, _ in table)
+    failure_total = sum(fail for _, fail in table)
+    if success_total == 0 or failure_total == 0:
+        only = "failure" if success_total == 0 else "success"
+        print(
+            f"chi-squared not computable: every call scored {only}. Both "
+            "outcomes must appear (check the corpus is loaded via "
+            "`make load-data`)."
+        )
+    else:
+        result = chi2_contingency(table)
+        print(f"chi2 statistic:                {result.statistic:.3f}")
+        print(f"p-value:                       {result.pvalue:.4f}")
+        print(f"degrees of freedom:            {result.dof}")
+        print(f"significant at alpha=0.05:     {result.pvalue < 0.05}")
     print()
 
     header = f"{'metric':<24}" + "".join(f"{v:>12}" for v in variants)

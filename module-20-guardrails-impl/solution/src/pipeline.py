@@ -26,7 +26,10 @@ from src.store import query
 
 
 def run_pipeline(
-    question: str, top_k: int = 5, model: str | None = None
+    question: str,
+    top_k: int = 5,
+    model: str | None = None,
+    max_tokens: int | None = None,
 ) -> QueryResponse:
     """Run the full RAG pipeline and return a structured ``QueryResponse``.
 
@@ -48,7 +51,8 @@ def run_pipeline(
     chosen_model = model or settings.model_complex
     query_embedding = embed_query(question)
     sources = query(query_embedding, n_results=top_k)
-    answer, usage, cost = generate(question, sources, chosen_model)
+    # TODO(m20-exercise-3): thread a max_tokens kwarg through run_pipeline into generate()
+    answer, usage, cost = generate(question, sources, chosen_model, max_tokens=max_tokens)
     confidence = (
         sum(s.similarity_score for s in sources) / len(sources) if sources else 0.0
     )

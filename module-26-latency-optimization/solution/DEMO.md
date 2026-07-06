@@ -75,7 +75,7 @@ def get_collection(name: str = "scikit_docs") -> Any:
     )
 ```
 
-The teachable surface is the metadata dict. The `scikit_docs` collection pins `hnsw:space=cosine` because OpenAI embeddings are normalized and Chroma's L2 default silently corrupts ranking against them — that override is load-bearing. Beyond `hnsw:space`, none of the other HNSW parameters are set. Chroma's defaults take over: `hnsw:M = 16`, `hnsw:construction_ef = 100`, `hnsw:search_ef = 100`. Compare against the cache collection at `src/cache/semantic.py`, which also pins `hnsw:space=cosine` for the same normalisation reason. Both collections do the one thing that has to be set; both leave the recall-versus-latency knobs at defaults.
+The teachable surface is the metadata dict. The `scikit_docs` collection pins `hnsw:space=cosine` because the pipeline's confidence score and the semantic cache's hit threshold are calibrated on cosine distances, and Chroma's default is L2. On normalized OpenAI embeddings L2 preserves the ranking but changes the score scale, which silently breaks both calibrations, so the override is load-bearing. Beyond `hnsw:space`, none of the other HNSW parameters are set. Chroma's defaults take over: `hnsw:M = 16`, `hnsw:construction_ef = 100`, `hnsw:search_ef = 100`. Compare against the cache collection at `src/cache/semantic.py`, which also pins `hnsw:space=cosine` for the same reason: its 0.85 hit threshold is a cosine threshold. Both collections do the one thing that has to be set; both leave the recall-versus-latency knobs at defaults.
 
 If you wanted to tune the docs collection — at scale where it would help — the Chroma syntax is what the docs show:
 

@@ -31,7 +31,7 @@ from src.tracing import traced_pipeline
 
 def select_model(query_type: QueryType) -> str:
     """Map a classifier label to a concrete OpenAI model name."""
-    # Premium tier first — most specific case, falls through to complex then simple.
+    # TODO(m18-ex1): add the premium-tier dispatch arm (check first — most specific case)
     if query_type == "premium":
         return settings.model_premium
     if query_type == "complex":
@@ -39,7 +39,7 @@ def select_model(query_type: QueryType) -> str:
     return settings.model_simple
 
 
-# ``provider`` keyword selects the adapter — "openai" uses traced_pipeline, "anthropic" swaps to the stub.
+# TODO(m18-ex3): add ``provider: str = "openai"`` keyword to route_query; when ``provider == "anthropic"`` swap chosen_model to "claude-sonnet-stub" and dispatch through the Anthropic adapter (src.gateway.providers.anthropic.generate) before traced_pipeline
 def route_query(
     question: str,
     top_k: int = 5,

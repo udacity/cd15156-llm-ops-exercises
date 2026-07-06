@@ -33,7 +33,7 @@ class QueryResponse(BaseModel):
     """Standardised response returned by the ScikitDocs `/query` route."""
 
     answer: str
-    # Structured-output contract: citations require ≥1 source, confidence in [0.0, 1.0]
+    # TODO(m20-exercise-4): add Pydantic Field constraints — citations min_length=1, confidence between 0.0 and 1.0
     citations: list[Source] = Field(..., min_length=1)
     confidence: float = Field(..., ge=0.0, le=1.0)
     model: str
