@@ -663,7 +663,7 @@ pystache==0.6.8
     # via
     #   arize-phoenix
     #   arize-phoenix-evals
-pytest==8.4.2
+pytest==9.0.3
     # via
     #   -r requirements_in.txt
     #   pytest-asyncio
