@@ -666,7 +666,7 @@ python-dotenv==1.2.2
     #   -r requirements_in.txt
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.30
+python-multipart==0.0.31
     # via arize-phoenix
 pytz==2026.2
     # via -r requirements_in.txt
