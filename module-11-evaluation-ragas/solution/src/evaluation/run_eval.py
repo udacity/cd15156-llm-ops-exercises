@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from datasets import Dataset
+from tqdm import tqdm
 from langchain_openai import ChatOpenAI as LangchainChatOpenAI
 from langchain_openai import OpenAIEmbeddings as LangchainOpenAIEmbeddings
 from ragas import evaluate
@@ -95,7 +96,7 @@ def build_eval_dataset(golden_set: list[dict], *, top_k: int = 5) -> Dataset:
     retrieved_contexts: list[list[str]] = []
     ground_truths: list[str] = []
 
-    for row in golden_set:
+    for row in tqdm(golden_set, desc="Generating answers", unit="q"):
         response = run_pipeline(row["question"], top_k=top_k)
         questions.append(row["question"])
         answers.append(response.answer)

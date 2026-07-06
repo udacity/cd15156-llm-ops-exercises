@@ -27,9 +27,16 @@ Two design notes worth naming:
   short-circuited to a single ``done`` event with ``blocked_by`` set;
   when it starts with ``"pii_redacted:"`` the question has been
   rewritten in place and the stream proceeds with the redacted text.
-  Output guards over streamed tokens are intentionally deferred — the
-  hallucination and off-topic checks both need the whole answer to fire
-  and applying them on a partial token stream is a follow-up exercise.
+  Output guards over streamed tokens are intentionally deferred. The
+  route assembles the whole answer before the ``done`` event, so the
+  hallucination and off-topic judges could run there, but by then every
+  token has already been streamed to the client and a failing guard
+  cannot retract what the user has already seen. The blocking ``/query``
+  route can suppress a bad answer only because it holds the full response
+  before sending a byte. Guarding a live stream means choosing among
+  buffer-then-stream (which forfeits the TTFT win), a retraction event
+  the client must honor, or windowed pattern-checks that cannot run the
+  whole-answer groundedness judge. That trade-off is a follow-up exercise.
 """
 
 import json

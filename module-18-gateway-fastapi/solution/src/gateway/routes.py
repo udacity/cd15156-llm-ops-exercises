@@ -56,7 +56,7 @@ class QueryRequest(BaseModel):
 
     question: str = Field(..., min_length=1, max_length=4000)
     top_k: int = Field(constants.DEFAULT_TOP_K, ge=1, le=20)
-    # Provider selector — defaults to OpenAI; "anthropic" picks the stub adapter.
+    # TODO(m18-ex3): add ``provider: Literal["openai", "anthropic"] = "openai"`` field to QueryRequest (import Literal from typing) and thread ``request.provider`` into the ``route_query`` call below
     provider: Literal["openai", "anthropic"] = "openai"
 
 

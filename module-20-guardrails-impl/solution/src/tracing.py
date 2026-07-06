@@ -129,7 +129,10 @@ def _summarize_sources(sources: list[Source]) -> str:
 
 
 def traced_pipeline(
-    question: str, model: str | None = None, top_k: int = 5
+    question: str,
+    model: str | None = None,
+    top_k: int = 5,
+    max_tokens: int | None = None,
 ) -> QueryResponse:
     """Run ``run_pipeline``'s composition with explicit spans per stage.
 
@@ -189,7 +192,10 @@ def traced_pipeline(
             with tracer.start_as_current_span("generate") as gen_span:
                 gen_span.set_attribute("llm.model_name", chosen_model)
                 gen_span.set_attribute("input.value", question)
-                answer, usage, cost = generate(question, sources, chosen_model)
+                # TODO(m20-exercise-3): thread a max_tokens kwarg through traced_pipeline into generate() — the live gateway path runs through here, not run_pipeline
+                answer, usage, cost = generate(
+                    question, sources, chosen_model, max_tokens=max_tokens
+                )
                 gen_span.set_attribute("output.value", answer)
                 gen_span.set_attribute("llm.token_count.prompt", usage.prompt_tokens)
                 gen_span.set_attribute(

@@ -189,6 +189,7 @@ def traced_pipeline(
             with tracer.start_as_current_span("generate") as gen_span:
                 gen_span.set_attribute("llm.model_name", chosen_model)
                 gen_span.set_attribute("input.value", question)
+                # TODO(m20-exercise-3): thread a max_tokens kwarg through traced_pipeline into generate() — the live gateway path runs through here, not run_pipeline
                 answer, usage, cost = generate(question, sources, chosen_model)
                 gen_span.set_attribute("output.value", answer)
                 gen_span.set_attribute("llm.token_count.prompt", usage.prompt_tokens)

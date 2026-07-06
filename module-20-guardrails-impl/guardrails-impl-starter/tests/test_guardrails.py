@@ -318,3 +318,6 @@ def test_query_endpoint_blocks_hallucination_at_output_layer(monkeypatch) -> Non
     body = response.json()
     assert body["answer"] == SAFE_FILTERED_MESSAGE
     assert body["blocked_by"].startswith("hallucination:")
+
+
+# TODO(m20-exercise-1): parametrised test for your new guard — one input that triggers it, one clean input, one edge case that must NOT trigger (Option A: an emoji is visible Unicode and must pass)

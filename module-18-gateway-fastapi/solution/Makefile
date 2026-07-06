@@ -1,4 +1,4 @@
-.PHONY: help setup serve serve-proxy load-data seed-difficulty smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-analyze test verify consistency-check
+.PHONY: help setup serve serve-proxy load-data seed-difficulty probe-tiers smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-analyze test verify consistency-check
 
 # Make `src` importable for scripts run via `uv run python scripts/...`.
 # (Pytest gets this from `pythonpath = ["."]` in pyproject.toml; scripts don't.)
@@ -35,6 +35,9 @@ load-data: ## Ingest scikit-learn docs into Chroma (fills scripts/load_data.py)
 
 seed-difficulty: ## Upsert 8 deliberately-confusing chunks — run after load-data
 	uv run python scripts/seed_difficulty.py
+
+probe-tiers: ## Print the classifier tier + model for the Ex1 sample questions
+	uv run python scripts/probe_tiers.py
 
 smoke-gate: ## Wave-4 smoke RAG gate — recall@5 ≥ 0.7 on 3 representative queries
 	uv run python scripts/smoke_gate.py

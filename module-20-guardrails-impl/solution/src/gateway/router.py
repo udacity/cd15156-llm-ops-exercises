@@ -25,6 +25,7 @@ from src.cache.semantic import lookup, store
 from src.config import settings
 from src.cost.tracker import log_request
 from src.gateway.classifier import QueryType, classify
+from src.guardrails.rate_limit import MAX_OUTPUT_TOKENS
 from src.models import QueryResponse
 from src.tracing import traced_pipeline
 
@@ -72,7 +73,10 @@ def route_query(
     query_type = classify(question)
     chosen_model = model or select_model(query_type)
 
-    response = traced_pipeline(question, top_k=top_k, model=chosen_model)
+    # TODO(m20-exercise-3): forward MAX_OUTPUT_TOKENS from src.guardrails.rate_limit into the traced_pipeline call so every gateway request carries the output cap
+    response = traced_pipeline(
+        question, top_k=top_k, model=chosen_model, max_tokens=MAX_OUTPUT_TOKENS
+    )
     if settings.enable_semantic_cache:
         store(question, response)
     log_request(chosen_model, response.tokens, response.cost_usd, query_type)

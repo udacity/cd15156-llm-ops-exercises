@@ -1,17 +1,164 @@
+# TODO(m22-exercise-1): complete the 200-call sticky-by-user A/B harness.
+# Everything below is scaffolded for you: the imports, constants, question pool,
+# LLM-as-judge scorer, retrieval helper, and the progress line. Your work is the
+# four TODO(m22-exercise-1) seams inside main(): assign the sticky variant,
+# invoke it, score the answer, and log one JSONL row per call. Run
+# `grep -n "TODO(m22-exercise-1)" scripts/ab_simulate.py` to list them.
 """200-call sticky-by-user A/B harness for the ScikitDocs assistant.
 
 Builds a 50-client_id pool, picks each call's client_id at random
 from the pool, calls pick_variant with a stable salt so assignments
-are sticky across calls, calls OpenAI through call_with_variant, and
+are sticky across calls, calls OpenAI through call_with_variant,
+scores each answer with an LLM-as-judge faithfulness check, and
 appends one JSONL row per call to data/ab_log.jsonl. The analyzer at
 scripts/ab_analyze.py reads that file.
 
 When you finish Exercise 2, replace this docstring with the written
-A/B decision Exercise 3 asks for — chi-squared p-value, cost delta,
+A/B decision Exercise 3 asks for: chi-squared p-value, cost delta,
 latency delta, and the next step. See INSTRUCTIONS.md.
 """
-# TODO(m22-exercise-1): write the 200-call sticky-by-user A/B harness here.
-# See INSTRUCTIONS.md → Exercise 1 step 2 for the structure (constants,
-# QUESTIONS pool, retrieve() helper, main() loop). After Exercise 2 analysis,
-# replace the docstring above with the Exercise 3 decision writeup.
-raise NotImplementedError("TODO(m22-exercise-1): implement the A/B harness")
+# Imports: stdlib json/randomness/path, Jinja + OpenAI for the judge, the
+# three A/B primitives, config settings, and run_pipeline.
+import json
+import random
+import time
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+from openai import OpenAI
+
+from src.config import settings
+from src.models import Source  # noqa: F401  (re-exported for downstream use)
+from src.optimization import call_with_variant, log_assignment, pick_variant
+from src.pipeline import run_pipeline  # for real retrieval
+
+# Harness constants — 200 calls, 50 clients, 50/50 split, stable salt for sticky
+# assignment, and the JSONL log path the analyzer reads.
+N_CALLS = 200
+N_CLIENTS = 50
+TRAFFIC_SPLIT = {"A": 0.5, "B": 0.5}
+SALT = "prompt-style-v1"
+LOG_PATH = Path("data/ab_log.jsonl")
+
+# Question pool the harness samples from — five to ten scikit-learn API questions
+# keeps retrieval realistic without ballooning per-run cost.
+QUESTIONS = [
+    "What is the default criterion for RandomForestClassifier?",
+    "How does HistGradientBoostingRegressor handle missing values?",
+    "What are the supported solvers for LogisticRegression?",
+    "Does DBSCAN require the number of clusters as input?",
+    "What's the difference between fit_transform and transform?",
+    "How does KMeans pick initial centroids by default?",
+    "What metrics does cross_val_score support out of the box?",
+    "How do you handle imbalanced classes in scikit-learn?",
+    "What is the difference between Pipeline and ColumnTransformer?",
+    "How does GridSearchCV decide which combination is best?",
+]
+
+# LLM-as-judge faithfulness scorer. The naive citation check
+# `any(s.doc_id in answer ...)` never fires on this corpus — the doc_ids
+# are RST section anchors like `modules.svm.kernel-functions`, which the
+# model never reproduces verbatim, so every call would score False and the
+# chi-squared table would be degenerate. Reading the answer against the
+# retrieved chunks gives a graded, honest success signal.
+_judge_env = Environment(
+    loader=FileSystemLoader("prompts"),
+    keep_trailing_newline=True,
+    autoescape=False,
+)
+_judge_client = OpenAI(base_url=settings.openai_base_url or None)
+
+
+def judge_supported(answer: str, sources: list) -> bool:
+    """Return True when the judge rules the answer SUPPORTED by sources.
+
+    Renders prompts/judge.j2 and asks gpt-4o-mini for a JSON verdict.
+    Fails open (returns True) on an empty answer or any judge error so a
+    transient proxy hiccup doesn't depress the measured success rate.
+    """
+    if not answer.strip() or not sources:
+        return False
+    context = "\n\n".join(f"[{s.doc_id}]\n{s.chunk_text}" for s in sources)
+    prompt = _judge_env.get_template("judge.j2").render(
+        answer=answer, source=context
+    )
+    try:
+        resp = _judge_client.chat.completions.create(
+            model=settings.model_simple,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        verdict = (
+            json.loads(resp.choices[0].message.content or "{}").get("verdict")
+            or ""
+        ).upper()
+    except Exception:
+        return True  # fail open — don't let a judge blip skew the metric
+    return verdict == "SUPPORTED"
+
+
+# Reuses the pipeline retrieval seam so the harness sees the same contexts that
+# the production route_query path would feed the generator.
+def retrieve(question: str) -> list:
+    """Reuse the starter's pipeline retrieval seam.
+
+    `src/pipeline.py` exposes `run_pipeline` which returns a
+    QueryResponse with a `.sources` list. We re-use that path so the
+    A/B harness sees the same retrieved contexts the production
+    `route_query` path would feed to the generator.
+    """
+    resp = run_pipeline(question, top_k=5)
+    return resp.sources
+
+
+def _fmt(seconds: float) -> str:
+    """Format a duration as M:SS for the progress line."""
+    m, s = divmod(int(seconds), 60)
+    return f"{m}:{s:02d}"
+
+
+# For each call: pick a random client_id, retrieve sources, assign + invoke the
+# variant, score success with the LLM judge, and append one JSONL row. The
+# progress line every 10 calls shows a bar, elapsed time, the split since the
+# last line, and an ETA, so a multi-minute run never looks hung.
+def main() -> None:
+    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    clients = [f"user-{i:03d}" for i in range(N_CLIENTS)]
+    print(f"Running {N_CALLS} A/B calls...")
+    start = last = time.monotonic()
+    for i in range(N_CALLS):
+        question = random.choice(QUESTIONS)
+        client_id = random.choice(clients)
+        sources = retrieve(question)
+        # TODO(m22-exercise-1): assign this client's sticky variant by calling
+        # pick_variant(client_id, TRAFFIC_SPLIT, salt=SALT). The client_id plus a
+        # FIXED salt is what keeps the same user on the same variant every call;
+        # drop the client_id or vary the salt and stickiness breaks.
+        # TODO(m22-exercise-1): invoke the chosen variant with
+        # call_with_variant(question, sources, variant); it returns the tuple
+        # (answer, usage, cost, latency_ms).
+        # TODO(m22-exercise-1): score the answer with judge_supported(answer,
+        # sources). This pass/fail label is the outcome the chi-squared test
+        # compares between variants A and B, so it has to be honest.
+        # TODO(m22-exercise-1): append one JSONL row for this call with
+        # log_assignment(LOG_PATH, client_id=client_id, variant=variant,
+        # question=question, answer=answer, usage=usage, cost_usd=cost,
+        # latency_ms=latency_ms, success=success).
+        if (i + 1) % 10 == 0:
+            now = time.monotonic()
+            done = i + 1
+            elapsed, split = now - start, now - last
+            eta = elapsed / done * (N_CALLS - done)
+            filled = 20 * done // N_CALLS
+            bar = "#" * filled + "-" * (20 - filled)
+            print(
+                f"[{bar}] {done}/{N_CALLS}  elapsed {_fmt(elapsed)}  "
+                f"+{_fmt(split)}  eta ~{_fmt(eta)}"
+            )
+            last = now
+
+
+# Standard CLI entry point.
+if __name__ == "__main__":
+    main()

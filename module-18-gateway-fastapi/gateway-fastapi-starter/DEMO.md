@@ -6,7 +6,7 @@ The gateway architecture has four moves — secrets, observability, rate limitin
 
 ## Setup
 
-With `make setup` complete and `make load-data` reporting the scikit-learn corpus is in Chroma, fire `make serve` in a separate terminal. The target resolves to `uv run uvicorn src.gateway.app:app --reload --reload-dir src --port 8080` — the server binds `localhost:8080` (`8000` is reserved for downstream services like vLLM that speak ChatCompletions). The Phoenix tracer boots at `localhost:6006` as a side effect of the lifespan startup. Your `.env` carries the two values the gateway cares about:
+With `make setup` complete, `make load-data` reporting the scikit-learn corpus is in Chroma, and `make seed-difficulty` run to seed the eight confusion chunks (Walkthrough 2's RandomForestRegressor-criterion query declines without them), fire `make serve` in a separate terminal. The target resolves to `uv run uvicorn src.gateway.app:app --reload --reload-dir src --port 8080` — the server binds `localhost:8080` (`8000` is reserved for downstream services like vLLM that speak ChatCompletions). The Phoenix tracer boots at `localhost:6006` as a side effect of the lifespan startup. Your `.env` carries the two values the gateway cares about:
 
 ```
 OPENAI_API_KEY=voc-...           # or sk-... on a direct OpenAI account
@@ -23,7 +23,7 @@ Open `src/gateway/app.py`. The file is roughly 55 lines and most of it is commen
 
 `create_app()` is the application factory. Two lines do the wiring: `include_router(api_router)` mounts `src/gateway/routes.py` (`POST /query`, `GET /health`) and `include_router(cost_router)` mounts `src/cost/dashboard.py` (`GET /cost-dashboard`). The FastAPI tutorial calls this pattern "bigger applications" — one app, many routers, one router per package. The app file is the wiring layer.
 
-Open `src/gateway/routes.py` next. The `QueryRequest` model at lines 45–58 is the gateway's first defense — `question` is capped at 4,000 characters and `top_k` is bounded `[1, 20]`. Pydantic rejects oversized bodies with HTTP 422 before any embedding or LLM call. The `POST /query` handler at lines 63–128 dispatches through the guardrail stack (rate limit, prompt injection, system-prompt leak, PII redaction, then `route_query`, then hallucination check). The optional `X-Client-Id` header threads in via `Header(alias=constants.CLIENT_ID_HEADER)` and is forwarded to `route_query` as a typed kwarg. That kwarg matters: a sticky-by-user variant assignment wraps `route_query` rather than the FastAPI route, and the wrapper's job stays trivial because the route handler is doing nothing else with the value.
+Open `src/gateway/routes.py` next. The `QueryRequest` model at lines 45–58 is the gateway's first defense — `question` is capped at 4,000 characters and `top_k` is bounded `[1, 20]`. Pydantic rejects oversized bodies with HTTP 422 before any embedding or LLM call. The `POST /query` handler at lines 63–128 dispatches through the guardrail stack (rate limit, prompt injection, system-prompt leak, PII redaction, then `route_query`, then the hallucination check, which is wrapped in `if settings.enable_output_guard:` and ships off in this module until Module 20 turns it on). The optional `X-Client-Id` header threads in via `Header(alias=constants.CLIENT_ID_HEADER)` and is forwarded to `route_query` as a typed kwarg. That kwarg matters: a sticky-by-user variant assignment wraps `route_query` rather than the FastAPI route, and the wrapper's job stays trivial because the route handler is doing nothing else with the value.
 
 Open `src/gateway/router.py`. Six lines do the dispatch. `classify(question)` at line 66 returns `simple` or `complex`. `select_model(query_type)` at line 67 maps to `settings.model_simple` (gpt-4o-mini) or `settings.model_complex` (gpt-4o). `lookup(question)` at line 69 checks the semantic cache and returns immediately on a hit. On miss, `traced_pipeline(question, ...)` at line 73 runs the retrieval-and-generation through the Phoenix span context, `store(question, response)` writes the answer back to the cache, and `log_request(...)` at line 75 appends a JSONL row to `data/cost_log.jsonl`. The conditional log on miss is deliberate: cache hits did not make an LLM call, so charging them a cost row would distort the dashboard. The composition wires every capability the starter provides into one ten-line function — that convergence is what the gateway is.
 
@@ -39,7 +39,7 @@ With `make serve` up on `localhost:8080`, fire one query through `/query`:
 curl -s -X POST http://localhost:8080/query \
   -H 'content-type: application/json' \
   -d '{"question": "What is the default criterion for RandomForestRegressor?", "top_k": 5}' \
-  | python -m json.tool
+  | uv run python -m json.tool
 ```
 
 The response is a `QueryResponse` (defined at `src/models.py:31-43`):
@@ -73,7 +73,7 @@ Fire a complex query to see the tier switch:
 curl -s -X POST http://localhost:8080/query \
   -H 'content-type: application/json' \
   -d '{"question": "When should I prefer GradientBoostingRegressor over RandomForestRegressor, and how do their hyperparameter sensitivities differ?", "top_k": 5}' \
-  | python -m json.tool | grep -E 'model|cost_usd'
+  | uv run python -m json.tool | grep -E 'model|cost_usd'
 ```
 
 The `model` field reads `gpt-4o` and `cost_usd` jumps roughly twentyfold because the per-token rate is ~17× the `gpt-4o-mini` rate and the completion is typically two to three times longer on a comparison prompt. That is the tiered-routing decision the gateway enforces in two lines at `router.py`. Tail the cost log again to see the new row at the higher model and cost — the dashboard is now reflecting a mixed-tier workload.
@@ -84,7 +84,7 @@ One more curl exercises the `X-Client-Id` header the starter wires for sticky-by
 curl -s -X POST http://localhost:8080/query \
   -H 'X-Client-Id: jeff@example.com' \
   -H 'content-type: application/json' \
-  -d '{"question": "Default kernel for SVC?"}' | python -m json.tool | grep -E 'model|cached'
+  -d '{"question": "Default kernel for SVC?"}' | uv run python -m json.tool | grep -E 'model|cached'
 ```
 
 The response shape is unchanged — `X-Client-Id` is metadata the gateway passes through to `route_query` without consuming. A sticky-by-user variant assignment reads the same header, hashing the identifier modulo the number of variants so a given user keeps landing on the same arm. The contract test at `tests/test_smoke.py::test_x_client_id_header_passes_through_to_router` pins the plumbing — run `make test` and confirm it passes. The gateway ships the plumbing; the consumer side is a later concern.

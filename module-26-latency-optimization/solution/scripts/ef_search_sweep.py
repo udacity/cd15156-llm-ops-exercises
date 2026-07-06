@@ -15,8 +15,10 @@ Run with `make load-data` already complete:
     uv run python scripts/ef_search_sweep.py
 """
 
-# Build sandbox collections at ef_search of 10/50/200, replay the same queries
-# against each, and print mean per-query latency.
+# TODO(m26-ex3): build sandbox collections at ef_search of 10/50/200, replay the
+# same queries against each, and print mean per-query latency. See
+# INSTRUCTIONS.md → Exercise 3 for the query list, sandbox-collection pattern,
+# and cleanup snippet.
 import sys
 import time
 from pathlib import Path
@@ -80,7 +82,7 @@ def sweep(ef: int) -> dict:
     for emb in embeddings:
         col.query(query_embeddings=[emb], n_results=5)
     elapsed_ms = (time.perf_counter() - start) * 1000
-    return {"ef_search": ef, "mean_ms": elapsed_ms / len(QUERIES)}
+    return {"ef_search": ef, "mean_ms": round(elapsed_ms / len(QUERIES), 1)}
 
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ def generate(
     """
     client = OpenAI(base_url=settings.openai_base_url or None)
     system_prompt = render_system_prompt(sources)
+    # TODO(m20-exercise-3): add a max_tokens: int | None = None kwarg to generate() and pass it to chat.completions.create so the LLM10 output cap is enforceable
     response = client.chat.completions.create(
         model=model,
         temperature=constants.GENERATION_TEMPERATURE,

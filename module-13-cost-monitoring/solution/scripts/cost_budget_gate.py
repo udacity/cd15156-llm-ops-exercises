@@ -9,7 +9,13 @@ Run:
     PYTHONPATH=. uv run python scripts/cost_budget_gate.py
 """
 
-# Pre-call tiktoken cost estimator and per-request budget gate, with reconciliation demo
+# TODO(m13-ex3): implement estimate_cost(question, model, system_prompt_tokens=1200,
+# expected_output_tokens=200) using tiktoken.encoding_for_model + the MODEL_PRICING
+# rate table, plus gate(question, model, limit_usd=0.01) which raises ValueError
+# when the estimate exceeds limit_usd. Under __main__, demo both on a normal and
+# pathological prompt, then run the reconciliation (estimate vs compute_cost on
+# run_pipeline output). See INSTRUCTIONS.md → Exercise 3 Part B for the contract
+# and expected output format.
 import tiktoken
 
 from src.cost.tracker import compute_cost

@@ -24,3 +24,8 @@ data/embedding_cache.jsonl
 data/CORPUS_VERSION
 
 # uv lockfile is tracked at the starter root; venv is not
+
+# Generated eval run artifacts (demo/exercise runs; not shipped)
+data/eval.json
+data/learner-eval.json
+data/topk-sweep.md

@@ -53,7 +53,10 @@ def render_system_prompt(sources: list[Source]) -> str:
 
 
 def generate(
-    question: str, sources: list[Source], model: str
+    question: str,
+    sources: list[Source],
+    model: str,
+    max_tokens: int | None = None,
 ) -> tuple[str, TokenUsage, float]:
     """Call OpenAI chat completions and return (answer, usage, cost_usd).
 
@@ -69,9 +72,11 @@ def generate(
     """
     client = OpenAI(base_url=settings.openai_base_url or None)
     system_prompt = render_system_prompt(sources)
+    # TODO(m20-exercise-3): add a max_tokens: int | None = None kwarg to generate() and pass it to chat.completions.create so the LLM10 output cap is enforceable
     response = client.chat.completions.create(
         model=model,
         temperature=constants.GENERATION_TEMPERATURE,
+        max_tokens=max_tokens,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},

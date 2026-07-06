@@ -1,0 +1,96 @@
+# requirements_in.txt — direct dependencies for the Vocareum Workspace image
+# covering ALL 12 Course 2 (LLM Ops) implementation-module exercises.
+#
+# Scope:
+#   Union of the `[project].dependencies` and `[dependency-groups].dev`
+#   entries from each exercise's solution/pyproject.toml under
+#   exercises/<NN>-<topic>/solution/. Solutions are a superset of
+#   starters (the starter for m18 omits `tenacity`; learners add it
+#   while doing the exercise — so the image must ship it).
+#
+# Target:
+#   Vocareum Udacity Workspace, Python 3.11 (pyproject pins 3.11-3.13).
+#   OpenAI access is provided via Vocareum env vars (`OPENAI_API_KEY`,
+#   `OPENAI_BASE_URL=https://openai.vocareum.com/v1`); no code changes
+#   needed — clients already read those.
+#
+# Regenerate the pinned `requirements.txt` from this file with:
+#   uv pip compile requirements_in.txt -o requirements.txt
+#
+# Notes:
+# - `en-core-web-sm` is a URL-pinned spaCy English NER wheel (binary
+#   install, no compile). Presidio (which llm-guard's Anonymize wraps)
+#   needs it as its tokenizer / sentence-segmenter backbone.
+# - `arize-phoenix` is pinned <14 because Phoenix 14+ conflicts with
+#   `llm-guard` via `cryptography` (Phoenix wants >=45; llm-guard wants
+#   <44.1). `arize-phoenix-evals` is pinned <3 because Phoenix 13.21
+#   imports `phoenix.evals.models` which was removed in evals 3.x.
+# - `pytz` is declared explicitly because `arize-phoenix` imports it
+#   in `phoenix/datetime_utils.py` without declaring it.
+# - The image should also pre-cache the HuggingFace models warmed by
+#   `make install-guardrails-models` per the 2026-05-03 workspace-image
+#   audit (DeBERTa prompt-injection, BERT-NER, MoritzLaurer NLI,
+#   MiniLM, en_core_web_sm) — that's separate from this pip install.
+
+# --- Web layer (M18: gateway) ---
+fastapi>=0.111,<1
+uvicorn[standard]>=0.30,<1
+pydantic>=2.7,<3
+pydantic-settings>=2.3,<3
+python-dotenv>=1.0,<2
+
+# --- Vector store (M05) ---
+chromadb>=0.5,<1
+
+# --- Telemetry pin (all modules) ---
+# chromadb 0.6.x calls posthog.capture() positionally; posthog>=6 made those
+# args keyword-only -> TypeError. Pin <6 so the resolved image keeps the working
+# combo (the compiled lock otherwise floats to posthog 7.x).
+posthog>=2.4.0,<6
+
+# --- OpenAI client + token accounting (M03, M13) ---
+# Solutions/starters allow openai<3, but every module + the capstone was
+# end-to-end validated against the 1.x SDK (capstone pin: 1.109.1).
+# OpenAI 2.x has client/exception API changes — pin <2 here so the
+# Workspace image matches the tested code path.
+openai>=1.30,<2
+tiktoken>=0.7,<1
+
+# --- Templating (M03 prompt versioning) ---
+jinja2>=3.1,<4
+
+# --- RST parsing for the scikit-learn doc corpus (all modules) ---
+docutils>=0.21,<1
+
+# --- Evaluation (M11) ---
+ragas==0.4.3
+langchain-openai>=1.0,<2
+
+# --- Tracing (M09) ---
+arize-phoenix>=13.21,<14
+arize-phoenix-evals>=0.20,<3
+arize-phoenix-otel>=0.16,<1
+openinference-instrumentation-openai>=0.1,<1
+pytz>=2026.1
+
+# --- Guardrails (M20) ---
+llm-guard>=0.3,<1
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
+# --- File-watcher for RAGOps demo (M24) ---
+watchdog>=4.0,<7
+
+# --- M03 Exercise 3: A/B refusal-rate harness (scripts/ab_refusal.py) ---
+requests>=2.31,<3
+scipy>=1.13,<2
+
+# --- M05 Exercise: local embedder swap (scripts/embed_with_st.py) ---
+sentence-transformers>=3,<5
+
+# --- M18 Exercise 2: OpenAI retry wrapper (added by learner; pre-install so it's ready) ---
+tenacity>=8.5,<10
+
+# --- Test harness (shipped: each module's tests must pass for grading) ---
+pytest>=8.2,<9
+pytest-asyncio>=0.23,<1
+httpx>=0.27,<1

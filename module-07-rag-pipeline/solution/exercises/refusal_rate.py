@@ -15,8 +15,9 @@ Run from the starter directory::
     git checkout prompts/docbot_system.j2
 """
 
-# Refusal-rate harness — fires off-topic questions through run_pipeline to
-# compare baseline vs permissive prompt outcomes.
+# TODO(m07-ex2): fire the same five off-topic questions through run_pipeline
+# and print each Q/A pair; run it once against baseline docbot_system.j2 and
+# once after softening instruction 6 to measure the refusal-rate delta.
 
 from src.pipeline import run_pipeline
 

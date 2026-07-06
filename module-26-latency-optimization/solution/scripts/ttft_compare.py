@@ -1,20 +1,25 @@
 """Exercise 2 — TTFT comparison: blocking /query vs streaming /query/stream.
 
 Times both endpoints on the same question. Blocking TTFT equals total
-(no body until the whole response lands). Streaming TTFT lands in the
-few-hundred-millisecond range because the first SSE frame arrives as soon
-as the model starts generating; streaming total is comparable to blocking
-total because the model still has to finish generating.
+(no body until the whole response lands). Streaming TTFT lands much lower
+because the first SSE frame arrives as soon as the model starts generating.
+The two totals land close together: the model does the same work either way,
+so streaming does not make generation faster, it just surfaces the first token
+sooner. (With the Module 20 output guard enabled, blocking would carry an
+extra hallucination-judge LLM call after the last token that the streaming
+route defers; this module ships with that guard off so the totals compare
+cleanly.)
 
-Run with `make serve` up on port 8080 and the cache cleared between calls
-(streaming bypasses the cache anyway; clear the cache so blocking misses too):
+Run with `make serve` up on port 8080 and the cache cleared once before the
+run (streaming bypasses the cache anyway; the clear is only what makes the
+blocking call a cold miss):
 
     uv run python -c "from src.cache import clear; clear()"
     uv run python scripts/ttft_compare.py
 """
 
-# Time blocking and streaming endpoints on the same question and print
-# {"ttft_ms", "total_ms"} for each.
+# TODO(m26-ex2): time blocking + streaming endpoints on the same question and
+# print {"ttft_ms", "total_ms"} for each. See INSTRUCTIONS.md → Exercise 2.
 import json
 import time
 import urllib.request
@@ -31,7 +36,7 @@ def time_blocking() -> dict:
     start = time.perf_counter()
     with urllib.request.urlopen(req) as resp:
         resp.read()
-    total_ms = (time.perf_counter() - start) * 1000
+    total_ms = round((time.perf_counter() - start) * 1000)
     return {"ttft_ms": total_ms, "total_ms": total_ms}
 
 
@@ -46,8 +51,8 @@ def time_streaming() -> dict:
     with urllib.request.urlopen(req) as resp:
         for line in resp:
             if ttft_ms is None:
-                ttft_ms = (time.perf_counter() - start) * 1000
-    total_ms = (time.perf_counter() - start) * 1000
+                ttft_ms = round((time.perf_counter() - start) * 1000)
+    total_ms = round((time.perf_counter() - start) * 1000)
     return {"ttft_ms": ttft_ms or total_ms, "total_ms": total_ms}
 
 

@@ -23,4 +23,7 @@ data/scikit-learn-cache/
 data/embedding_cache.jsonl
 data/CORPUS_VERSION
 
+# Video-recording throwaway (demo section 1 trace export)
+data/traces.md
+
 # uv lockfile is tracked at the starter root; venv is not

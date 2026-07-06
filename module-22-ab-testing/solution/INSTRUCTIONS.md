@@ -56,120 +56,39 @@ Two hundred calls across fifty `client_id` values, with `pick_variant` doing the
 
    You should see exactly the instruction-4 substitution and nothing else. Variant A says "Be concise and direct"; variant B says "Be expansive." Multi-variable variant drift is a source of confounded results — constraining the diff to one instruction is the experimental-design discipline this enforces.
 
-2. Write `scripts/ab_simulate.py`. The structure is:
+2. Complete `scripts/ab_simulate.py`. The starter scaffolds the whole file for you: the imports, constants, the `QUESTIONS` pool, the `judge_supported` LLM-as-judge scorer, the `retrieve` helper, and the progress line are all in place. Your work is the loop body in `main()`, marked with four `TODO(m22-exercise-1)` seams (run `grep -n "TODO(m22-exercise-1)" scripts/ab_simulate.py` to list them):
 
    ```python
-   """200-call sticky-by-user A/B harness for the ScikitDocs assistant.
-
-   Builds a 50-client_id pool, picks each call's client_id at random
-   from the pool, calls pick_variant with a stable salt so assignments
-   are sticky across calls, calls OpenAI through call_with_variant,
-   scores each answer with an LLM-as-judge faithfulness check, and
-   appends one JSONL row per call to data/ab_log.jsonl. The analyzer
-   reads that file.
-   """
-   import json
-   import random
-   from pathlib import Path
-
-   from jinja2 import Environment, FileSystemLoader
-   from openai import OpenAI
-
-   from src.config import settings
-   from src.models import Source
-   from src.optimization import call_with_variant, log_assignment, pick_variant
-   from src.pipeline import run_pipeline  # for real retrieval
-
-   N_CALLS = 200
-   N_CLIENTS = 50
-   TRAFFIC_SPLIT = {"A": 0.5, "B": 0.5}
-   SALT = "prompt-style-v1"
-   LOG_PATH = Path("data/ab_log.jsonl")
-
-   QUESTIONS = [
-       "What is the default criterion for RandomForestClassifier?",
-       "How does HistGradientBoostingRegressor handle missing values?",
-       "What are the supported solvers for LogisticRegression?",
-       "Does DBSCAN require the number of clusters as input?",
-       "What's the difference between fit_transform and transform?",
-       # ... add five to ten more from your retrieval set
-   ]
-
-   # LLM-as-judge success metric. A naive citation check
-   # `any(s.doc_id in answer ...)` never fires here: the corpus doc_ids
-   # are RST section anchors like `modules.svm.kernel-functions`, which
-   # the model never reproduces verbatim, so every call would score
-   # False and the chi-squared table degenerates. Reading the answer
-   # against the retrieved chunks gives a graded, honest success signal.
-   _judge_env = Environment(
-       loader=FileSystemLoader("prompts"),
-       keep_trailing_newline=True,
-       autoescape=False,
-   )
-   _judge_client = OpenAI(base_url=settings.openai_base_url or None)
-
-   def judge_supported(answer, sources):
-       # Render prompts/judge.j2 and ask gpt-4o-mini for a JSON verdict.
-       # Fail open (True) on an empty answer or judge error so a transient
-       # proxy hiccup doesn't depress the measured success rate.
-       if not answer.strip() or not sources:
-           return False
-       context = "\n\n".join(f"[{s.doc_id}]\n{s.chunk_text}" for s in sources)
-       prompt = _judge_env.get_template("judge.j2").render(
-           answer=answer, source=context
+   for i in range(N_CALLS):
+       question = random.choice(QUESTIONS)
+       client_id = random.choice(clients)
+       sources = retrieve(question)
+       # 1. Assign the sticky variant. pick_variant hashes the client_id with
+       #    the FIXED salt, so the same user lands on the same variant on every
+       #    call. This is the one line that makes the experiment sticky.
+       variant = pick_variant(client_id, TRAFFIC_SPLIT, salt=SALT)
+       # 2. Invoke that variant against the retrieved context.
+       answer, usage, cost, latency_ms = call_with_variant(
+           question, sources, variant
        )
-       try:
-           resp = _judge_client.chat.completions.create(
-               model=settings.model_simple,
-               messages=[{"role": "user", "content": prompt}],
-               temperature=0,
-               response_format={"type": "json_object"},
-           )
-           verdict = (
-               json.loads(resp.choices[0].message.content or "{}").get("verdict")
-               or ""
-           ).upper()
-       except Exception:
-           return True
-       return verdict == "SUPPORTED"
-
-   def retrieve(question):
-       # Reuse the starter's pipeline retrieval seam — src/pipeline.py
-       # exposes run_pipeline which returns a QueryResponse with .sources.
-       # For the exercise you can short-circuit and call src.store.query
-       # directly, or build a small in-memory fixture of Source objects.
-       resp = run_pipeline(question, top_k=5)
-       return resp.sources
-
-   def main():
-       LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-       clients = [f"user-{i:03d}" for i in range(N_CLIENTS)]
-       for i in range(N_CALLS):
-           question = random.choice(QUESTIONS)
-           client_id = random.choice(clients)
-           sources = retrieve(question)
-           variant = pick_variant(client_id, TRAFFIC_SPLIT, salt=SALT)
-           answer, usage, cost, latency_ms = call_with_variant(
-               question, sources, variant
-           )
-           success = judge_supported(answer, sources)
-           log_assignment(
-               LOG_PATH,
-               client_id=client_id,
-               variant=variant,
-               question=question,
-               answer=answer,
-               usage=usage,
-               cost_usd=cost,
-               latency_ms=latency_ms,
-               success=success,
-           )
-           if (i + 1) % 20 == 0:
-               print(f"{i+1}/{N_CALLS} done")
-
-   if __name__ == "__main__":
-       main()
+       # 3. Score the answer. This pass/fail label is the outcome the
+       #    chi-squared test compares between variants A and B.
+       success = judge_supported(answer, sources)
+       # 4. Append one JSONL row the analyzer can read.
+       log_assignment(
+           LOG_PATH,
+           client_id=client_id,
+           variant=variant,
+           question=question,
+           answer=answer,
+           usage=usage,
+           cost_usd=cost,
+           latency_ms=latency_ms,
+           success=success,
+       )
    ```
+
+   The sticky contract lives entirely in seam 1: pass the `client_id` and hold `SALT` fixed across the whole run. Drop the `client_id` or let the salt vary per call and the same user stops landing on the same variant, which quietly compromises Exercises 2 and 3.
 
 3. Run it from the project root:
 
@@ -177,7 +96,7 @@ Two hundred calls across fifty `client_id` values, with `pick_variant` doing the
    make ab-simulate
    ```
 
-   Expect the run to take roughly four to six minutes on Vocareum (the proxy serializes calls under load) or roughly two to three minutes on direct OpenAI. The `(i+1)/200 done` progress print at every twentieth call tells you the script is alive; the cold-start latency on the first call is the OpenAI client warmup and is normal.
+   Expect the run to take roughly four to six minutes on Vocareum (the proxy serializes calls under load) or roughly two to three minutes on direct OpenAI. The scaffolded progress line prints a fill bar, elapsed time, the per-batch split, and an ETA every tenth call, so a long run never looks hung. The first call pauses longer than the rest, which is the OpenAI client cold-start warmup, not a hang.
 
 4. Verify stickiness directly. Run this one-liner from the project root:
 

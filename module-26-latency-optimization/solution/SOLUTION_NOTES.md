@@ -75,13 +75,14 @@ The one-paragraph interpretation should name:
 ### Exercise 2 — TTFT-versus-total table
 
 Expected shape from `uv run python scripts/ttft_compare.py` with the
-cache cleared between calls (so blocking misses):
+cache cleared once before the run (so the blocking call is a cold miss;
+streaming bypasses the cache either way):
 
 ```
 |               | TTFT (ms)  | Total (ms) |
 |---------------|------------|------------|
-| blocking      |   ~2500    |   ~2500    |
-| streaming     |   ~500     |   ~2500    |
+| blocking      |    5268    |    5268    |
+| streaming     |    3218    |    5495    |
 ```
 
 The right interpretation paragraph (two paragraphs total per the
@@ -89,16 +90,19 @@ exercise spec):
 
 > Blocking TTFT equals blocking total — the urllib client cannot read
 > any byte until the server flushes the whole response body. Streaming
-> TTFT lands in the few-hundred-millisecond range because the first SSE
-> `data:` frame ships as soon as the model emits its first token. Total
-> time is comparable because the model still has to finish generating
-> regardless of the response shape. The user-perceived difference is
-> the spinner that did not appear, not the total clock. The engineering
-> cost is the deferred output guards — the hallucination judge and the
-> off-topic check that gate the blocking route fire on the complete
-> answer and cannot run on a half-streamed token sequence without
-> rewriting their contract. The starter offers both routes so the
-> trade-off is visible in code.
+> TTFT lands much lower because the first SSE `data:` frame ships as soon
+> as the model emits its first token. The two totals land close together,
+> because the model does the same work regardless of the response shape:
+> streaming does not make generation faster, it just surfaces the first
+> token sooner. The user-perceived difference is the spinner that did not
+> appear, not the total clock. The engineering cost is the deferred output
+> guards — the hallucination judge and the off-topic check that gate the
+> blocking route fire on the complete answer and cannot run on a
+> half-streamed token sequence without rewriting their contract. (This
+> module ships with that guard off so the totals compare cleanly; turn it
+> on and blocking's total grows by the judge call, which is the Exercise 2
+> stretch.) The starter offers both routes so the trade-off is visible in
+> code.
 
 > Default the docs-FAQ workload to `/query` (blocking). The output
 > guards are load-bearing for a docs assistant where hallucinated API

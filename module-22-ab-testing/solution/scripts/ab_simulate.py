@@ -1,15 +1,17 @@
+# TODO(m22-exercise-1): write the 200-call sticky-by-user A/B harness here.
 # 200-call sticky-by-user A/B harness for the ScikitDocs assistant.
 # Module docstring below records the A/B decision: chi-squared p-value, cost
 # delta, latency delta, and the next step (quality read + secondary tiebreaker).
 """A/B decision (illustrative): Variant A retained.
 
 Chi-squared on the LLM-judge faithfulness label at ~50 unique clients
-typically returns p ~ 0.8 (not significant; effective N is sticky-
-correlated so this is even more underpowered than the raw call count
-suggests). Variant B's "be expansive" instruction produced noticeably
-longer answers — on a typical run ~40% more completion tokens, which
-tracks into ~35% higher mean latency and a modestly higher per-call
-cost — with no detectable quality improvement on the judge label.
+returns p ~ 0.32 (not significant; effective N is sticky-correlated so
+this is even more underpowered than the raw call count suggests).
+Variant B's "be expansive" instruction produced noticeably longer
+answers: on this run ~30% more completion tokens, tracking into ~30%
+higher mean latency and a modestly higher per-call cost. B's judged
+success rate was numerically higher (94% vs 89%) but not significant
+at this N, so there is no quality gain to weigh against those costs.
 Next step: rerun at 500 unique clients to confirm the quality-parity
 read holds at higher power, then sunset variant B unless a quality
 signal emerges.
@@ -26,6 +28,7 @@ analyzer at scripts/ab_analyze.py reads that file.
 # three A/B primitives, config settings, and run_pipeline.
 import json
 import random
+import time
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -116,11 +119,21 @@ def retrieve(question: str) -> list:
     return resp.sources
 
 
+def _fmt(seconds: float) -> str:
+    """Format a duration as M:SS for the progress line."""
+    m, s = divmod(int(seconds), 60)
+    return f"{m}:{s:02d}"
+
+
 # For each call: pick a random client_id, retrieve sources, assign + invoke the
-# variant, score success with the LLM judge, and append one JSONL row.
+# variant, score success with the LLM judge, and append one JSONL row. The
+# progress line every 10 calls shows a bar, elapsed time, the split since the
+# last line, and an ETA, so a multi-minute run never looks hung.
 def main() -> None:
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     clients = [f"user-{i:03d}" for i in range(N_CLIENTS)]
+    print(f"Running {N_CALLS} A/B calls...")
+    start = last = time.monotonic()
     for i in range(N_CALLS):
         question = random.choice(QUESTIONS)
         client_id = random.choice(clients)
@@ -141,8 +154,18 @@ def main() -> None:
             latency_ms=latency_ms,
             success=success,
         )
-        if (i + 1) % 20 == 0:
-            print(f"{i+1}/{N_CALLS} done")
+        if (i + 1) % 10 == 0:
+            now = time.monotonic()
+            done = i + 1
+            elapsed, split = now - start, now - last
+            eta = elapsed / done * (N_CALLS - done)
+            filled = 20 * done // N_CALLS
+            bar = "#" * filled + "-" * (20 - filled)
+            print(
+                f"[{bar}] {done}/{N_CALLS}  elapsed {_fmt(elapsed)}  "
+                f"+{_fmt(split)}  eta ~{_fmt(eta)}"
+            )
+            last = now
 
 
 # Standard CLI entry point.

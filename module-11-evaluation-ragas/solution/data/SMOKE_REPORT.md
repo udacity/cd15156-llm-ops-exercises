@@ -1,6 +1,6 @@
 # Wave 4 smoke RAG gate — SMOKE_REPORT
 
-- Run at: 2026-05-18T14:19:43+00:00
+- Run at: 2026-06-30T23:10:15+00:00
 - Collection: `scikit_docs`
 - Embedding model: `text-embedding-3-small`
 - Top-k: 5
@@ -18,7 +18,7 @@
 > What is the default value of `n_estimators` in `RandomForestClassifier`?
 
 - **Passed:** ✅ (min_hits=1)
-- **Latency:** 1705.2 ms
+- **Latency:** 1475.7 ms
 - **Expected doc_id prefixes** (3):
   - `modules.ensemble.random-forests`
   - `modules.ensemble.parameters`
@@ -37,7 +37,7 @@
 > How do I scale features before clustering them?
 
 - **Passed:** ✅ (min_hits=1)
-- **Latency:** 599.0 ms
+- **Latency:** 670.1 ms
 - **Expected doc_id prefixes** (2):
   - `modules.preprocessing`
   - `modules.clustering`
@@ -55,7 +55,7 @@
 > Why use stratified K-fold instead of plain K-fold for classification?
 
 - **Passed:** ✅ (min_hits=1)
-- **Latency:** 616.3 ms
+- **Latency:** 760.0 ms
 - **Expected doc_id prefixes** (2):
   - `modules.cross_validation.stratified-k-fold`
   - `modules.cross_validation.computing-cross-validated-metrics`

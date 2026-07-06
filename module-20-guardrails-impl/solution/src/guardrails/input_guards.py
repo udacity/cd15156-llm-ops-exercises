@@ -181,6 +181,30 @@ def detect_pii(text: str) -> tuple[str, list[str]]:
     return redacted, kinds
 
 
+# TODO(m20-exercise-1): add your new input guard here (Option A: detect_invisible_unicode(text) -> str | None returning "invisible_unicode: matched <name>"; Options B/C instead extend PII_PATTERNS / SYSTEM_PROMPT_LEAK_PATTERNS above — see INSTRUCTIONS.md Exercise 1)
+INVISIBLE_UNICODE_PATTERNS: dict[str, re.Pattern[str]] = {
+    "zero_width_space": re.compile("\\u200b"),
+    "zero_width_joiner": re.compile("\\u200d"),
+    "bidi_override": re.compile("\\u202e"),
+    "soft_hyphen_run": re.compile("\\u00ad{2,}"),
+}
+
+
+def detect_invisible_unicode(text: str) -> str | None:
+    """Flag zero-width and direction-override Unicode smuggling in ``text``.
+
+    Exercise 1, Option A. Zero-width characters carry no glyph, so a human
+    reviewer cannot see the payload they smuggle; the bidi override
+    reorders rendered text so what the reviewer reads is not what the
+    model receives. Visible high-bit Unicode (emoji, accented letters)
+    must pass clean — the check targets invisibility, not non-ASCII.
+    """
+    for name, pattern in INVISIBLE_UNICODE_PATTERNS.items():
+        if pattern.search(text):
+            return f"invisible_unicode: matched {name}"
+    return None
+
+
 __all__ = [
     "INJECTION_PATTERNS",
     "SYSTEM_PROMPT_LEAK_PATTERNS",

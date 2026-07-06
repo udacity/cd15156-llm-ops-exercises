@@ -39,30 +39,30 @@ Expected output after the 200-call run (numbers will jitter, shape is fixed):
 
 ```
 Loaded 200 rows from the A/B log.
-Unique client_ids (sticky effective N): 49
+Unique client_ids (sticky effective N): 50
 
-Variant A: 98/105 success (93.3%)
-Variant B: 87/95 success (91.6%)
-chi2 statistic:                0.041
-p-value:                       0.8402
+Variant A: 79/89 success (88.8%)
+Variant B: 104/111 success (93.7%)
+chi2 statistic:                0.975
+p-value:                       0.3235
 degrees of freedom:            1
 significant at alpha=0.05:     False
 
 metric                             A           B
 ------------------------------------------------
-n                                105          95
-mean_latency_ms                 4207        5755
-p50_latency_ms                  3649        4733
-mean_cost_usd                0.00045     0.00050
-total_cost_usd               0.04682     0.04769
-mean_completion_tokens           189         271
+n                                 89         111
+mean_latency_ms                 4609        5953
+p50_latency_ms                  4251        5693
+mean_cost_usd                0.00045     0.00049
+total_cost_usd               0.03978     0.05480
+mean_completion_tokens           191         249
 ```
 
-The honest one-paragraph interpretation: "Underpowered for sticky-by-user at ~50 unique clients — chi-squared p ~ 0.84 does not let us reject the null hypothesis of equivalence, and the sticky-effective-N (~50, not 200) makes the test even more underpowered than the raw call count suggests. We cannot conclude the variants are statistically different on the judge faithfulness label at this sample size."
+The honest one-paragraph interpretation: "Underpowered for sticky-by-user at ~50 unique clients: chi-squared p ~ 0.32 does not let us reject the null hypothesis of equivalence, and the sticky-effective-N (~50, not 200) makes the test even more underpowered than the raw call count suggests. We cannot conclude the variants are statistically different on the judge faithfulness label at this sample size."
 
 ### Exercise 3 — Written decision docstring
 
-The docstring at the top of `scripts/ab_simulate.py` in these notes is the canonical example. It names the winning variant (A), the deciding metric (cost + latency at quality parity), the confidence caveat (sticky-effective-N), and the proposed next step (rerun at 500 unique clients). On a typical run variant B's "be expansive" answers carry ~40% more completion tokens, which tracks into ~35% higher mean latency and a modestly higher per-call cost at no judged-quality gain — so A wins on the secondary metrics.
+The docstring at the top of `scripts/ab_simulate.py` in these notes is the canonical example. It names the winning variant (A), the deciding metric (cost + latency at quality parity), the confidence caveat (sticky-effective-N), and the proposed next step (rerun at 500 unique clients). On this run variant B's "be expansive" answers carried ~30% more completion tokens, which tracks into ~30% higher mean latency and a modestly higher per-call cost at no statistically significant quality gain, so A wins on the secondary metrics.
 
 ## Verification
 

@@ -10,8 +10,8 @@ Run from the starter directory::
     uv run python exercises/grounding_battery.py | tee /tmp/answers.txt
 """
 
-# Ten-question grounding battery — prints answer, top source, and confidence
-# per row so the learner can classify grounded vs hallucinated.
+# TODO(m07-ex1): build the ten-question grounding battery — five in-domain
+# factual + five off-topic — and print answer/top-source/confidence per row.
 
 from src.pipeline import run_pipeline
 
