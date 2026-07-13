@@ -295,7 +295,7 @@ joblib==1.5.3
     # via
     #   nltk
     #   scikit-learn
-json-repair==0.44.1
+json-repair==0.60.1
     # via llm-guard
 jsonpatch==1.33
     # via langchain-core
