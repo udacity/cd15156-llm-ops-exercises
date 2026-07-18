@@ -9,7 +9,7 @@ Runs after ``make load-data``. Idempotent — re-running upserts the same
 eight IDs.
 
 Why these chunks exist: a too-clean documentation corpus produces near-
-ceiling recall and makes the Module 11 RAGAS top-k sweep pedagogically flat.
+ceiling recall and makes the RAGAS top-k sweep pedagogically flat.
 The 8 seeded chunks (~0.2% of the corpus) reintroduce confusion without
 breaking the smoke gate's recall@5 ≥ 0.7 floor. See
 ``data/SEEDING_NOTES.md`` for the full rationale.

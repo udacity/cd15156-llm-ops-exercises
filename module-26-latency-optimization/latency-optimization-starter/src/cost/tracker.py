@@ -1,4 +1,4 @@
-"""Per-request cost log (append-only JSONL) and summarization helpers (Module 13).
+"""Per-request cost log (append-only JSONL) and summarization helpers.
 
 Three responsibilities:
 
@@ -14,8 +14,7 @@ promote the JSONL into Parquet on object storage once volume crosses a
 threshold; the column shape stays the same.
 
 ``compute_cost`` is re-exported from ``src.pricing`` for callers that
-prefer this module as the single cost-stack entry point. Matches the
-capstone's ``project/src/cost/tracker.py``.
+prefer this module as the single cost-stack entry point.
 """
 
 import json

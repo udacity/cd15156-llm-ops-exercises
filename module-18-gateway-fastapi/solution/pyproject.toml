@@ -45,6 +45,8 @@ dependencies = [
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     # File-watcher for RAGOps demo — Module 24
     "watchdog>=4.0,<7",
+    # Chi-square A/B analysis — scripts/ab_analyze.py
+    "scipy>=1.13,<2",
     # TODO(m18-ex2): add tenacity for the OpenAI retry wrapper
     "tenacity>=8.5,<10",
 ]

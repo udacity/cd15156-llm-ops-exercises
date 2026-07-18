@@ -1,7 +1,7 @@
-"""LLM Guard wrappers — DeBERTa prompt injection + Presidio PII (Module 20).
+"""LLM Guard wrappers — DeBERTa prompt injection + Presidio PII.
 
-The capstone teaches the regex layer first because it is fast,
-explainable, and grep-able. This subpackage is the ML layer that
+The regex layer runs first because it is fast, explainable, and
+grep-able. This subpackage is the ML layer that
 catches what regex cannot enumerate. Both layers run; they are
 complementary, not competing.
 

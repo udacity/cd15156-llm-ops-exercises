@@ -17,7 +17,7 @@ SERVICE_PORT: int = 8080
 QUERY_ROUTE: str = "/query"
 HEALTH_ROUTE: str = "/health"
 
-# === Models — match capstone `project/src/pricing.py` ===
+# === Models ===
 MODEL_COMPLEX: str = "gpt-4o"
 MODEL_SIMPLE: str = "gpt-4o-mini"
 EMBEDDING_MODEL: str = "text-embedding-3-small"
@@ -30,21 +30,21 @@ CHUNK_OVERLAP_TOKENS: int = 75
 CONFIDENCE_THRESHOLD: float = 0.7
 GENERATION_TEMPERATURE: float = 0.2
 
-# === Evaluation (RAGAS) — Module 11 ===
+# === Evaluation (RAGAS) ===
 GOLDEN_SET_SIZE: int = 30
 JUDGE_TEMPERATURE: float = 0.0
 
-# === Caching — Module 15 ===
+# === Caching ===
 CACHE_SIMILARITY_THRESHOLD: float = 0.85
 
-# === Cost logging — Module 13 ===
+# === Cost logging ===
 COST_LOG_PATH: str = "data/cost_log.jsonl"
 
-# === Tracing — Module 09 ===
+# === Tracing ===
 PHOENIX_PORT: int = 6006
 PHOENIX_PROJECT_NAME: str = "scikitdocs"
 
-# === Gateway + A/B routing — Module 18 / Module 22 ===
+# === Gateway + A/B routing ===
 CLIENT_ID_HEADER: str = "X-Client-Id"
 
 # === OpenAI / Vocareum bridge — matches memory `project_vocareum_deployment.md` ===

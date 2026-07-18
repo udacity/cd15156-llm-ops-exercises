@@ -1,4 +1,4 @@
-"""Blue/green alias file management (Module 24).
+"""Blue/green alias file management.
 
 The ``scikit_docs`` collection name is a *public alias* that resolves to
 one of two real Chroma collections: ``scikit_docs_blue`` or
@@ -13,9 +13,9 @@ which a concurrent reader could see a partial value. That property is
 the load-bearing reason this file exists rather than the alias being a
 ``constants.py`` value.
 
-Pre-Module 24 environments have no ``ACTIVE_COLLECTION`` file and
-``read_active_collection`` returns the literal ``scikit_docs`` so the
-Module 05 behaviour is preserved for any caller that imports
+Environments where no migration has run have no ``ACTIVE_COLLECTION``
+file; ``read_active_collection`` returns the literal ``scikit_docs`` so
+the original behaviour is preserved for any caller that imports
 :func:`src.store.get_collection`.
 """
 

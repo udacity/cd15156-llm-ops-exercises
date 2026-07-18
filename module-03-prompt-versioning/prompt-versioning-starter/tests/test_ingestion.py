@@ -1,4 +1,4 @@
-"""Unit tests for the Module 24 ingestion surface.
+"""Unit tests for the ingestion surface.
 
 These tests do not call out to OpenAI or stand up a real Chroma store
 on disk for the embedding-bearing paths — the embedding call is patched

@@ -1,4 +1,4 @@
-"""LLM Guard layer — DeBERTa + Presidio for the input stack (Module 20).
+"""LLM Guard layer — DeBERTa + Presidio for the input stack.
 
 Two functions, mirroring the regex layer's shape:
 

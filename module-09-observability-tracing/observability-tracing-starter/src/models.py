@@ -1,8 +1,7 @@
 """Shared Pydantic models for the ScikitDocs starter.
 
-Mirrors `project/src/models.py` exactly so a learner who has read the
-capstone reads identical type shapes here. Don't add ScikitDocs-specific
-fields — they belong in `src/store.py` metadata or `src/pipeline.py`
+These are the shared type shapes every layer imports. Don't add
+ScikitDocs-specific fields — they belong in `src/store.py` metadata or `src/pipeline.py`
 locals, not in the shared response surface.
 """
 

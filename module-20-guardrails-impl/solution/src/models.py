@@ -1,10 +1,10 @@
 """Shared Pydantic models for the ScikitDocs starter.
 
-Mirrors `project/src/models.py` for the most part. The local-only
-deviation (Module 20 exercise 4) is that `QueryResponse.citations` and
+These are the shared type shapes every layer imports. The local-only
+deviation (exercise 4) is that `QueryResponse.citations` and
 `QueryResponse.confidence` carry Pydantic `Field` constraints — the
 structured-output contract the learner wires at the gateway boundary
-in Skill Pair 9.
+in the output-validator exercise.
 """
 
 from pydantic import BaseModel, Field

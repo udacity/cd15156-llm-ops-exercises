@@ -12,8 +12,8 @@ https://docutils.sourceforge.io/docs/howto/rst-directives.html — we register
 no-op handlers for the Sphinx-specific names docutils doesn't know about.
 
 Known limitation: cross-references (``:ref:``, ``:doc:``) are captured but
-not resolved — resolution would require a full Sphinx build. Module 07
-discusses this trade-off when teaching RAG retrieval quality.
+not resolved — resolution would require a full Sphinx build. The
+trade-off surfaces when measuring RAG retrieval quality.
 """
 
 import re

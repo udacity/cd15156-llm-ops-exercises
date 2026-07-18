@@ -20,7 +20,7 @@ eval harness, for example, fires un-headered requests). Pydantic
 + FastAPI's ``Header(default=None)`` gives both behaviors in one line.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Header
 from pydantic import BaseModel, Field
@@ -56,6 +56,8 @@ class QueryRequest(BaseModel):
 
     question: str = Field(..., min_length=1, max_length=4000)
     top_k: int = Field(constants.DEFAULT_TOP_K, ge=1, le=20)
+    # TODO(m18-ex3): add ``provider: Literal["openai", "anthropic"] = "openai"`` field to QueryRequest (import Literal from typing) and thread ``request.provider`` into the ``route_query`` call below
+    provider: Literal["openai", "anthropic"] = "openai"
 
 
 router = APIRouter()
@@ -117,6 +119,7 @@ def query_endpoint(
         cleaned,
         top_k=request.top_k,
         client_id=client_id,
+        provider=request.provider,
     )
 
     # 6. Hallucination check on the output.

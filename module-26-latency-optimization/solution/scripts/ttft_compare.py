@@ -5,7 +5,7 @@ Times both endpoints on the same question. Blocking TTFT equals total
 because the first SSE frame arrives as soon as the model starts generating.
 The two totals land close together: the model does the same work either way,
 so streaming does not make generation faster, it just surfaces the first token
-sooner. (With the Module 20 output guard enabled, blocking would carry an
+sooner. (With the output guard enabled, blocking would carry an
 extra hallucination-judge LLM call after the last token that the streaming
 route defers; this module ships with that guard off so the totals compare
 cleanly.)

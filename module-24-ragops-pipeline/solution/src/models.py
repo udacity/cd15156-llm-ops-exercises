@@ -1,13 +1,12 @@
 """Shared Pydantic models for the ScikitDocs starter.
 
-Mirrors `project/src/models.py` exactly so a learner who has read the
-capstone reads identical type shapes here. Don't add ScikitDocs-specific
-fields — they belong in `src/store.py` metadata or `src/pipeline.py`
+These are the shared type shapes every layer imports. Don't add
+ScikitDocs-specific fields — they belong in `src/store.py` metadata or `src/pipeline.py`
 locals, not in the shared response surface.
 
-`QueryResponseValidator` (Module 20 exercise 4) is the one local-only addition.
-It does not mirror `project/` — it is the curriculum-only structured-output
-guard the learner wires at the gateway boundary in Skill Pair 9.
+`QueryResponseValidator` is the one local-only addition — the
+structured-output guard the learner wires at the gateway boundary in
+the output-validator exercise.
 """
 
 from pydantic import BaseModel, Field
@@ -48,14 +47,14 @@ class QueryResponse(BaseModel):
 
 # Structured-output guard model that pins gateway-boundary contract (citations ≥1, confidence ∈ [0,1])
 class QueryResponseValidator(BaseModel):
-    """Structured-output guard for the `/query` boundary (Skill Pair 9, ex. 4).
+    """Structured-output guard for the `/query` boundary.
 
-    The planning doc names this "the QueryResponse validator with answer +
-    citations ≥1 + confidence ∈ [0,1]." Our `QueryResponse` already exists
-    and uses `sources` (mirrors `project/`), so this companion model adds
-    the missing constraints without renaming the field downstream code
-    depends on. `sources` is the same concept the planning doc calls
-    `citations` — at the gateway boundary the dict shape is identical.
+    The contract: answer + citations ≥1 + confidence ∈ [0,1]. Our
+    `QueryResponse` already exists and uses `sources`, so this companion
+    model adds the missing constraints without renaming the field
+    downstream code depends on. `sources` is the same concept the
+    contract calls `citations` — at the gateway boundary the dict shape
+    is identical.
 
     What this enforces that `QueryResponse` alone does not:
 

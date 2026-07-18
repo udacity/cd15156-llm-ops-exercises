@@ -1,4 +1,4 @@
-"""Tests for the input + output guardrail stack (Module 20).
+"""Tests for the input + output guardrail stack.
 
 Four detector families and one integration path are covered:
 

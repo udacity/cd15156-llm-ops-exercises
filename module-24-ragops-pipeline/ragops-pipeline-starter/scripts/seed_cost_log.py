@@ -1,6 +1,6 @@
-"""Seed ``data/cost_log.jsonl`` with 50 realistic synthetic entries (Module 13).
+"""Seed ``data/cost_log.jsonl`` with 50 realistic synthetic entries.
 
-Lets a learner satisfy Module 13 Exercise 1's "50-entry floor" in <1
+Lets a learner hit the exercise's "50-entry floor" in <1
 second with $0 of API spend, instead of running a 50-query bash loop.
 The mix and token distributions match what a real run produces, so
 ``GET /cost-dashboard`` looks indistinguishable from a real load test.
@@ -31,7 +31,7 @@ LOG_PATH = Path(constants.COST_LOG_PATH)
 DEFAULT_TARGET = 50
 SEED = 20260501  # deterministic seed for reproducibility
 
-# Mix proportions per Module 13 framing: 70% simple, 20% complex, 10% LLM-judge.
+# Mix proportions: 70% simple, 20% complex, 10% LLM-judge.
 MIX = (
     ("simple", constants.MODEL_SIMPLE, 0.70),
     ("complex", constants.MODEL_COMPLEX, 0.20),

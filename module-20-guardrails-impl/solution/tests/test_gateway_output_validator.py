@@ -1,6 +1,6 @@
-"""Tests for the gateway boundary output validator (Module 20 exercise 4).
+"""Tests for the gateway boundary output validator.
 
-Two tests pin the contract Skill Pair 9 exercise 4 teaches:
+Two tests pin the structured-output contract at the `/query` boundary:
 
 1. Well-formed response (mock ``route_query`` to return a `QueryResponse`
    that satisfies the ``citations`` ≥1 + ``confidence`` ∈ [0, 1]

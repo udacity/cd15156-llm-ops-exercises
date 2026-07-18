@@ -36,18 +36,25 @@ _env = Environment(
 )
 
 
-def render_system_prompt(sources: list[Source]) -> str:
+# TODO(m03-ex1): thread user_tier through render_system_prompt
+def render_system_prompt(
+    sources: list[Source], user_tier: str = "standard"
+) -> str:
     """Render ``docbot_system.j2`` with retrieved chunks as context.
 
     Args:
-        sources: List of retrieved chunks (from ``store.query``).
+        sources:   List of retrieved chunks (from ``store.query``).
+        user_tier: Tier of the calling user. Set to ``"premium"`` to
+                   inject the mailing-list pointer added in Exercise 1.
+                   Defaults to ``"standard"`` so existing callers keep
+                   working without modification.
 
     Returns:
         The fully-rendered system prompt string.
     """
     template = _env.get_template("docbot_system.j2")
     contexts = "\n\n---\n\n".join(s.chunk_text for s in sources)
-    return template.render(contexts=contexts)
+    return template.render(contexts=contexts, user_tier=user_tier)
 
 
 def generate(
@@ -65,7 +72,7 @@ def generate(
         ``(answer, TokenUsage, cost_usd)``. ``cost_usd`` comes from
         ``src.pricing.compute_cost``.
     """
-    client = OpenAI(base_url=settings.openai_base_url or None)
+    client = OpenAI(base_url=settings.openai_base_url or None, timeout=60.0)
     system_prompt = render_system_prompt(sources)
     response = client.chat.completions.create(
         model=model,

@@ -1,6 +1,6 @@
 # TODO(m05-ex3): write scripts/embed_with_st.py, side-by-side MiniLM wrapper so
 # the OpenAI embedder stays untouched for the swap comparison.
-"""Local sentence-transformers embedder for the Module 05 swap exercise."""
+"""Local sentence-transformers embedder for the swap exercise."""
 from sentence_transformers import SentenceTransformer
 
 # Loads all-MiniLM-L6-v2 once at import — first call warms the HF cache

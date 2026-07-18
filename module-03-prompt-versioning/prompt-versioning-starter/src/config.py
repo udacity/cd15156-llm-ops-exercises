@@ -14,7 +14,7 @@ from src import constants
 # Load .env into os.environ early so libraries that read environment
 # variables directly (the openai SDK's base_url discovery, RAGAS's
 # internal OpenAI client) see the project's keys without needing a
-# manual `set -a; source .env` step. Matches capstone behavior.
+# manual `set -a; source .env` step.
 load_dotenv()
 
 
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # === Chroma ===
     chroma_path: str = "data/chroma"
 
-    # === Tracing — Module 09 populates this ===
+    # === Tracing ===
     tracing_backend: Literal["phoenix", "none"] = "phoenix"
     phoenix_embedded: bool = True
     phoenix_host: str = "0.0.0.0"
@@ -50,8 +50,8 @@ class Settings(BaseSettings):
     cost_log_path: str = constants.COST_LOG_PATH
 
     # === Feature flags (taught later; early modules ship these off via .env) ===
-    enable_semantic_cache: bool = True  # taught M15
-    enable_output_guard: bool = True  # taught M20
+    enable_semantic_cache: bool = True
+    enable_output_guard: bool = True
 
     # TODO(m03-ex2): add prompt_env setting for env-aware loader
 
