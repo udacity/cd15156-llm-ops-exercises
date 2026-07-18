@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from datasets import Dataset
+from tqdm import tqdm
 from langchain_openai import ChatOpenAI as LangchainChatOpenAI
 from langchain_openai import OpenAIEmbeddings as LangchainOpenAIEmbeddings
 from ragas import evaluate
@@ -60,9 +61,8 @@ def load_golden_set(path: str | Path) -> list[dict]:
 
     Returns a list of ``{question, ground_truth, query_type, version_sensitive}``
     dicts. The starter's CSV uses ``ground_truth_answer`` as the column
-    name (rather than the capstone's ``ground_truth``); this function
-    rewrites it to ``ground_truth`` so callers downstream see the
-    RAGAS-canonical key. ``expected_doc_ids`` and ``min_hits`` are
+    name; this function rewrites it to ``ground_truth`` so callers
+    downstream see the RAGAS-canonical key. ``expected_doc_ids`` and ``min_hits`` are
     consumed only by ``scripts/smoke_gate.py`` and are dropped here —
     RAGAS measures retrieval quality against whatever the pipeline
     retrieves at eval time, not against a fixed candidate list.
@@ -96,7 +96,7 @@ def build_eval_dataset(golden_set: list[dict], *, top_k: int = 5) -> Dataset:
     retrieved_contexts: list[list[str]] = []
     ground_truths: list[str] = []
 
-    for row in golden_set:
+    for row in tqdm(golden_set, desc="Generating answers", unit="q"):
         response = run_pipeline(row["question"], top_k=top_k)
         questions.append(row["question"])
         answers.append(response.answer)
@@ -139,7 +139,7 @@ def _build_llm() -> LangchainLLMWrapper:
     Temperature is pinned at ``constants.JUDGE_TEMPERATURE`` (0.0). The
     judge is a comparator, not a generator — non-zero temperature is a
     documented source of run-to-run drift in LLM-as-judge evals (see
-    the Module 10 concept walk and the MT-Bench paper).
+    the MT-Bench paper).
     """
     return LangchainLLMWrapper(
         LangchainChatOpenAI(

@@ -1,11 +1,9 @@
-"""RAGAS evaluation harness for the ScikitDocs starter (Module 11).
+"""RAGAS evaluation harness for the ScikitDocs starter.
 
-Mirrors ``project/src/evaluation/run_eval.py`` with two ScikitDocs-specific
-adaptations:
+Two ScikitDocs-specific design points:
 
 * ``load_golden_set`` reads the starter's column shape
-  (``question,expected_doc_ids,min_hits,ground_truth_answer,query_type,version_sensitive``)
-  rather than the capstone's ``question,ground_truth,contexts`` shape.
+  (``question,expected_doc_ids,min_hits,ground_truth_answer,query_type,version_sensitive``).
 * A ``deprecated_apis`` sub-metric is layered on top of the four RAGAS
   metrics. It scores whether any scikit-learn symbol cited in the
   generated answer appears in

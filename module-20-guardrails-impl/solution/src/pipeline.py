@@ -1,4 +1,4 @@
-"""End-to-end RAG pipeline: retrieve → prompt → generate → respond (Module 07).
+"""End-to-end RAG pipeline: retrieve → prompt → generate → respond.
 
 Composes the three single-purpose modules scaffolded:
 
@@ -6,16 +6,15 @@ Composes the three single-purpose modules scaffolded:
 - ``store.query`` — top-k cosine search against the ``scikit_docs`` collection.
 - ``generator.generate`` — render the system prompt and call OpenAI.
 
-The capstone factored these into ``project/src/rag/{retriever,generator,pipeline}.py``;
-the ScikitDocs starter inlines the embed-plus-search half (no separate
-``retriever.py``) so each frozen ``src/*.py`` file maps 1:1 to one module's
-walkthrough. The composition is otherwise identical — same five RAG stages,
-same confidence-from-similarity averaging, same ``QueryResponse`` shape.
+The ScikitDocs starter inlines the embed-plus-search half (no separate
+``retriever.py``) so each frozen ``src/*.py`` file maps 1:1 to one
+walkthrough. The composition is the classic five-stage RAG loop with
+confidence-from-similarity averaging into a ``QueryResponse``.
 
-Phoenix tracing (Module 09) wraps this function from the outside with a
+Phoenix tracing wraps this function from the outside with a
 top-level span and child spans for each composed call. Don't import
-opentelemetry here — Module 09 patches the function reference rather than asking
-Module 07 to know about tracing.
+opentelemetry here — ``src/tracing.py`` composes the stages itself
+rather than asking the pipeline to know about tracing.
 """
 
 from src.config import settings

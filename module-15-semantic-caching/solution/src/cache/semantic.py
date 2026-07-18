@@ -129,6 +129,10 @@ def lookup(
         return None
 
     metadata = results["metadatas"][0][0]
+    if metadata is None:
+        # A match with no metadata carries no cached payload (a stale or
+        # foreign entry). Treat it as a miss rather than crash the request.
+        return None
     ttl_s = int(metadata.get("ttl_s", 0))
     if ttl_s > 0:
         created_at = datetime.fromisoformat(metadata["created_at"])

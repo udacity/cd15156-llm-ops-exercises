@@ -1,4 +1,4 @@
-.PHONY: help setup serve serve-proxy load-data seed-difficulty smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-analyze test verify consistency-check
+.PHONY: help setup clean serve serve-proxy load-data seed-difficulty smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-analyze test verify consistency-check
 
 # Make `src` importable for scripts run via `uv run python scripts/...`.
 # (Pytest gets this from `pythonpath = ["."]` in pyproject.toml; scripts don't.)
@@ -21,6 +21,9 @@ help: ## Show available commands
 
 setup: ## Install dependencies with uv
 	uv sync
+
+clean: ## Remove generated artifacts (venv + corpus caches) for a from-scratch setup/load-data
+	rm -rf .venv data/chroma data/phoenix data/scikit-learn-cache data/embedding_cache.jsonl data/CORPUS_VERSION
 
 serve: ## Run FastAPI development server (Module 18 fills src/gateway/app.py)
 	# --reload-dir scopes the file-watcher to src/ only.

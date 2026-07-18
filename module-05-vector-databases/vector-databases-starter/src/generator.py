@@ -1,4 +1,4 @@
-"""OpenAI generation + system-prompt rendering (Module 03).
+"""OpenAI generation + system-prompt rendering.
 
 Renders ``prompts/docbot_system.j2`` with the retrieved chunks as context
 and calls OpenAI chat completions. Frozen contract documented in
@@ -11,9 +11,8 @@ Two design choices worth naming:
 - ``keep_trailing_newline=True`` because Jinja strips the final newline
   by default and removing it can shift tokenization on some models.
 
-``cost_usd`` is computed by ``src.pricing.compute_cost`` (added by
-Module 13). The signature still matches ``INTERFACES.md`` —
-Module 13 wired the real cost in without changing the return shape.
+``cost_usd`` is computed by ``src.pricing.compute_cost``. The signature
+matches the frozen contract in ``INTERFACES.md``.
 """
 
 from pathlib import Path
@@ -27,9 +26,8 @@ from src.models import Source, TokenUsage
 from src.pricing import compute_cost
 
 # ``parents[1]`` lands on the starter root (src/ is one level under it).
-# The capstone uses ``parents[2]`` because its generator lives in
-# src/rag/. Don't generalise this — it should be obvious which directory
-# the templates live in from the file path alone.
+# Don't generalise this — it should be obvious which directory the
+# templates live in from the file path alone.
 _PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
 _env = Environment(
     loader=FileSystemLoader(_PROMPTS_DIR),
@@ -38,18 +36,25 @@ _env = Environment(
 )
 
 
-def render_system_prompt(sources: list[Source]) -> str:
+# TODO(m03-ex1): thread user_tier through render_system_prompt
+def render_system_prompt(
+    sources: list[Source], user_tier: str = "standard"
+) -> str:
     """Render ``docbot_system.j2`` with retrieved chunks as context.
 
     Args:
-        sources: List of retrieved chunks (from ``store.query``).
+        sources:   List of retrieved chunks (from ``store.query``).
+        user_tier: Tier of the calling user. Set to ``"premium"`` to
+                   inject the mailing-list pointer added in Exercise 1.
+                   Defaults to ``"standard"`` so existing callers keep
+                   working without modification.
 
     Returns:
         The fully-rendered system prompt string.
     """
     template = _env.get_template("docbot_system.j2")
     contexts = "\n\n---\n\n".join(s.chunk_text for s in sources)
-    return template.render(contexts=contexts)
+    return template.render(contexts=contexts, user_tier=user_tier)
 
 
 def generate(
@@ -65,9 +70,9 @@ def generate(
 
     Returns:
         ``(answer, TokenUsage, cost_usd)``. ``cost_usd`` comes from
-        ``src.pricing.compute_cost`` (wired in by Module 13).
+        ``src.pricing.compute_cost``.
     """
-    client = OpenAI(base_url=settings.openai_base_url or None)
+    client = OpenAI(base_url=settings.openai_base_url or None, timeout=60.0)
     system_prompt = render_system_prompt(sources)
     response = client.chat.completions.create(
         model=model,

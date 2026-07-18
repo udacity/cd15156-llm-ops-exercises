@@ -1,9 +1,9 @@
-"""CLI: ``make eval`` → ``uv run python scripts/run_eval.py`` (Module 11).
+"""CLI: ``make eval`` → ``uv run python scripts/run_eval.py``.
 
 Runs RAGAS over the ScikitDocs golden set, prints the four-metric
 aggregate plus the deprecated-API sub-metric, and optionally writes
 per-row results (RAGAS columns + deprecated-API citations) to JSON
-for the Module 11 Exercise 3 diagnostic loop.
+for the per-row diagnostic loop.
 """
 
 import argparse
@@ -54,6 +54,25 @@ def main(argv: list[str] | None = None) -> int:
             "to avoid parallel-load timeouts that produce NaN cells."
         ),
     )
+    # Regression-gate thresholds — exit code 2 if aggregate falls below the floor.
+    parser.add_argument(
+        "--faithfulness-min",
+        type=float,
+        default=None,
+        help=(
+            "If set, exit with code 2 when aggregate faithfulness falls "
+            "below this floor. Suitable for CI regression gates."
+        ),
+    )
+    parser.add_argument(
+        "--context-recall-min",
+        type=float,
+        default=None,
+        help=(
+            "If set, exit with code 2 when aggregate context_recall falls "
+            "below this floor. Suitable for CI regression gates."
+        ),
+    )
     args = parser.parse_args(argv)
 
     golden = load_golden_set(args.golden)
@@ -65,6 +84,19 @@ def main(argv: list[str] | None = None) -> int:
     aggregate = summarize(result)
 
     rows = result.to_pandas().to_dict("records")
+    # RAGAS 0.4.x renames the dataset columns to its SingleTurnSample schema
+    # (user_input/response/retrieved_contexts/reference) inside evaluate();
+    # restore the documented names this module's prose and per-row JSON use.
+    _RAGAS_TO_DOCUMENTED = {
+        "user_input": "question",
+        "response": "answer",
+        "retrieved_contexts": "contexts",
+        "reference": "ground_truth",
+    }
+    for row in rows:
+        for canonical, documented in _RAGAS_TO_DOCUMENTED.items():
+            if canonical in row:
+                row[documented] = row.pop(canonical)
     deprecated_rows = score_deprecated_apis_per_row([r["answer"] for r in rows])
     aggregate["deprecated_apis"] = aggregate_deprecated(
         r["score"] for r in deprecated_rows
@@ -86,6 +118,22 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         print(f"\nWrote per-row results to {args.output}")
+
+    # Enforce CI regression gates — exit 2 when any aggregate metric is below its floor.
+    thresholds = {
+        "faithfulness": args.faithfulness_min,
+        "context_recall": args.context_recall_min,
+    }
+    for metric, floor in thresholds.items():
+        if floor is None:
+            continue
+        actual = aggregate.get(metric)
+        if actual is None or actual < floor:
+            print(
+                f"FAIL: {metric}={actual!r} below floor {floor}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
 
     return 0
 

@@ -66,7 +66,7 @@ def generate(
         ``(answer, TokenUsage, cost_usd)``. ``cost_usd`` comes from
         ``src.pricing.compute_cost``.
     """
-    client = OpenAI(base_url=settings.openai_base_url or None)
+    client = OpenAI(base_url=settings.openai_base_url or None, timeout=60.0)
     system_prompt = render_system_prompt(sources)
     response = client.chat.completions.create(
         model=model,

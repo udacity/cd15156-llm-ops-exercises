@@ -1,8 +1,8 @@
-"""Chroma vector-store client (Module 05).
+"""Chroma vector-store client.
 
 Wraps :class:`chromadb.PersistentClient` writing to
-``settings.chroma_path``. Default collection name is ``scikit_docs`` (vs.
-the capstone's ``products``). The collection is created with
+``settings.chroma_path``. Default collection name is ``scikit_docs``. The collection is
+created with
 ``hnsw:space=cosine`` pinned — Chroma defaults to L2, which silently
 corrupts ranking against normalised OpenAI embeddings, so the override
 is load-bearing.
@@ -26,7 +26,7 @@ from src.models import Source
 # fd-2 trick in scripts/load_data.py — Python logging knobs don't
 # reach onnxruntime, and on CPU-only hosts (Workspace included) the
 # warning fires every import. Wrapped here so any importer of
-# `src.store` (Module 07 pipeline, Module 11 RAGAS) inherits the quiet behaviour.
+# `src.store` (the pipeline, the RAGAS eval) inherits the quiet behaviour.
 _saved_fd2 = os.dup(2)
 _devnull = os.open(os.devnull, os.O_WRONLY)
 try:
@@ -66,12 +66,12 @@ ALIAS_FILE: Path = Path("data/ACTIVE_COLLECTION")
 def _resolve_alias(name: str) -> str:
     """If ``name`` is the public alias, resolve to the active color.
 
-    Module 24 introduces a blue/green alias mechanism. The active
-    collection name is recorded as one line in ``data/ACTIVE_COLLECTION``
-    (e.g., ``scikit_docs_blue``). When the file is missing — the legacy
-    pre-Module 24 state, before any migration has run — the alias resolves to
+    The blue/green alias mechanism records the active collection name
+    as one line in ``data/ACTIVE_COLLECTION``
+    (e.g., ``scikit_docs_blue``). When the file is missing — before any
+    migration has run — the alias resolves to
     its own name and ``get_or_create_collection`` returns the original
-    ``scikit_docs`` collection so Module 05's behaviour is preserved.
+    ``scikit_docs`` collection so the default behaviour is preserved.
     """
     if name != ALIAS_NAME:
         return name
@@ -88,7 +88,7 @@ def get_collection(name: str = "scikit_docs") -> Any:
         name: Collection name. Defaults to ``"scikit_docs"`` (the public
             alias resolved through :func:`_resolve_alias`). Pass an
             explicit color name (``"scikit_docs_blue"`` /
-            ``"scikit_docs_green"``) to bypass the alias — Module 24's migration
+            ``"scikit_docs_green"``) to bypass the alias — the migration
             script uses this to build into the inactive color.
 
     Returns:
@@ -112,7 +112,7 @@ def add(
 
     Uses :meth:`Collection.upsert` so re-runs against the same ids are
     idempotent (the load-time path re-runs frequently as the corpus
-    rebuilds; Module 24's blue/green swap also relies on this).
+    rebuilds; the blue/green swap also relies on this).
 
     Args:
         documents:  Raw chunk text. Same length as ``embeddings``.

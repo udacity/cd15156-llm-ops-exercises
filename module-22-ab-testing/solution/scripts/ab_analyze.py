@@ -1,4 +1,4 @@
-"""A/B log analyzer for Module 22.
+"""A/B log analyzer.
 
 Reads ``data/ab_log.jsonl`` (written by ``src.optimization.ab.log_assignment``
 in the learner's Exercise 1 harness), builds a 2×2 variant-by-success
@@ -82,7 +82,7 @@ def unique_client_count(rows: list[dict]) -> int:
     For sticky-by-user A/B the *effective* sample size is the unique-
     client count, not the raw call count. Surfacing it lets the
     learner reason about whether the test is underpowered for the
-    sticky tradeoff Module 21 V3 named.
+    sticky tradeoff.
     """
     return len({r.get("client_id") for r in rows if r.get("client_id")})
 

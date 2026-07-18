@@ -1,4 +1,4 @@
-"""Operational ingestion surface for the ScikitDocs corpus (Module 24).
+"""Operational ingestion surface for the ScikitDocs corpus.
 
 Two related concerns live here:
 
@@ -10,8 +10,8 @@ Two related concerns live here:
 * :mod:`src.ingestion.watcher` — a watchdog ``Observer`` that ingests
   pre-chunked JSON sections dropped into ``data/docs_inbox/`` and
   upserts them into the **active** color via content-hashed ids. The
-  idempotent-receiver shape mirrors the producer–queue–consumer pattern
-  named in Module 23's concept walk.
+  idempotent-receiver shape follows the classic producer–queue–consumer
+  pattern.
 
 * :mod:`src.ingestion.migrate` — build the inactive color from a
   pinned ``scikit-learn`` source tag, run a small recall gate against

@@ -1,4 +1,4 @@
-"""Per-model pricing and cost computation (Module 13).
+"""Per-model pricing and cost computation.
 
 Shared infrastructure imported by both ``src.generator`` (where token
 usage is captured at the source) and ``src.cost.tracker`` (where costs
@@ -6,9 +6,8 @@ are aggregated). Lives outside both modules so neither has to import
 the other — preserves the forward-dependency rule that keeps the cost
 stack composable.
 
-Mirrors the capstone's ``project/src/pricing.py`` exactly. The same rate
-table, the same ``KeyError``-on-unknown-model behavior, the same
-"USD per 1M tokens" units. Re-verify the rates against the live OpenAI
+The rate table uses "USD per 1M tokens" units and raises
+``KeyError`` on unknown models. Re-verify the rates against the live OpenAI
 pricing page before every republish — vendor pages move.
 
 To add a new model, add an entry to ``MODEL_PRICING`` keyed on the exact

@@ -18,19 +18,19 @@ Pipeline:
        concurrent in-flight requests, so a cold build of ~4,000 chunks
        fits the <60s Workspace target.
     7. Upsert into the Chroma collection that the ``scikit_docs`` alias
-       currently resolves to (Module 24 blue/green) with
-       ``hnsw:space=cosine`` pinned at create time. Pre-Module 24 starters and
-       fresh checkouts with no ``data/ACTIVE_COLLECTION`` file land in
+       currently resolves to (the blue/green alias) with
+       ``hnsw:space=cosine`` pinned at create time. Fresh
+       checkouts with no ``data/ACTIVE_COLLECTION`` file land in
        the literal ``scikit_docs`` collection — the original
        behaviour. Chroma's metadata columns are scalar-only, so
        list-typed fields (xrefs, code_languages) are JSON-serialised on
        the way in.
     8. Write ``data/CORPUS_VERSION`` with tag + SHA + timestamp + chunk
-       count so Module 24 RAGOps can read it for blue/green migrations.
+       count so the blue/green migration tooling can read it.
 
-Module 05 refactors this script to use the now-filled
-``src.chunker.chunk_doc`` / ``src.embedder.embed`` / ``src.store.add``
-stubs. Until then the chunk/embed/upsert logic lives inline here.
+The chunk/embed/upsert logic lives inline here (rather than calling
+``src.chunker.chunk_doc`` / ``src.embedder.embed`` / ``src.store.add``)
+so the script works even in a tree where those files are still stubbed.
 """
 
 from __future__ import annotations
@@ -48,9 +48,9 @@ from pathlib import Path
 from src import constants, corpus
 from src.config import settings
 
-# Match capstone's chromadb fd-2 silencing — onnxruntime warns at C++
+# Silence chromadb's onnxruntime fd-2 warning — it fires at C++
 # init on CPU-only hosts (Workspace included) and Python logging knobs
-# don't reach it. See project/src/vectordb/store.py.
+# don't reach it. Same trick as src/store.py.
 _saved_fd2 = os.dup(2)
 _devnull = os.open(os.devnull, os.O_WRONLY)
 try:
@@ -272,13 +272,13 @@ def embed_missing(
 def _make_chroma_collection() -> "chromadb.Collection":
     """Open the active collection by routing through :func:`src.store.get_collection`.
 
-    Module 24 introduced the blue/green alias mechanism — passing
+    Routing through the alias matters here — passing
     ``COLLECTION_NAME`` (``"scikit_docs"``, the public alias) through
     ``store.get_collection`` means a post-migration ``make load-data``
     refreshes whichever color the alias currently names rather than
     silently writing to the pre-alias ``scikit_docs`` collection. When
-    no ``data/ACTIVE_COLLECTION`` file exists (bootstrap / pre-Module 24
-    starter) the resolver returns the literal ``scikit_docs`` and
+    no ``data/ACTIVE_COLLECTION`` file exists (bootstrap — no migration
+    has run yet) the resolver returns the literal ``scikit_docs`` and
     behaviour matches the original code path.
     """
     from src import store

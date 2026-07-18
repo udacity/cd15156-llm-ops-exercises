@@ -1,9 +1,9 @@
-"""Unit tests for ``src.pricing`` + ``src.cost.{tracker,dashboard}`` (Module 13).
+"""Unit tests for ``src.pricing`` + ``src.cost.{tracker,dashboard}``.
 
 Covers the pure-function surface: cost math, JSONL round-trip,
 summarization, HTML rendering on empty and populated inputs. The
-``/cost-dashboard`` route itself is integration-tested at Module 18
-when the gateway lands.
+``/cost-dashboard`` route itself is integration-tested through the
+gateway app.
 """
 
 import json

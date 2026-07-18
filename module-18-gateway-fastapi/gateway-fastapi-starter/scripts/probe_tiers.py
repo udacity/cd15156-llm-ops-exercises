@@ -1,4 +1,4 @@
-"""Probe the classifier's tier routing for Module 18 Exercise 1.
+"""Probe the classifier's tier routing for Exercise 1.
 
 Runs the five sample questions from the exercise through the gateway's
 ``classify`` + ``select_model`` and prints the tier each landed on next to

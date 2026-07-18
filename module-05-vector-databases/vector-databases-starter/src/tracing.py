@@ -1,17 +1,17 @@
-"""Phoenix tracing for the ScikitDocs pipeline (Module 09).
+"""Phoenix tracing for the ScikitDocs pipeline.
 
 Two responsibilities:
 
 1. ``init_tracing`` boots the embedded Phoenix UI, registers an
    OpenTelemetry ``TracerProvider``, and auto-instruments the OpenAI
    SDK. Idempotent — safe to call multiple times from the lifespan of a
-   long-running process (Module 18 wires it into the FastAPI gateway)
-   or from a one-off Python invocation in the Module 09 demo and exercises.
+   long-running process (the FastAPI gateway calls it from its lifespan)
+   or from a one-off Python invocation in the demo and exercises.
 
 2. ``traced_pipeline`` composes the same four functions
    ``pipeline.run_pipeline`` does — ``embed_query`` → ``store.query`` →
    ``render_system_prompt`` → ``generate`` — and emits one named span per
-   stage. The resulting hierarchy matches the Module 08 concept's vocabulary:
+   stage. The resulting hierarchy:
 
        rag_query           (root, the request)
          └── retrieve
@@ -21,11 +21,11 @@ Two responsibilities:
          └── generate      (auto-child: OpenAI ChatCompletion span)
 
    Re-implementing the composition here (instead of decorating
-   ``run_pipeline``) is deliberate: the Module 09 learner sees each stage as
+   ``run_pipeline``) is deliberate: the learner sees each stage as
    its own span in Phoenix, which is the diagnostic surface the eval,
-   cost, and latency modules will read from later. The trade-off is the
-   small duplication with ``src/pipeline.py``; the contract that Module 07
-   should not import OpenTelemetry (so the pipeline stays a pure RAG
+   cost, and latency work reads from later. The trade-off is the
+   small duplication with ``src/pipeline.py``; the contract that the
+   pipeline should not import OpenTelemetry (so it stays a pure RAG
    composition) keeps the duplication contained to this one file.
 
 Trace-export rendering helpers (``summarize_traces``, ``render_markdown``,
@@ -136,14 +136,14 @@ def traced_pipeline(
     Imports the four underlying functions directly (rather than calling
     ``run_pipeline``) so ``retrieve``, ``embed``, ``search``, ``augment``,
     and ``generate`` each become their own named span. The resulting
-    Gantt chart in Phoenix matches the vocabulary the Module 08 concept uses.
+    Gantt chart in Phoenix names each RAG stage explicitly.
 
     Returns a ``QueryResponse`` with ``trace_id`` populated (32-character
     hex from the W3C Trace Context spec). When ``init_tracing`` was not
     called or the backend is ``"none"``, the OTel API returns a no-op
     tracer; spans are silently dropped and ``trace_id`` is ``None``.
     """
-    # Imports here (not at module top) match the capstone pattern: the
+    # Imports here (not at module top) are deliberate: the
     # tracer wrapper composes the pipeline by hand, but importing the
     # underlying functions lazily means a learner can drop ``tracing.py``
     # into a fresh checkout without circular-import gymnastics.
@@ -233,8 +233,7 @@ def traced_pipeline(
 
 # === Trace export — markdown + JSON renderers ===
 #
-# Mirror of capstone ``project/src/tracing/trace_export.py``. Kept in
-# this file (not a separate module) so the starter sticks to its
+# Kept in this file (not a separate module) so the starter sticks to its
 # "one flat file per module" convention. ``scripts/show_traces.py``
 # is the thin CLI that calls these.
 

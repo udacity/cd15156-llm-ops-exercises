@@ -1,11 +1,11 @@
-"""HTTP route handlers for the ScikitDocs gateway (Module 18 + Module 20).
+"""HTTP route handlers for the ScikitDocs gateway.
 
 ``POST /query`` accepts a Pydantic-validated body plus the optional
 ``X-Client-Id`` request header (per ``constants.CLIENT_ID_HEADER``).
 ``GET /health`` is a static liveness probe so the runtime check has a
 zero-cost endpoint to ping.
 
-Module 20 inserted the guardrail stack between the route handler
+The guardrail stack sits between the route handler
 and :func:`src.gateway.router.route_query`. The order is deliberate
 (documented in the handler body): rate-limit first (LLM10 — cheapest
 check, fails before any work), prompt-injection regex/DeBERTa second,
@@ -15,20 +15,22 @@ guard (LLM-judge hallucination check) runs after dispatch.
 
 Why ``X-Client-Id`` is optional: the gateway must accept the header
 when the gateway sends it for sticky-by-user bucketing, and it must also
-serve clean traffic from callers that do not provide one (the Module 11
+serve clean traffic from callers that do not provide one (the
 RAGAS eval harness, for example, fires un-headered requests). Pydantic
 + FastAPI's ``Header(default=None)`` gives both behaviors in one line.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Header
-from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, ValidationError
 
 from src import constants
 from src.config import settings
 from src.gateway.router import route_query
 from src.guardrails.input_guards import (
+    detect_invisible_unicode,
     detect_pii,
     detect_prompt_injection,
     detect_system_prompt_leak,
@@ -40,13 +42,13 @@ from src.guardrails.wrapper import (
     SAFE_FILTERED_MESSAGE,
     safe_response,
 )
-from src.models import QueryResponse
+from src.models import QueryResponse, QueryResponseValidator
 
 
 class QueryRequest(BaseModel):
     """Validated request body for ``POST /query``.
 
-    The ``question`` cap mirrors the capstone's 4,000-char ceiling —
+    The ``question`` cap is a 4,000-char ceiling —
     enough room for paragraph-length queries, well under the
     context-window budget for either tier. ``top_k`` is bounded to keep
     Chroma latency predictable; widening it past 20 in practice trades
@@ -56,6 +58,8 @@ class QueryRequest(BaseModel):
 
     question: str = Field(..., min_length=1, max_length=4000)
     top_k: int = Field(constants.DEFAULT_TOP_K, ge=1, le=20)
+    # TODO(m18-ex3): add ``provider: Literal["openai", "anthropic"] = "openai"`` field to QueryRequest (import Literal from typing) and thread ``request.provider`` into the ``route_query`` call below
+    provider: Literal["openai", "anthropic"] = "openai"
 
 
 router = APIRouter()
@@ -67,7 +71,7 @@ def query_endpoint(
     client_id: Annotated[
         str | None, Header(alias=constants.CLIENT_ID_HEADER)
     ] = None,
-) -> QueryResponse:
+) -> QueryResponse | JSONResponse:
     """Dispatch through the guardrail stack to :func:`route_query`.
 
     Order is intentional and load-bearing:
@@ -93,6 +97,11 @@ def query_endpoint(
     if rl_reason is not None:
         return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=rl_reason)
 
+    # TODO(m20-exercise-1): Option A wiring — call your detect_invisible_unicode here, between the rate-limit and injection checks (cheaper checks run earlier); return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=reason) on a hit
+    iu_reason = detect_invisible_unicode(request.question)
+    if iu_reason is not None:
+        return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=iu_reason)
+
     # 2. Prompt injection (anchored OWASP LLM01:2025).
     pi_reason = detect_prompt_injection(request.question)
     if pi_reason is not None:
@@ -115,6 +124,7 @@ def query_endpoint(
         cleaned,
         top_k=request.top_k,
         client_id=client_id,
+        provider=request.provider,
     )
 
     # 6. Hallucination check on the output.
@@ -127,6 +137,25 @@ def query_endpoint(
     # sees the redaction in the audit log even on the happy path.
     if pii_reason is not None:
         response.blocked_by = pii_reason
+    # 7. Structured-output validation at the gateway boundary.
+    #    The base ``QueryResponse`` allows ``sources=[]`` and an
+    #    out-of-range ``confidence``; the ``QueryResponseValidator``
+    #    companion model adds the ``min_length=1`` + ``[0, 1]``
+    #    constraints the output-validator contract
+    #    pins. A validation failure here is a contract bug, not a
+    #    user error — we return 502 (Bad Gateway), not 4xx.
+    try:
+        QueryResponseValidator.model_validate(response.model_dump())
+    except ValidationError as exc:
+        first_error = exc.errors()[0]
+        return JSONResponse(
+            status_code=502,
+            content={
+                "detail": "output_validation_failed",
+                "field": str(first_error.get("loc", ("unknown",))[0]),
+            },
+        )
+
     return response
 
 
