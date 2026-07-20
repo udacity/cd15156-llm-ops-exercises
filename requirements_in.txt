@@ -1,12 +1,22 @@
-# requirements_in.txt — direct dependencies for the Vocareum Workspace image
-# covering ALL 12 Course 2 (LLM Ops) implementation-module exercises.
+# requirements_in.txt — direct dependencies for the ONE Vocareum Workspace image
+# that serves BOTH the 12 Course 2 (LLM Ops) implementation-module exercises AND
+# the capstone project. A single image, one manifest, both workloads.
 #
 # Scope:
 #   Union of the `[project].dependencies` and `[dependency-groups].dev`
 #   entries from each exercise's solution/pyproject.toml under
-#   exercises/<NN>-<topic>/solution/. Solutions are a superset of
-#   starters (the starter for m18 omits `tenacity`; learners add it
-#   while doing the exercise — so the image must ship it).
+#   exercises/<NN>-<topic>/solution/, AND the capstone's
+#   project/pyproject.toml (runtime deps + dev group). Solutions are a
+#   superset of starters (the starter for m18 omits `tenacity`; learners
+#   add it while doing the exercise — so the image must ship it).
+#
+#   The capstone adds ZERO packages: every project/pyproject.toml dependency
+#   is already present here with a compatible pin (the capstone is a strict
+#   subset of the exercise closure by package name). The only version-range
+#   difference was `openai` — the capstone allowed `<3`, this image pins `<2`
+#   (the tested 1.x path, openai==1.109.1); `<2` satisfies both, and the
+#   capstone pyproject was tightened to match. Verified: this pinned image
+#   passes the full 231-test capstone suite (see requirements.txt header).
 #
 # Target:
 #   Vocareum Udacity Workspace, Python 3.11 (pyproject pins 3.11-3.13).
