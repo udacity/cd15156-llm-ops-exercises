@@ -853,7 +853,7 @@ tqdm==4.67.3
     #   sentence-transformers
     #   spacy
     #   transformers
-transformers==4.51.3
+transformers==5.5.0
     # via
     #   llm-guard
     #   sentence-transformers
