@@ -578,7 +578,7 @@ pandas==3.0.3
     #   datasets
 phonenumbers==8.13.55
     # via presidio-analyzer
-pillow==12.2.0
+pillow==12.3.0
     # via
     #   ragas
     #   sentence-transformers
