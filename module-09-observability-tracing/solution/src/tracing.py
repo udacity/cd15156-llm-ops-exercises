@@ -87,7 +87,22 @@ def init_tracing() -> None:
         os.environ.setdefault("PHOENIX_WORKING_DIR", settings.phoenix_working_dir)
         os.environ.setdefault("PHOENIX_HOST", settings.phoenix_host)
         os.environ.setdefault("PHOENIX_PORT", str(settings.phoenix_port))
-        _phoenix_session = px.launch_app()
+
+        # Phoenix reflects its own SQLite schema on launch. Two of its
+        # indexes (ix_latency, ix_cumulative_llm_token_count_total) are
+        # expression-based, which SQLAlchemy reflection can't represent —
+        # it warns and skips them. Benign, but noisy on every startup, so
+        # scope the suppression to exactly that message (real warnings
+        # still surface).
+        import warnings
+
+        from sqlalchemy.exc import SAWarning
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Skipped unsupported reflection", SAWarning
+            )
+            _phoenix_session = px.launch_app()
 
     if _tracer_provider is None:
         from openinference.instrumentation.openai import OpenAIInstrumentor

@@ -37,7 +37,14 @@ help: ## Show available commands
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
 setup: ## Verify the shared environment provides this module's dependencies
-	@uv run --no-project python -c "import fastapi, uvicorn, pytest, chromadb, openai, ragas, phoenix, llm_guard, watchdog" \
+	@printf '%s\n' \
+		'import os' \
+		'_s = os.dup(2); os.dup2(os.open(os.devnull, os.O_WRONLY), 2)  # mute onnxruntime C++ init warning (fd-2, matches src/store.py)' \
+		'try:' \
+		'    import fastapi, uvicorn, pytest, chromadb, openai, ragas, phoenix, llm_guard, watchdog' \
+		'finally:' \
+		'    os.dup2(_s, 2)  # restore stderr so a genuine ImportError traceback is still visible' \
+		| uv run --no-project python - \
 		&& echo "OK: environment ready (Udacity Workspace image or exercises/.venv)" \
 		|| { echo ""; \
 		     echo "Dependencies missing. Nothing was installed."; \
