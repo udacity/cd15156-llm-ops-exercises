@@ -768,7 +768,7 @@ scipy==1.17.1
     #   sentence-transformers
 sentence-transformers==4.1.0
     # via -r requirements_in.txt
-setuptools==82.0.1
+setuptools==83.0.0
     # via
     #   spacy
     #   thinc
