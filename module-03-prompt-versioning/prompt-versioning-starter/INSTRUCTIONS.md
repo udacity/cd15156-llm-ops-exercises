@@ -6,7 +6,7 @@ This starter is the ScikitDocs RAG application with every operational feature wi
 
 In this module you will add three things on top of that codebase: a `user_tier` Jinja conditional in `prompts/docbot_system.j2` (Exercise 1), an environment-aware prompt loader at `src/prompts/loader.py` that switches between `prompts/dev/` and `prompts/prod/` via the `PROMPT_ENV` setting (Exercise 2), and a small A/B-test harness at `scripts/ab_refusal.py` that compares refusal rates between two prompt branches with a chi-squared significance check (Exercise 3).
 
-Run `make setup` to install dependencies, then `make load-data` once to populate the Chroma vector store. Open a second terminal and run `make serve` to start the FastAPI server on `localhost:8080` — Exercise 3's harness and the demo's curl commands both target it. Then follow the demo walkthrough first, then the three exercises in order; each exercise has a self-verifiable acceptance criterion.
+Run `make setup` to verify your environment has everything it needs, then `make load-data` once to populate the Chroma vector store. Open a second terminal and run `make serve` to start the FastAPI server on `localhost:8080`. Exercise 3's harness and the demo's curl commands both target it. Then follow the demo walkthrough first, then the three exercises in order; each exercise has a self-verifiable acceptance criterion.
 
 ---
 

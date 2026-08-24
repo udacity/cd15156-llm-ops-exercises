@@ -7,7 +7,7 @@ This starter is the ScikitDocs RAG app — a Q&A assistant for the scikit-learn 
 Bring up the corpus and confirm the live route before you start:
 
 ```bash
-uv sync
+make setup                    # verifies the environment, installs nothing
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key)
 make load-data                # ~45–60s cold; ~$0.10 in embeddings
 make smoke-gate               # confirms recall@5 floor

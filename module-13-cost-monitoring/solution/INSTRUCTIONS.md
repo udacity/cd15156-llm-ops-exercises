@@ -7,7 +7,7 @@ This starter is the ScikitDocs RAG app — a Q&A assistant for the scikit-learn 
 Bring up the corpus before you start:
 
 ```bash
-uv sync
+make setup                    # verifies the environment, installs nothing
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key)
 make load-data                # ~45–60s cold, ~5s warm; ~$0.10 in embeddings
 make seed-difficulty          # upsert 8 deliberately-confusing chunks

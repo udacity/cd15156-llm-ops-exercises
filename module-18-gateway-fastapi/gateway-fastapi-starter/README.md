@@ -22,8 +22,12 @@ Exercises read from `src/` but never write to it.
 
 ## Setup
 
+Nothing to install on the Udacity Workspace. The image ships every dependency.
+On your own machine, run `make -C ../.. setup` once. It builds the one shared
+virtualenv at `exercises/.venv` that every module uses.
+
 ```bash
-uv sync                       # installs deps into .venv/
+make setup                    # verifies the environment, installs nothing
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key)
 make test                     # smoke test passes immediately at scaffold time
 ```

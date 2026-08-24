@@ -7,7 +7,7 @@ This starter is the ScikitDocs RAG app — a Q&A assistant for the scikit-learn 
 Bring up the environment before you start:
 
 ```bash
-uv sync
+make setup                    # verifies the environment, installs nothing
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key);
                               # set OPENAI_BASE_URL=https://openai.vocareum.com/v1 on Vocareum
 make load-data                # ~45–60s cold, ~5s warm; ~$0.10 in embeddings
@@ -123,13 +123,17 @@ The mechanics this exercise pins are the ones the concept module's video on retr
 
 ### What to do
 
-1. Add tenacity to the project. It is already a transitive dependency through several packages; the explicit add is one line in `pyproject.toml` under `[project.dependencies]`:
+1. Declare tenacity as a dependency. Open `pyproject.toml` and add one line under `[project.dependencies]`:
 
    ```
    "tenacity>=8.5,<10",
    ```
 
-   followed by `uv sync` to install. Confirm with `uv run python -c "import importlib.metadata as m; print(m.version('tenacity'))"`.
+   There is nothing to install. The environment already ships tenacity, because the course image is built from the union of every module's solution dependencies. Declaring it anyway is the point of this step: the line is how the next person to open this project learns that the retry policy is something the code requires, not an accident of what happened to be installed. Confirm the version you are coding against:
+
+   ```
+   uv run python -c "import importlib.metadata as m; print(m.version('tenacity'))"
+   ```
 
 2. Decorate the OpenAI chat-completions call site. Open `src/generator.py`. The current call at lines 72–79 is bare:
 
