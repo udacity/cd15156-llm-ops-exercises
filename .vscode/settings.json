@@ -1,7 +1,6 @@
 {
     // Visual settings for recording
     "workbench.colorTheme": "Default High Contrast",
-    "workbench.activityBar.visible": false,
     "workbench.sideBar.location": "right",
     "workbench.statusBar.visible": false,
     
@@ -40,5 +39,6 @@
 
     // No interruptions mid-recording
     "update.mode": "none",
-    "extensions.ignoreRecommendations": true
+    "extensions.ignoreRecommendations": true,
+    "workbench.activityBar.location": "hidden"
 }

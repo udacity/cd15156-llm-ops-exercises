@@ -103,7 +103,7 @@ Sanity check before you go further:
 uv run python -c "from src.generator import render_system_prompt; from src.models import Source; print(render_system_prompt([Source(doc_id='x', chunk_text='LogisticRegression default penalty is l2.', similarity_score=0.9)])[:200])"
 ```
 
-You should see the first 200 characters of the rendered system prompt with the chunk visible inside the context block. If the import fails, run `uv sync`; if the render fails, `parents[1]` is landing in the wrong place — print `_PROMPTS_DIR` to debug.
+You should see the first 200 characters of the rendered system prompt with the chunk visible inside the context block. If the import fails, run `make setup`; if the render fails, `parents[1]` is landing in the wrong place, so print `_PROMPTS_DIR` to debug.
 
 ## Part 2 — Switching versions with a Git branch
 

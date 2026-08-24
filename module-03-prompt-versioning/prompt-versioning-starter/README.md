@@ -22,8 +22,12 @@ Exercises read from `src/` but never write to it.
 
 ## Setup
 
+Nothing to install on the Udacity Workspace. The image ships every dependency.
+On your own machine, run `make -C ../.. setup` once. It builds the one shared
+virtualenv at `exercises/.venv` that every module uses.
+
 ```bash
-uv sync                       # installs deps into .venv/
+make setup                    # verifies the environment, installs nothing
 cp .env.example .env          # add your OPENAI_API_KEY (or Vocareum voc- key)
 make test                     # smoke test passes immediately at scaffold time
 ```
@@ -65,8 +69,8 @@ corpus cache (`data/chroma/`, `data/scikit-learn-cache/`,
 `data/embedding_cache.jsonl`, `data/CORPUS_VERSION`, `data/phoenix/`). Your
 source data (golden set, seeded chunks) is tracked in Git and left untouched.
 
-**Cost impact of a reset.** `make setup` after a clean is free — it only
-reinstalls Python packages, no API calls. The charge lands on the next
+**Cost impact of a reset.** `make setup` after a clean is free. It only
+verifies the environment and makes no API calls. The charge lands on the next
 `make load-data`: because clean removed `embedding_cache.jsonl`, that run is a
 **cold** rebuild that re-embeds the whole corpus (~$0.08–0.15, ~45–60 s)
 instead of a sub-five-second warm replay. So each full

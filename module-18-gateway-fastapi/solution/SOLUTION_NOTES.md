@@ -25,7 +25,7 @@ The decorator wires `retry=retry_if_exception(_is_retryable)` — the helper-dri
 ## Verification
 
 ```bash
-# After uv sync (which pulls tenacity) + make load-data:
+# After make load-data (tenacity ships with the environment):
 uv run pytest tests/test_retry.py -v
 uv run python -c "import json; from src.gateway.classifier import QueryType, _VALID_LABELS; print(_VALID_LABELS)"
 uv run python -c "from src.gateway.providers.anthropic import generate, _call_anthropic; print(_call_anthropic('claude-sonnet-stub', 'sys', 'hello'))"
