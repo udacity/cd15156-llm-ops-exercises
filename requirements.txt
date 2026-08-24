@@ -622,7 +622,7 @@ pyarrow==24.0.0
     # via
     #   arize-phoenix
     #   datasets
-pyasn1==0.6.3
+pyasn1==0.6.4
     # via ldap3
 pycparser==3.0
     # via cffi
