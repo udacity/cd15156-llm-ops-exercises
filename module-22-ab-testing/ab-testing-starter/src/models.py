@@ -41,16 +41,14 @@ class QueryResponse(BaseModel):
     blocked_by: str | None = None
 
 
-# Structured-output guard model that pins gateway-boundary contract (citations ≥1, confidence ∈ [0,1])
+# Structured-output guard model that pins gateway-boundary contract (sources ≥1, confidence ∈ [0,1])
 class QueryResponseValidator(BaseModel):
     """Structured-output guard for the `/query` boundary.
 
-    The contract: answer + citations ≥1 + confidence ∈ [0,1]. Our
-    `QueryResponse` already exists and uses `sources`, so this companion
-    model adds the missing constraints without renaming the field
-    downstream code depends on. `sources` is the same concept the
-    contract calls `citations` — at the gateway boundary the dict shape
-    is identical.
+    The contract: answer + sources ≥1 + confidence ∈ [0,1]. Our
+    `QueryResponse` already exists, so this companion model adds the
+    missing constraints without touching the field downstream code
+    depends on.
 
     What this enforces that `QueryResponse` alone does not:
 

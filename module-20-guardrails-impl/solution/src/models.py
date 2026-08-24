@@ -1,10 +1,10 @@
 """Shared Pydantic models for the ScikitDocs starter.
 
 These are the shared type shapes every layer imports. The local-only
-deviation (exercise 4) is that `QueryResponse.citations` and
-`QueryResponse.confidence` carry Pydantic `Field` constraints — the
-structured-output contract the learner wires at the gateway boundary
-in the output-validator exercise.
+deviation (exercise 4) is the `QueryResponseValidator` companion model
+at the bottom of this file — the structured-output guard the learner
+builds and wires at the gateway boundary in the output-validator
+exercise. `QueryResponse` itself stays unconstrained.
 """
 
 from pydantic import BaseModel, Field
@@ -33,12 +33,40 @@ class QueryResponse(BaseModel):
     """Standardised response returned by the ScikitDocs `/query` route."""
 
     answer: str
-    # TODO(m20-exercise-4): add Pydantic Field constraints — citations min_length=1, confidence between 0.0 and 1.0
-    citations: list[Source] = Field(..., min_length=1)
-    confidence: float = Field(..., ge=0.0, le=1.0)
+    sources: list[Source]
+    confidence: float
     model: str
     tokens: TokenUsage
     cost_usd: float
     cached: bool = False
     trace_id: str | None = None
     blocked_by: str | None = None
+
+
+# Structured-output guard model that pins gateway-boundary contract (sources ≥1, confidence ∈ [0,1])
+# TODO(m20-exercise-4): build the QueryResponseValidator companion model — sources min_length=1, confidence between 0.0 and 1.0
+class QueryResponseValidator(BaseModel):
+    """Structured-output guard for the `/query` boundary.
+
+    The contract: answer + sources ≥1 + confidence ∈ [0,1]. Our
+    `QueryResponse` already exists, so this companion model adds the
+    missing constraints without touching the field downstream code
+    depends on.
+
+    What this enforces that `QueryResponse` alone does not:
+
+    - `sources` must be non-empty (`min_length=1`). The hallucination class
+      we care about is "answer that cites nothing"; the LLM-judge catches
+      *wrong* citations, this validator catches *missing* ones.
+    - `confidence` must be in `[0.0, 1.0]`. The base model accepts any
+      float; the validator pins the contract a downstream consumer can
+      trust without re-checking.
+
+    Used by the boundary block in `src/gateway/routes.py` that wraps the
+    dispatched response in `QueryResponseValidator.model_validate(...)`
+    and returns HTTP 502 on `ValidationError`.
+    """
+
+    answer: str
+    sources: list[Source] = Field(..., min_length=1)
+    confidence: float = Field(..., ge=0.0, le=1.0)

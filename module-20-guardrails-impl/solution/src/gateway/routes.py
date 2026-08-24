@@ -35,6 +35,10 @@ from src.guardrails.input_guards import (
     detect_prompt_injection,
     detect_system_prompt_leak,
 )
+from src.guardrails.llm_guard.input_guards import (
+    detect_pii_layered,
+    detect_prompt_injection_layered,
+)
 from src.guardrails.llm_judge.output_guards import check_hallucination
 from src.guardrails.rate_limit import check_rate_limit
 from src.guardrails.wrapper import (
@@ -42,7 +46,7 @@ from src.guardrails.wrapper import (
     SAFE_FILTERED_MESSAGE,
     safe_response,
 )
-from src.models import QueryResponse
+from src.models import QueryResponse, QueryResponseValidator
 
 
 class QueryRequest(BaseModel):
@@ -102,8 +106,12 @@ def query_endpoint(
     if iu_reason is not None:
         return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=iu_reason)
 
-    # 2. Prompt injection (anchored OWASP LLM01:2025).
-    pi_reason = detect_prompt_injection(request.question)
+    # 2. Prompt injection (anchored OWASP LLM01:2025) — regex → DeBERTa
+    #    layered when the ML input guards are enabled, regex-only otherwise.
+    if settings.enable_ml_input_guards:
+        pi_reason = detect_prompt_injection_layered(request.question)
+    else:
+        pi_reason = detect_prompt_injection(request.question)
     if pi_reason is not None:
         return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=pi_reason)
 
@@ -113,8 +121,12 @@ def query_endpoint(
         return safe_response(SAFE_BLOCKED_MESSAGE, blocked_by=spl_reason)
 
     # 4. PII redaction — redact, pass through. ``cleaned`` is what the
-    #    pipeline sees; the original is dropped on the floor.
-    cleaned, pii_kinds = detect_pii(request.question)
+    #    pipeline sees; the original is dropped on the floor. Regex →
+    #    Presidio layered when the ML input guards are enabled.
+    if settings.enable_ml_input_guards:
+        cleaned, pii_kinds = detect_pii_layered(request.question)
+    else:
+        cleaned, pii_kinds = detect_pii(request.question)
     pii_reason: str | None = None
     if pii_kinds:
         pii_reason = f"pii_redacted: {','.join(pii_kinds)}"
@@ -129,7 +141,7 @@ def query_endpoint(
 
     # 6. Hallucination check on the output.
     if settings.enable_output_guard:
-        passed, halluc_reason = check_hallucination(response.answer, response.citations)
+        passed, halluc_reason = check_hallucination(response.answer, response.sources)
         if not passed:
             return safe_response(SAFE_FILTERED_MESSAGE, blocked_by=halluc_reason or "hallucination: judge flagged")
 
@@ -139,15 +151,15 @@ def query_endpoint(
         response.blocked_by = pii_reason
 
     # 7. Structured-output validation at the gateway boundary.
-    #    ``QueryResponse`` carries the ``citations`` min_length=1 and
-    #    ``confidence`` ∈ [0, 1] Pydantic ``Field`` constraints. Re-
-    #    validating the dumped response catches a contract violation
-    #    introduced upstream — a validation failure here is a server-
-    #    side bug, not a user error, so we return 502 (Bad Gateway),
-    #    not 4xx.
-    # TODO(m20-exercise-4): wrap response construction in try/except ValidationError; return 502 with detail="output_validation_failed" on failure
+    #    The base ``QueryResponse`` allows ``sources=[]`` and an
+    #    out-of-range ``confidence``; the ``QueryResponseValidator``
+    #    companion model adds the ``min_length=1`` + ``[0, 1]``
+    #    constraints the output-validator contract
+    #    pins. A validation failure here is a contract bug, not a
+    #    user error — we return 502 (Bad Gateway), not 4xx.
+    # TODO(m20-exercise-4): wrap the boundary check in try/except ValidationError — QueryResponseValidator.model_validate the dumped response; return 502 with detail="output_validation_failed" on failure
     try:
-        QueryResponse.model_validate(response.model_dump())
+        QueryResponseValidator.model_validate(response.model_dump())
     except ValidationError as exc:
         first_error = exc.errors()[0]
         return JSONResponse(

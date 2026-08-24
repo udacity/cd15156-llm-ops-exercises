@@ -9,9 +9,10 @@ Two tests pin the structured-output contract at the `/query` boundary:
    ``sources=[]``) → endpoint returns 502 with a body naming
    ``sources`` as the failing field.
 
-The hallucination check is bypassed via a direct patch so the validator
-seam is what each test is actually exercising — these tests are about
-the structured-output guard, not the LLM-judge.
+The hallucination check and the layered input guards are bypassed via
+direct patches so the validator seam is what each test is actually
+exercising — these tests are about the structured-output guard, not
+the LLM-judge or the input stack.
 """
 
 from __future__ import annotations
@@ -69,6 +70,14 @@ def test_query_endpoint_passes_well_formed_response() -> None:
             "src.gateway.routes.check_hallucination",
             return_value=(True, None),
         ),
+        patch(
+            "src.gateway.routes.detect_prompt_injection_layered",
+            return_value=None,
+        ),
+        patch(
+            "src.gateway.routes.detect_pii_layered",
+            side_effect=lambda text: (text, []),
+        ),
     ):
         client = TestClient(app)
         response = client.post(
@@ -96,6 +105,14 @@ def test_query_endpoint_returns_502_on_citation_stripped_response() -> None:
         patch(
             "src.gateway.routes.check_hallucination",
             return_value=(True, None),
+        ),
+        patch(
+            "src.gateway.routes.detect_prompt_injection_layered",
+            return_value=None,
+        ),
+        patch(
+            "src.gateway.routes.detect_pii_layered",
+            side_effect=lambda text: (text, []),
         ),
     ):
         client = TestClient(app)

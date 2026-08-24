@@ -1,4 +1,4 @@
-.PHONY: help setup clean serve serve-proxy load-data seed-difficulty smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-analyze test verify consistency-check
+.PHONY: help setup clean serve serve-proxy load-data seed-difficulty smoke-gate show-traces seed-traces seed-cost-log cost-dashboard eval eval-topk-sweep watch migrate-blue-green ab-analyze test verify
 
 # Make `src` importable for scripts run via `uv run python scripts/...`.
 # (Pytest gets this from `pythonpath = ["."]` in pyproject.toml; scripts don't.)
@@ -29,7 +29,7 @@ WORKSPACE ?= /workspace
 # command works verbatim in make or typed into your terminal on either host.
 
 # Cap RAGAS executor concurrency (filled in by Module 11 — placeholder here
-# so the variable exists at scaffold time and consistency-check passes).
+# so the variable exists at scaffold time).
 EVAL_MAX_WORKERS ?= 1
 
 help: ## Show available commands

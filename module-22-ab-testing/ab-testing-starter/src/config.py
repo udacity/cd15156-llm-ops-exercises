@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     # === Feature flags (taught later; early modules ship these off via .env) ===
     enable_semantic_cache: bool = True
     enable_output_guard: bool = True
+    enable_ml_input_guards: bool = True
 
     # TODO(m03-ex2): add prompt_env setting for env-aware loader
     # Selects ``prompts/<prompt_env>/`` for the env-aware loader.

@@ -86,7 +86,7 @@ def test_locked_invariants_count_is_21() -> None:
 
 
 def test_critical_invariant_values() -> None:
-    """Pin the values that downstream modules depend on. Drift = consistency-check fail."""
+    """Pin the values that downstream modules depend on. Drift here is a review-blocker."""
     assert constants.SERVICE_PORT == 8080
     assert constants.MODEL_COMPLEX == "gpt-4o"
     assert constants.MODEL_SIMPLE == "gpt-4o-mini"

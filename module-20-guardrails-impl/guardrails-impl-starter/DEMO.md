@@ -51,7 +51,7 @@ curl -s -X POST http://localhost:8080/query \
   | python -m json.tool
 ```
 
-HTTP 200, `answer` set to `SAFE_BLOCKED_MESSAGE` (defined at `src/guardrails/wrapper.py:14-17`), `citations` empty, `confidence` zero, and `blocked_by: "prompt_injection: matched pattern 'ignore_previous'"`. The regex short-circuit fired; DeBERTa was not invoked. The pattern name in the reason string is what an operator greps audit logs for.
+HTTP 200, `answer` set to `SAFE_BLOCKED_MESSAGE` (defined at `src/guardrails/wrapper.py:14-17`), `sources` empty, `confidence` zero, and `blocked_by: "prompt_injection: matched pattern 'ignore_previous'"`. The regex short-circuit fired; DeBERTa was not invoked. The pattern name in the reason string is what an operator greps audit logs for.
 
 Slot 3 — fire a system-prompt extraction:
 
@@ -62,7 +62,7 @@ curl -s -X POST http://localhost:8080/query \
   | python -m json.tool
 ```
 
-Same shape, `blocked_by: "system_prompt_leak: matched pattern 'first_sentence_context'"`. The route handler runs slot 1 then slot 3 in sequence (see `src/gateway/routes.py:90-100`), so a hijack-then-extract payload is caught by whichever pattern fires first. The anchor is CVE-2025-54135 — the Cursor incident.
+Same shape, `blocked_by: "system_prompt_leak: matched pattern 'first_sentence_context'"`. The route handler runs slot 1 then slot 3 in sequence (see `src/gateway/routes.py:109-121`), so a hijack-then-extract payload is caught by whichever pattern fires first. The anchor is CVE-2025-54135 — the Cursor incident.
 
 Slot 2 — fire a PII-bearing payload to see the redaction path (not a block):
 
@@ -77,7 +77,7 @@ The response comes back populated with a real answer about `OneHotEncoder`, and 
 
 ## Walkthrough 3 — Trace the output side: the LLM-judge and the LLM10 cap
 
-Open `src/gateway/routes.py` at lines 102 to 105. After `route_query` returns, the handler calls `check_hallucination(response.answer, response.citations)` and rewrites the response to `SAFE_FILTERED_MESSAGE` on a `NOT_SUPPORTED` verdict. The judge lives at `src/guardrails/llm_judge/output_guards.py`. Three things to read. First, the rubric is in `prompts/judge.j2` — an answer is SUPPORTED if every cited API symbol, function name, parameter, default value, or return type appears in the retrieved source chunks; NOT_SUPPORTED if the answer cites something the sources do not mention. Second, the response contract is JSON mode (`response_format={"type": "json_object"}`) and the parser pulls `{verdict, reason}`. Third, every error path fails open — network exception, JSON-decode error, missing `verdict` field — and logs at WARN. Fire a hallucination-prone query:
+Open `src/gateway/routes.py` at lines 143 to 146. After `route_query` returns, the handler calls `check_hallucination(response.answer, response.sources)` and rewrites the response to `SAFE_FILTERED_MESSAGE` on a `NOT_SUPPORTED` verdict. The judge lives at `src/guardrails/llm_judge/output_guards.py`. Three things to read. First, the rubric is in `prompts/judge.j2` — an answer is SUPPORTED if every cited API symbol, function name, parameter, default value, or return type appears in the retrieved source chunks; NOT_SUPPORTED if the answer cites something the sources do not mention. Second, the response contract is JSON mode (`response_format={"type": "json_object"}`) and the parser pulls `{verdict, reason}`. Third, every error path fails open — network exception, JSON-decode error, missing `verdict` field — and logs at WARN. Fire a hallucination-prone query:
 
 ```
 curl -s -X POST http://localhost:8080/query \

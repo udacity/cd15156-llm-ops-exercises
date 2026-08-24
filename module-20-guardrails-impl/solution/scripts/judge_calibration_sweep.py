@@ -55,7 +55,7 @@ def _score(question: str, cohort: str, i: int, n: int) -> bool:
     you read the matrix).
     """
     resp = route_query(question)
-    passed, _ = check_hallucination(resp.answer, resp.citations)
+    passed, _ = check_hallucination(resp.answer, resp.sources)
     verdict = "PASSED " if passed else "FLAGGED"
     preview = resp.answer.strip().replace("\n", " ")[:70]
     print(f"  {cohort:<9} {i}/{n}  judge={verdict}  ans: {preview!r}", flush=True)

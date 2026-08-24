@@ -158,7 +158,7 @@ def _stub_response() -> QueryResponse:
     """Cheap ``QueryResponse`` for the contract tests — no LLM call needed."""
     return QueryResponse(
         answer="stub",
-        citations=[Source(doc_id="doc_1", chunk_text="stub", similarity_score=0.9)],
+        sources=[Source(doc_id="doc_1", chunk_text="stub", similarity_score=0.9)],
         confidence=0.9,
         model=constants.MODEL_SIMPLE,
         tokens=TokenUsage(prompt_tokens=10, completion_tokens=5),
@@ -167,8 +167,12 @@ def _stub_response() -> QueryResponse:
     )
 
 
-def test_x_client_id_header_passes_through_to_router() -> None:
+def test_x_client_id_header_passes_through_to_router(monkeypatch) -> None:
     """Header sent → ``route_query`` receives the value as ``client_id``."""
+    import src.config
+
+    # Regex-only input guards — this test pins header plumbing, not the ML layer.
+    monkeypatch.setattr(src.config.settings, "enable_ml_input_guards", False)
     from src.gateway.app import app
 
     captured: dict[str, str | None] = {}
@@ -192,8 +196,12 @@ def test_x_client_id_header_passes_through_to_router() -> None:
     assert captured["client_id"] == "user-42"
 
 
-def test_x_client_id_header_is_optional() -> None:
+def test_x_client_id_header_is_optional(monkeypatch) -> None:
     """No header sent → ``route_query`` receives ``client_id=None`` and 200 OK."""
+    import src.config
+
+    # Regex-only input guards — this test pins header plumbing, not the ML layer.
+    monkeypatch.setattr(src.config.settings, "enable_ml_input_guards", False)
     from src.gateway.app import app
 
     captured: dict[str, str | None] = {}

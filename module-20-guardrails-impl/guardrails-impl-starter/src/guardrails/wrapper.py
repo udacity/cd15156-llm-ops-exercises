@@ -44,19 +44,13 @@ def safe_response(message: str, *, blocked_by: str) -> QueryResponse:
             Surfaced in the response and recorded in traces.
 
     Returns:
-        A :class:`QueryResponse` with empty citations, zero confidence,
+        A :class:`QueryResponse` with empty sources, zero confidence,
         and the model field set to the cheaper tier — the actual model
         was never called.
-
-    Note:
-        Uses :meth:`QueryResponse.model_construct` to bypass the
-        ``citations`` ``min_length=1`` constraint that exercise 4 adds.
-        Block responses are not answers; the boundary validator catches
-        malformed *answer* responses, not deliberate block notifications.
     """
-    return QueryResponse.model_construct(
+    return QueryResponse(
         answer=message,
-        citations=[],
+        sources=[],
         confidence=0.0,
         model=constants.MODEL_SIMPLE,
         tokens=TokenUsage(prompt_tokens=0, completion_tokens=0),
