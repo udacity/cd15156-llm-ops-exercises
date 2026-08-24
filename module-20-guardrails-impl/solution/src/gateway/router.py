@@ -99,7 +99,7 @@ def route_query(
         answer, usage, cost = anthropic_generate(question, system_prompt, chosen_model)
         response = QueryResponse(
             answer=answer,
-            citations=sources,
+            sources=sources,
             confidence=sum(s.similarity_score for s in sources) / max(len(sources), 1),
             model=chosen_model,
             tokens=usage,

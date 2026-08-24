@@ -93,7 +93,7 @@ def generate(question: str, sources: list[Source], model: str) -> tuple[str, Tok
 
 Three lines deserve attention. `OpenAI(base_url=settings.openai_base_url or None)` is the Vocareum / direct-OpenAI bridge: when `OPENAI_BASE_URL` is the empty string the SDK falls back to its built-in default; when it is the Vocareum URL the SDK routes through the proxy. Same code, two deploy targets, zero conditional branches.
 
-`temperature=constants.GENERATION_TEMPERATURE` imports from `src/constants.py`. The locked value is `0.2` — low enough for factual recall, not zero so the model can paraphrase. Hardcoding `0.2` in a call site is a review-blocker caught by `make consistency-check`.
+`temperature=constants.GENERATION_TEMPERATURE` imports from `src/constants.py`. The locked value is `0.2` — low enough for factual recall, not zero so the model can paraphrase. Hardcoding `0.2` in a call site is a review-blocker: the constant exists so the value is set in exactly one place.
 
 `cost_usd = 0.0` is a placeholder. Cost-aware downstreams see zero until a pricing table replaces the literal with `pricing.compute_cost(usage, model)` — the slot-and-fill is intentional so the cost concern stays a separate piece without rework here.
 

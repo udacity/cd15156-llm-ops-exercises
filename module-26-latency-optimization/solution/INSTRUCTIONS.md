@@ -73,7 +73,7 @@ The rubric §7 evidence target is a per-span latency breakdown that names where 
 
 4. Find the cold query's traces. The `rag_query` trace holds the retrieval (embed plus search) and the generator spans. The cache lookup and, on a miss, the classifier each run before the pipeline opens its span, so Phoenix records them as their own short top-level traces next to `rag_query` rather than as children of it. Read all of them together and record four durations: the cache lookup, the classifier, the retrieval, and the generator. Then look at the cached query. A hit returns at the cache lookup, so it produces only the cache-lookup trace; the classifier, retrieval, and generator never run, and that absence is exactly the latency the cache buys back.
 
-5. Build a two-column table. Magnitudes will vary by region and load; the structure is what you keep:
+5. Build a two-column table. Magnitudes will vary by region and load; the structure is what you keep. Both guard flags ship off in this module's `.env` (`ENABLE_OUTPUT_GUARD=false`, `ENABLE_ML_INPUT_GUARDS=false`), so no guard rows appear: the hallucination judge and the DeBERTa plus Presidio scanners would otherwise add their cost to every request, cache hits included, and skew exactly this table:
 
    ```
    | Span                | Cold (ms)  | Cached (ms) |
@@ -164,7 +164,7 @@ The starter runs both `/query` (blocking) and `/query/stream` (SSE). The previou
    streaming: {'ttft_ms': ~3000, 'total_ms': ~5000}
    ```
 
-   Blocking TTFT equals blocking total — the client cannot do anything until the whole body lands. Streaming TTFT lands much lower because the first token arrives as soon as the model starts generating. The two totals land close together, because the model does the same work either way: streaming does not make generation faster, it just surfaces the first token sooner. (This module ships with the output guard off. Turn it on and blocking picks up an extra hallucination-judge call after the last token that streaming defers, which pushes blocking's total up — that is the Exercise 2 stretch.) The streaming route bypasses the cache, so even on a paraphrase-repeat it always pays the full generator cost.
+   Blocking TTFT equals blocking total — the client cannot do anything until the whole body lands. Streaming TTFT lands much lower because the first token arrives as soon as the model starts generating. The two totals land close together, because the model does the same work either way: streaming does not make generation faster, it just surfaces the first token sooner. (This module ships with the output guard and the ML input guards off. Turn the output guard on and blocking picks up an extra hallucination-judge call after the last token that streaming defers, which pushes blocking's total up — that is the Exercise 2 stretch.) The streaming route bypasses the cache, so even on a paraphrase-repeat it always pays the full generator cost.
 
 4. Build a two-by-two table:
 
@@ -188,6 +188,8 @@ Modify your Python client to `print(token, end="", flush=True)` on each `content
 A second stretch: fire the same question twice through `/query` (the blocking endpoint) without clearing the cache between calls. The second call returns the cached answer immediately. Now fire the same question twice through `/query/stream`. Both streaming calls always pay the full generator cost because the streaming route bypasses the cache by design. The cache wins on the blocking-route hit path; streaming wins on perceived-latency on the cache-miss path. Each lever solves a different problem.
 
 A third stretch: measure what the output guard costs. This module ships with `ENABLE_OUTPUT_GUARD=false`, so the blocking and streaming totals come in close. Set `ENABLE_OUTPUT_GUARD=true` in `.env`, restart `make serve`, and re-run `scripts/ttft_compare.py`. Blocking's total jumps by the hallucination judge, a second LLM call it runs on the whole answer after the last token, while streaming's total barely moves because the streaming route defers that guard. The gap you open up is the guard's price, not slower streaming generation. The trace-based view needs no config change: read the generator span from each route in Phoenix and compare those directly, the same span-isolation move as Exercise 1.
+
+A fourth stretch: measure what the input guards cost. This module also ships `ENABLE_ML_INPUT_GUARDS=false`. Set it to true, restart `make serve`, and re-run `scripts/ttft_compare.py`. The DeBERTa prompt-injection scanner and the Presidio PII redactor then run model inference on every blocking request before the cache lookup, cache hits included: expect roughly 40 ms per request on the workspace GPU and roughly 900 ms on CPU. The streaming numbers do not move, because the streaming route's guard seam is still the no-op `_pre_stream_guards` shim.
 
 ## Exercise 3 — Sweep `ef_search` against the `scikit_docs` collection
 

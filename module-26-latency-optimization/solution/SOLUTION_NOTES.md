@@ -40,7 +40,10 @@ uv run python scripts/ef_search_sweep.py
 Expected shape from the Phoenix UI (or `make show-traces`) after the
 five-query repeat against `/query`. Magnitudes vary by region, hosted
 endpoint load, and Vocareum-vs-direct path; the **shape** is what the
-rubric §7 evidence target wants:
+rubric §7 evidence target wants. Both guard flags ship off in this
+module's `.env` (`ENABLE_OUTPUT_GUARD=false`,
+`ENABLE_ML_INPUT_GUARDS=false`), so no judge or guard-scanner rows
+appear in the trace:
 
 ```
 | Span                    | Cold (ms)  | Cached (ms) |
@@ -101,7 +104,11 @@ exercise spec):
 > half-streamed token sequence without rewriting their contract. (This
 > module ships with that guard off so the totals compare cleanly; turn it
 > on and blocking's total grows by the judge call, which is the Exercise 2
-> stretch.) The starter offers both routes so the trade-off is visible in
+> stretch. The ML input guards are off for the same reason; switched on
+> they add their scan to every blocking request before the cache lookup,
+> about 40 ms on the workspace GPU and about 900 ms on CPU, while the
+> streaming numbers stay put because that route's guard seam is still the
+> no-op shim.) The starter offers both routes so the trade-off is visible in
 > code.
 
 > Default the docs-FAQ workload to `/query` (blocking). The output
