@@ -14,7 +14,7 @@ process-local, so it resets on ``make serve`` restart.
 
 Needs ``make serve`` up on :8080 and a loaded corpus; each of the first twenty
 calls is a real model round-trip. Run one throwaway query first so the DeBERTa
-cold-start (~250 MB) is not counted in the burst.
+cold-start (~700 MB) is not counted in the burst.
 
 Usage:
     PYTHONPATH=. uv run python scripts/burst_test.py
