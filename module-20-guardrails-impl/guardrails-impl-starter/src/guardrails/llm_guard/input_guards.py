@@ -42,7 +42,7 @@ def _ensure_scanners() -> None:
     """Lazy-load LLM Guard scanners on first call.
 
     The imports are inside the function body so importing this module
-    is cheap. The DeBERTa weights (~250 MB) and the Presidio NLP engine
+    is cheap. The DeBERTa weights (~700 MB) and the Presidio NLP engine
     only load when the real scanners are needed — tests mock at this
     seam and never trigger the download.
     """

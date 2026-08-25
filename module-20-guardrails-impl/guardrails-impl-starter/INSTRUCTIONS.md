@@ -14,7 +14,7 @@ make smoke-gate               # confirms recall@5 floor
 make serve                    # in a separate terminal — uvicorn on :8080
 ```
 
-First call into `/query` loads DeBERTa (~250 MB) and Presidio's NER backend — five to ten seconds of CPU on the Workspace T4 box. Subsequent calls reuse the in-process models.
+First call into `/query` loads DeBERTa (~700 MB) and Presidio's NER backend — five to ten seconds of CPU on the Workspace T4 box. Subsequent calls reuse the in-process models.
 
 ---
 > The recorded demo walks through this codebase; the exercises below build on it.
@@ -96,7 +96,7 @@ The `/query` route returns JSON; a downstream consumer must trust the shape. The
 
 ## Hints and common pitfalls
 
-**DeBERTa cold-start latency.** The first call into the live `/query` route after `make serve` loads the prompt-injection model (~250 MB) and the Presidio NER backend. Plan for five to ten seconds on the Workspace's T4 box. If you are timing the request to measure latency, throw away the first call. Production teams pre-warm the model in the application lifespan — the starter does not because the Workspace cold-starts the whole process on every learner session and the first-call cost is amortised against the corpus load anyway.
+**DeBERTa cold-start latency.** The first call into the live `/query` route after `make serve` loads the prompt-injection model (~700 MB) and the Presidio NER backend. Plan for five to ten seconds on the Workspace's T4 box. If you are timing the request to measure latency, throw away the first call. Production teams pre-warm the model in the application lifespan — the starter does not because the Workspace cold-starts the whole process on every learner session and the first-call cost is amortised against the corpus load anyway.
 
 **spaCy `en_core_web_sm` missing.** The `pyproject.toml` URL-pins the wheel for exactly this reason, but past Workspace image rebuilds have shipped without it. Failure mode: Presidio raises an `IOError` deep in its NER initialisation. Fix: `uv run python -m spacy download en_core_web_sm`, then restart `make serve`. The `ALL_SUPPORTED_LANGUAGES = ["en"]` patch in `src/guardrails/llm_guard/input_guards.py` narrows the language set so only `en_core_web_sm` is needed, not the Chinese one — the `llm-guard` issue 337 fix.
 
