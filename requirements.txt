@@ -396,7 +396,7 @@ networkx==3.6.1
     # via
     #   ragas
     #   torch
-nltk==3.9.4
+nltk==3.10.3
     # via llm-guard
 nodeenv==1.10.0
     # via pre-commit
