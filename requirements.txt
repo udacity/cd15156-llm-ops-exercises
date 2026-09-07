@@ -151,7 +151,7 @@ confection==1.3.3
     #   weasel
 cross-web==0.7.0
     # via lia-web
-cryptography==44.0.3
+cryptography==50.0.0
     # via
     #   authlib
     #   presidio-anonymizer
